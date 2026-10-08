@@ -217,7 +217,10 @@ collect_numbered_files() {
 }
 
 payload_files() {
-    find "$STAGE" -type f ! -path "$META/*" ! -name manifest.json ! -name manifest.sha256 -print | sort
+    local member
+    while IFS= read -r member; do printf '%s/%s\n' "$STAGE" "$member"; done < <(
+        find "$STAGE" -type f ! -path "$META/*" ! -name manifest.json ! -name manifest.sha256 -printf '%P\n' | inspection_helper order
+    )
 }
 
 add_redaction_event() {
@@ -579,6 +582,7 @@ safe_archive_members() {
     local archive=$1 member normalized type member_count total_size listing members seen=$'\n'
     listing=$(tar --zstd --quoting-style=escape -tvf "$archive") || return 1
     members=$(tar --zstd --quoting-style=escape -tf "$archive") || return 1
+    inspection_helper order --check <<<"$members" || return 1
     member_count=$(wc -l <<<"$listing")
     total_size=$(awk '$1 ~ /^-/ {sum += $3} END {print sum + 0}' <<<"$listing")
     (( member_count <= 256 && total_size <= STAGING_LIMIT )) || return 1
@@ -618,8 +622,8 @@ prepare_verified_archive() {
         [[ $(stat -c %s "$workspace/$path") == "$size" ]] || { rm -rf "$workspace"; return 2; }
         [[ $(sha256sum "$workspace/$path" | awk '{print $1}') == "$hash" ]] || { rm -rf "$workspace"; return 2; }
     done <"$expected"
-    find "$workspace" -type f ! -name manifest.json ! -name manifest.sha256 ! -name .expected ! -name .actual -printf '%P\n' | sort >"$actual"
-    cut -d' ' -f1 "$expected" | sort | cmp -s - "$actual" || { rm -rf "$workspace"; return 2; }
+    find "$workspace" -type f ! -name manifest.json ! -name manifest.sha256 ! -name .expected ! -name .actual -printf '%P\n' | inspection_helper order >"$actual"
+    cut -d' ' -f1 "$expected" | inspection_helper order | cmp -s - "$actual" || { rm -rf "$workspace"; return 2; }
     scan_tree "$workspace" "$workspace/.verification-scan.json" || { rm -rf "$workspace"; return 2; }
     rm -f "$expected" "$actual" "$workspace/.verification-scan.json"
     printf -v "$result_variable" '%s' "$workspace"
@@ -851,8 +855,10 @@ collect_bundle() {
 
     archive_temp=$(mktemp "$destination_directory/.kitpro-support-archive.XXXXXX") || fail 'cannot create temporary archive'
     local list="$META/archive-files"
-    (cd "$STAGE" && find . -type f -printf '%P\0' | sort -z) >"$list"
-    if ! tar -C "$STAGE" --null --files-from="$list" --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner --mode='u+rw,go-rwx' --zstd -cf "$archive_temp"; then
+    if ! find "$STAGE" -type f -printf '%P\n' | inspection_helper order >"$list"; then
+        rm -f "$archive_temp"; fail 'cannot order archive members'
+    fi
+    if ! tar -C "$STAGE" --verbatim-files-from --files-from="$list" --mtime=@0 --owner=0 --group=0 --numeric-owner --mode='u+rw,go-rwx' --zstd -cf "$archive_temp"; then
         rm -f "$archive_temp"; fail 'archive creation failed'
     fi
     chmod 600 "$archive_temp"

@@ -115,7 +115,7 @@ def validate_manifest(document: dict[str, Any]) -> None:
         if item.get("redaction_status") != "sanitized":
             raise ValidationError("support bundle file is not sanitized")
         paths.append(path)
-    if paths != sorted(paths) or len(paths) != len(set(paths)):
+    if paths != canonical_member_order(paths):
         raise ValidationError("support bundle file inventory is not canonical")
 
     redaction = document.get("redaction")
@@ -151,3 +151,16 @@ def safe_member_path(path: str) -> bool:
 def validate_health_payload(document: dict[str, Any]) -> None:
     """Keep the bundle health payload on the Phase 8.3 contract."""
     validate_health_report(document)
+
+
+def canonical_member_order(paths: list[str]) -> list[str]:
+    """Order unique normalized ASCII member names by bytes, never locale.
+
+    Names use '/' separators and must already satisfy safe_member_path; no
+    normalization, natural sorting, or case folding is performed.
+    """
+    if any(not safe_member_path(path) for path in paths):
+        raise ValidationError("support bundle member name is unsafe")
+    if len(paths) != len(set(paths)):
+        raise ValidationError("support bundle member names are duplicated")
+    return sorted(paths, key=lambda path: path.encode("ascii"))

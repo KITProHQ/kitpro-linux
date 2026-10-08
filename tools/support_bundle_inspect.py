@@ -12,7 +12,7 @@ import unicodedata
 from pathlib import Path
 from typing import Any
 
-from tools.support_bundle import ValidationError, validate_health_payload, validate_manifest
+from tools.support_bundle import ValidationError, canonical_member_order, validate_health_payload, validate_manifest
 from tools.system_health import subsystem_summary
 
 
@@ -486,8 +486,19 @@ def main(argv: list[str] | None = None) -> int:
     view.add_argument("workspace", type=Path)
     view.add_argument("member")
     view.add_argument("--pretty", action="store_true")
+    order = subparsers.add_parser("order")
+    order.add_argument("--check", action="store_true")
     arguments = parser.parse_args(argv)
     try:
+        if arguments.command == "order":
+            paths = sys.stdin.read().splitlines()
+            ordered = canonical_member_order(paths)
+            if arguments.check:
+                if paths != ordered:
+                    raise ValidationError("archive member order is not canonical")
+            elif ordered:
+                print("\n".join(ordered))
+            return 0
         if arguments.command in {"validate", "inventory"}:
             manifest, _, _, _ = validate_workspace(arguments.workspace)
             if arguments.command == "inventory":
