@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "release": "0.1-dev",
+  "architecture": "x86_64",
+  "repository": "core",
+  "explicit_packages": [
+    {
+      "name": "base",
+      "expected_repository": "core",
+      "support_class": "core",
+      "update_policy": "coherent-base-update",
+      "reason": "Defines the minimum Arch userspace and package-management baseline."
+    },
+    {
+      "name": "linux-lts",
+      "expected_repository": "core",
+      "support_class": "boot-critical",
+      "update_policy": "continuous-lts-patch",
+      "reason": "Provides the default server kernel."
+    },
+    {
+      "name": "linux-firmware",
+      "expected_repository": "core",
+      "support_class": "boot-critical",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides firmware needed by common server hardware."
+    },
+    {
+      "name": "mkinitcpio",
+      "expected_repository": "core",
+      "support_class": "boot-critical",
+      "update_policy": "qualified-maintenance",
+      "reason": "Generates the initial ramdisk for the later bootable prototype."
+    },
+    {
+      "name": "openssh",
+      "expected_repository": "core",
+      "support_class": "security-sensitive",
+      "update_policy": "expedited-security",
+      "reason": "Provides remote administration."
+    },
+    {
+      "name": "nftables",
+      "expected_repository": "extra",
+      "support_class": "security-sensitive",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides the default host firewall."
+    },
+    {
+      "name": "iproute2",
+      "expected_repository": "core",
+      "support_class": "core",
+      "update_policy": "coherent-base-update",
+      "reason": "Provides core network configuration and diagnostics."
+    },
+    {
+      "name": "iputils",
+      "expected_repository": "core",
+      "support_class": "core",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides basic network diagnostics."
+    },
+    {
+      "name": "e2fsprogs",
+      "expected_repository": "core",
+      "support_class": "storage-critical",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides ext4 creation, checking, and repair tools."
+    },
+    {
+      "name": "dosfstools",
+      "expected_repository": "core",
+      "support_class": "storage-critical",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides FAT filesystem tools for the EFI system partition."
+    },
+    {
+      "name": "efibootmgr",
+      "expected_repository": "core",
+      "support_class": "boot-critical",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides UEFI boot-entry management."
+    },
+    {
+      "name": "sudo",
+      "expected_repository": "core",
+      "support_class": "security-sensitive",
+      "update_policy": "expedited-security",
+      "reason": "Provides delegated system administration."
+    },
+    {
+      "name": "curl",
+      "expected_repository": "core",
+      "support_class": "security-sensitive",
+      "update_policy": "expedited-security",
+      "reason": "Provides HTTPS retrieval and diagnostics."
+    },
+    {
+      "name": "ethtool",
+      "expected_repository": "extra",
+      "support_class": "diagnostic",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides Ethernet interface diagnostics."
+    },
+    {
+      "name": "pciutils",
+      "expected_repository": "core",
+      "support_class": "diagnostic",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides PCI hardware discovery."
+    },
+    {
+      "name": "usbutils",
+      "expected_repository": "core",
+      "support_class": "diagnostic",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides USB hardware discovery."
+    },
+    {
+      "name": "lsof",
+      "expected_repository": "extra",
+      "support_class": "diagnostic",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides open-file and socket diagnostics."
+    },
+    {
+      "name": "nano",
+      "expected_repository": "core",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides an approachable default console editor."
+    },
+    {
+      "name": "vim",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides the conventional vi-compatible server editor."
+    },
+    {
+      "name": "bash-completion",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Improves interactive shell usability for administrators."
+    },
+    {
+      "name": "less",
+      "expected_repository": "core",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides standard paging for logs, manuals, and command output."
+    },
+    {
+      "name": "which",
+      "expected_repository": "core",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides standard command-path inspection."
+    },
+    {
+      "name": "man-db",
+      "expected_repository": "core",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides local manual-page lookup."
+    },
+    {
+      "name": "man-pages",
+      "expected_repository": "core",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides baseline Linux and libc manual-page content."
+    },
+    {
+      "name": "rsync",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides reliable file transfer and synchronization."
+    },
+    {
+      "name": "jq",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides JSON inspection for KITPro and system diagnostics."
+    },
+    {
+      "name": "bind",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides DNS diagnostics including dig."
+    },
+    {
+      "name": "tcpdump",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides packet capture for network troubleshooting."
+    },
+    {
+      "name": "dmidecode",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides physical-system firmware and hardware inventory."
+    },
+    {
+      "name": "smartmontools",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides SMART storage health diagnostics."
+    },
+    {
+      "name": "nvme-cli",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides NVMe storage diagnostics."
+    },
+    {
+      "name": "strace",
+      "expected_repository": "extra",
+      "support_class": "administrator-baseline",
+      "update_policy": "qualified-maintenance",
+      "reason": "Provides syscall tracing for difficult service failures."
+    }
+  ],
+  "native_packages": [
+    "kitpro-linux-release",
+    "kitpro-linux-keyring",
+    "kitpro-linux-base"
+  ],
+  "deferred_native_packages": {
+    "kitpro-linux-mirrorlist": "No production repository endpoint exists in Phase 1.",
+    "kitpro-linux-defaults": "System defaults belong to the later bootable-system phase."
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "id": "kitpro-linux",
+  "name": "KITPro Linux Server",
+  "release": "0.1-dev",
+  "generation": "0.1-dev-g0003",
+  "support_status": "technical-prototype",
+  "production_ready": false
+}

@@ -1,0 +1,48 @@
+pkgname=kitpro-linux-base
+pkgver=0.1.0
+pkgrel=6
+pkgdesc='Minimal supported package contract for KITPro Linux Server'
+arch=('any')
+license=('Apache-2.0')
+depends=(
+	'kitpro-linux-release'
+	'kitpro-linux-keyring'
+	'kitpro-linux-repository-trust'
+	'base'
+	'linux-lts'
+	'linux-firmware'
+	'mkinitcpio'
+	'openssh'
+	'nftables'
+	'iproute2'
+	'iputils'
+	'e2fsprogs'
+	'dosfstools'
+	'efibootmgr'
+	'sudo'
+	'curl'
+	'ethtool'
+	'pciutils'
+	'usbutils'
+	'lsof'
+	'nano'
+	'vim'
+	'bash-completion'
+	'less'
+	'which'
+	'man-db'
+	'man-pages'
+	'rsync'
+	'jq'
+	'bind'
+	'tcpdump'
+	'dmidecode'
+	'smartmontools'
+	'nvme-cli'
+	'strace'
+	'python'
+)
+
+package() {
+	:
+}

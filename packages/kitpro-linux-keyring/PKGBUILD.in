@@ -1,0 +1,17 @@
+pkgname=kitpro-linux-keyring
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='KITPro Linux Server development package trust keys'
+arch=('any')
+license=('Apache-2.0')
+source=('kitpro-linux.gpg' 'kitpro-linux-trusted' 'kitpro-linux-revoked')
+sha256sums=('@GPG_SHA256@' '@TRUSTED_SHA256@' '@REVOKED_SHA256@')
+
+package() {
+	install -Dm644 "$srcdir/kitpro-linux.gpg" \
+		"$pkgdir/usr/share/pacman/keyrings/kitpro-linux.gpg"
+	install -Dm644 "$srcdir/kitpro-linux-trusted" \
+		"$pkgdir/usr/share/pacman/keyrings/kitpro-linux-trusted"
+	install -Dm644 "$srcdir/kitpro-linux-revoked" \
+		"$pkgdir/usr/share/pacman/keyrings/kitpro-linux-revoked"
+}

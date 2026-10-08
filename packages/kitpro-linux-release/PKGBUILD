@@ -1,0 +1,14 @@
+pkgname=kitpro-linux-release
+pkgver=0.1.0
+pkgrel=3
+pkgdesc='KITPro Linux Server development release identity'
+arch=('any')
+license=('Apache-2.0')
+install=kitpro-linux-release.install
+source=('kitpro-linux-release.json')
+sha256sums=('da7138be5f74158f79342dcc83a08cca447099b62fc77afdf3b75ef5e7e7ba12')
+
+package() {
+	install -Dm644 "$srcdir/kitpro-linux-release.json" \
+		"$pkgdir/usr/lib/kitpro-linux/release.json"
+}
