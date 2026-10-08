@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/recovery-receipt.schema.json",
+  "title": "KITPro Linux recovery operation receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "operation", "target", "release", "generation",
+    "started_at", "completed_at", "changes", "result", "validation", "receipt_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-recovery-receipt"},
+    "operation": {
+      "enum": [
+        "regenerate-initramfs", "repair-boot", "reinstall-package",
+        "repair-fallback-entry", "regenerate-previous-initramfs"
+      ]
+    },
+    "target": {"type": "string", "pattern": "^/"},
+    "release": {"type": "string"},
+    "generation": {"type": "string"},
+    "started_at": {"type": "string"},
+    "completed_at": {"type": "string"},
+    "changes": {"type": "array", "items": {"type": "string"}},
+    "result": {"enum": ["passed", "failed"]},
+    "validation": {"type": "object"},
+    "receipt_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

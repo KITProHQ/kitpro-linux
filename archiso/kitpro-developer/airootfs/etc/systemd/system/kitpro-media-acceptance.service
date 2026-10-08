@@ -1,0 +1,19 @@
+[Unit]
+Description=Run explicitly requested KITPro media acceptance installation
+ConditionPathExists=/sys/firmware/qemu_fw_cfg/by_name/opt/kitpro/acceptance/raw
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+Before=getty.target
+
+[Service]
+Type=oneshot
+Environment=PYTHONPATH=/opt/kitpro-linux
+ExecStart=/usr/local/lib/kitpro-linux/media-acceptance
+# The physical console is intentionally the final kernel console. This
+# QEMU-only service must not acquire /dev/console before ExecStart; bounded
+# acceptance evidence is emitted explicitly to ttyS0 by media-acceptance.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

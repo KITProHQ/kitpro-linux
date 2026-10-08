@@ -1,0 +1,240 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.example/schemas/system-health.schema.json",
+  "title": "KITPro Linux system health report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "timestamp", "mode", "system", "kernel",
+    "boot", "systemd", "networking", "dns", "firewall", "ssh",
+    "repository", "storage", "history", "redaction", "overall_status",
+    "warnings", "errors"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-system-health"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "mode": {"enum": ["live", "offline"]},
+    "system": {"$ref": "#/$defs/system"},
+    "kernel": {"$ref": "https://kitpro.example/schemas/kernel-status.schema.json"},
+    "boot": {"$ref": "#/$defs/boot"},
+    "systemd": {"$ref": "#/$defs/systemd"},
+    "networking": {"$ref": "#/$defs/networking"},
+    "dns": {"$ref": "#/$defs/dns"},
+    "firewall": {"$ref": "#/$defs/firewall"},
+    "ssh": {"$ref": "#/$defs/ssh"},
+    "repository": {"$ref": "#/$defs/repository"},
+    "storage": {"$ref": "#/$defs/storage"},
+    "history": {"$ref": "#/$defs/history"},
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "sensitive_values_included"],
+      "properties": {
+        "profile": {"const": "support-safe-v1"},
+        "sensitive_values_included": {"const": false}
+      }
+    },
+    "overall_status": {"enum": ["healthy", "warning", "error", "unknown"]},
+    "warnings": {"$ref": "#/$defs/messages"},
+    "errors": {"$ref": "#/$defs/messages"}
+  },
+  "$defs": {
+    "nullableString": {"type": ["string", "null"]},
+    "nullableBoolean": {"type": ["boolean", "null"]},
+    "nullableInteger": {"type": ["integer", "null"], "minimum": 0},
+    "messages": {"type": "array", "items": {"type": "string"}},
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["product", "release", "generation", "hostname", "architecture", "uptime_seconds"],
+      "properties": {
+        "product": {"$ref": "#/$defs/nullableString"},
+        "release": {"$ref": "#/$defs/nullableString"},
+        "generation": {"$ref": "#/$defs/nullableString"},
+        "hostname": {"$ref": "#/$defs/nullableString"},
+        "architecture": {"$ref": "#/$defs/nullableString"},
+        "uptime_seconds": {"$ref": "#/$defs/nullableInteger"}
+      }
+    },
+    "boot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["firmware", "esp_present", "esp_mounted", "systemd_boot_valid", "default_entry", "current_entry_valid", "fallback_entry_valid", "kernel_image_valid", "initramfs_valid"],
+      "properties": {
+        "firmware": {"enum": ["uefi", "unsupported", "offline", "unavailable"]},
+        "esp_present": {"type": "boolean"},
+        "esp_mounted": {"$ref": "#/$defs/nullableBoolean"},
+        "systemd_boot_valid": {"type": "boolean"},
+        "default_entry": {"$ref": "#/$defs/nullableString"},
+        "current_entry_valid": {"type": "boolean"},
+        "fallback_entry_valid": {"$ref": "#/$defs/nullableBoolean"},
+        "kernel_image_valid": {"type": "boolean"},
+        "initramfs_valid": {"type": "boolean"}
+      }
+    },
+    "service": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "enabled"],
+      "properties": {
+        "state": {"type": "string"},
+        "enabled": {"type": "string"}
+      }
+    },
+    "systemd": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["failed_unit_count", "failed_units", "critical_failed_units", "services"],
+      "properties": {
+        "failed_unit_count": {"type": "integer", "minimum": 0},
+        "failed_units": {"type": "array", "items": {"type": "string"}},
+        "critical_failed_units": {"type": "array", "items": {"type": "string"}},
+        "services": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["systemd_networkd", "systemd_resolved", "systemd_timesyncd", "nftables", "sshd"],
+          "properties": {
+            "systemd_networkd": {"$ref": "#/$defs/service"},
+            "systemd_resolved": {"$ref": "#/$defs/service"},
+            "systemd_timesyncd": {"$ref": "#/$defs/service"},
+            "nftables": {"$ref": "#/$defs/service"},
+            "sshd": {"$ref": "#/$defs/service"}
+          }
+        }
+      }
+    },
+    "networking": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["configuration_present", "configuration_files", "active_interfaces", "global_address_present", "default_route_present", "networkd_state"],
+      "properties": {
+        "configuration_present": {"type": "boolean"},
+        "configuration_files": {"type": "array", "items": {"type": "string"}},
+        "active_interfaces": {"type": "array", "items": {"type": "string"}},
+        "global_address_present": {"$ref": "#/$defs/nullableBoolean"},
+        "default_route_present": {"$ref": "#/$defs/nullableBoolean"},
+        "networkd_state": {"type": "string"}
+      }
+    },
+    "dns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resolved_state", "resolv_conf_valid", "validation"],
+      "properties": {
+        "resolved_state": {"type": "string"},
+        "resolv_conf_valid": {"type": "boolean"},
+        "validation": {"enum": ["healthy", "degraded", "unavailable"]}
+      }
+    },
+    "firewall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["service_state", "configuration_valid", "ruleset_available", "baseline_policy_valid"],
+      "properties": {
+        "service_state": {"type": "string"},
+        "configuration_valid": {"type": "boolean"},
+        "ruleset_available": {"$ref": "#/$defs/nullableBoolean"},
+        "baseline_policy_valid": {"type": "boolean"}
+      }
+    },
+    "ssh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "service_state", "configuration_valid", "syntax", "listening", "root_login", "password_authentication"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "service_state": {"type": "string"},
+        "configuration_valid": {"type": "boolean"},
+        "syntax": {"type": "string"},
+        "listening": {"$ref": "#/$defs/nullableBoolean"},
+        "root_login": {"enum": ["disabled", "unknown"]},
+        "password_authentication": {"enum": ["disabled", "unknown"]}
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled_repositories", "generation", "kitpro_only", "signature_enforcement", "arch_repositories_present", "package_database_readable", "installed_package_count", "release_package_present", "kernel_package_present"],
+      "properties": {
+        "enabled_repositories": {"type": "array", "items": {"type": "string"}},
+        "generation": {"$ref": "#/$defs/nullableString"},
+        "kitpro_only": {"type": "boolean"},
+        "signature_enforcement": {"type": "boolean"},
+        "arch_repositories_present": {"type": "boolean"},
+        "package_database_readable": {"type": "boolean"},
+        "installed_package_count": {"type": "integer", "minimum": 0},
+        "release_package_present": {"type": "boolean"},
+        "kernel_package_present": {"type": "boolean"}
+      }
+    },
+    "volume": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["filesystem", "total_bytes", "free_bytes", "low_space"],
+      "properties": {
+        "filesystem": {"type": "string"},
+        "total_bytes": {"type": "integer", "minimum": 0},
+        "free_bytes": {"type": "integer", "minimum": 0},
+        "low_space": {"type": "boolean"}
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "esp", "kernel_retention"],
+      "properties": {
+        "root": {"$ref": "#/$defs/volume"},
+        "esp": {"$ref": "#/$defs/volume"},
+        "kernel_retention": {"enum": ["ready", "insufficient-space", "unavailable"]}
+      }
+    },
+    "installReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "valid", "schema_version", "installed_at", "installer_version"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "valid": {"type": "boolean"},
+        "schema_version": {"type": ["integer", "null"]},
+        "installed_at": {"$ref": "#/$defs/nullableString"},
+        "installer_version": {"$ref": "#/$defs/nullableString"}
+      }
+    },
+    "operationReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "valid", "operation_id", "result", "completed_at"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "valid": {"type": "boolean"},
+        "operation_id": {"$ref": "#/$defs/nullableString"},
+        "result": {"$ref": "#/$defs/nullableString"},
+        "completed_at": {"$ref": "#/$defs/nullableString"}
+      }
+    },
+    "recoveryHistory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["count", "latest", "latest_valid", "operation", "result", "completed_at"],
+      "properties": {
+        "count": {"type": "integer", "minimum": 0},
+        "latest": {"$ref": "#/$defs/nullableString"},
+        "latest_valid": {"$ref": "#/$defs/nullableBoolean"},
+        "operation": {"$ref": "#/$defs/nullableString"},
+        "result": {"$ref": "#/$defs/nullableString"},
+        "completed_at": {"$ref": "#/$defs/nullableString"}
+      }
+    },
+    "history": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["install_receipt", "kernel_transition", "recovery"],
+      "properties": {
+        "install_receipt": {"$ref": "#/$defs/installReceipt"},
+        "kernel_transition": {"$ref": "#/$defs/operationReceipt"},
+        "recovery": {"$ref": "#/$defs/recoveryHistory"}
+      }
+    }
+  }
+}

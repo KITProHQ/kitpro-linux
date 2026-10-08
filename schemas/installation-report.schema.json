@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/installation-report.schema.json",
+  "title": "KITPro Linux installation evidence report",
+  "type": "object",
+  "required": [
+    "schema_version", "installer_version", "install_spec_version",
+    "install_spec_sha256", "install_plan_sha256", "release",
+    "repository_generation", "package_count", "target", "disk",
+    "rootfs_manifest_sha256", "kernel", "initramfs", "bootloader", "install_receipt",
+    "system", "network", "ssh", "firewall", "start_time",
+    "completion_time", "first_boot", "result"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "installer_version": { "type": "string" },
+    "install_spec_version": { "const": 1 },
+    "install_spec_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "install_plan_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "release": { "type": "string" },
+    "repository_generation": { "type": "string" },
+    "package_count": { "type": "integer", "minimum": 1 },
+    "target": { "type": "object" },
+    "disk": { "type": "object" },
+    "rootfs_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "kernel": { "type": "object" },
+    "initramfs": { "type": "object" },
+    "bootloader": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "const": "systemd-boot" },
+        "version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "install_receipt": {
+      "type": "object",
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "const": "/var/lib/kitpro-linux/install-receipt.json" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "system": { "type": "object" },
+    "network": { "type": "object" },
+    "ssh": { "type": "object" },
+    "firewall": { "type": "object" },
+    "start_time": { "type": "string" },
+    "completion_time": { "type": "string" },
+    "first_boot": { "type": "object" },
+    "result": { "enum": ["installed_pending_first_boot", "passed", "failed"] }
+  }
+}

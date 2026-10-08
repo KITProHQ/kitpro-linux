@@ -1,0 +1,923 @@
+#!/usr/bin/bash
+# Local-only, sanitized KITPro Linux diagnostic archive builder and verifier.
+set -uo pipefail
+
+VERSION=0.4
+FORMAT_VERSION=1
+INDIVIDUAL_LIMIT=${KITPRO_SUPPORT_INDIVIDUAL_LIMIT:-1048576}
+JOURNAL_LIMIT=${KITPRO_SUPPORT_JOURNAL_LIMIT:-1048576}
+STAGING_LIMIT=${KITPRO_SUPPORT_STAGING_LIMIT:-16777216}
+ARCHIVE_LIMIT=${KITPRO_SUPPORT_ARCHIVE_LIMIT:-8388608}
+TIMEOUT_SECONDS=${KITPRO_SUPPORT_TIMEOUT_SECONDS:-15}
+CAPACITY_RESERVE=${KITPRO_SUPPORT_CAPACITY_RESERVE:-67108864}
+ROOT=${KITPRO_SUPPORT_TEST_ROOT:-/}
+MODE=${KITPRO_SUPPORT_MODE:-$([[ $ROOT == / ]] && printf live || printf offline)}
+OUTPUT=
+OVERWRITE=false
+WORK=
+STAGE=
+META=
+PRESERVE_WORK=false
+WARNINGS=()
+ERRORS=()
+REDACTION_TOTAL=0
+REDACTION_CATEGORIES=()
+BUNDLE_RESULT=failed
+RUNTIME_DIRECTORY=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+if [[ -f $RUNTIME_DIRECTORY/../tools/support_bundle_inspect.py ]]; then
+    INSPECTION_PYTHONPATH=$(cd -- "$RUNTIME_DIRECTORY/.." && pwd -P)
+else
+    INSPECTION_PYTHONPATH=/usr/lib/kitpro-linux/python
+fi
+INSPECTION_PYTHON=/usr/bin/python
+
+usage() {
+    cat <<'EOF'
+usage: kitpro-support-bundle [--output FILE] [--overwrite]
+       kitpro-support-bundle verify ARCHIVE
+       kitpro-support-bundle inspect ARCHIVE [--json] [--verbose]
+       kitpro-support-bundle view ARCHIVE MEMBER [--pretty]
+       kitpro-support-bundle view ARCHIVE --list
+
+Builds, verifies, inspects, or safely views a local sanitized .tar.zst archive.
+No data is uploaded and no archive member is extracted into the caller's directory.
+
+Exit codes: 0 complete/valid, 1 complete with warnings, 2 unsafe/invalid,
+3 invocation or internal failure.
+EOF
+}
+
+json_escape() {
+    local value=${1-}
+    value=${value//\\/\\\\}; value=${value//\"/\\\"}
+    value=${value//$'\n'/\\n}; value=${value//$'\r'/\\r}; value=${value//$'\t'/\\t}
+    printf '%s' "$value"
+}
+json_string() { printf '"%s"' "$(json_escape "${1-}")"; }
+json_nullable() { [[ -n ${1-} ]] && json_string "$1" || printf null; }
+json_bool() { [[ ${1:-false} == true ]] && printf true || printf false; }
+fail() { printf 'kitpro-support-bundle: %s\n' "$*" >&2; exit 3; }
+warn() { WARNINGS+=("$1"); }
+error() { ERRORS+=("$1"); }
+root_path() { [[ $ROOT == / ]] && printf '%s' "$1" || printf '%s%s' "${ROOT%/}" "$1"; }
+inspection_helper() {
+    [[ -x $INSPECTION_PYTHON && -f $INSPECTION_PYTHONPATH/tools/support_bundle_inspect.py ]] || {
+        printf 'kitpro-support-bundle: inspection runtime is unavailable\n' >&2
+        return 3
+    }
+    PYTHONPATH="$INSPECTION_PYTHONPATH" \
+        "$INSPECTION_PYTHON" -m tools.support_bundle_inspect "$@"
+}
+
+cleanup() {
+    if [[ -n ${WORK:-} && -d $WORK && $PRESERVE_WORK != true ]]; then
+        chmod -R u+rwX "$WORK" 2>/dev/null || true
+        rm -rf -- "$WORK"
+    fi
+}
+trap cleanup EXIT HUP INT TERM
+
+safe_relative_path() {
+    local path=$1 part
+    [[ $path =~ ^[a-z0-9][a-zA-Z0-9._/-]*$ && $path != /* && $path != *//* ]] || return 1
+    IFS=/ read -r -a parts <<<"$path"
+    for part in "${parts[@]}"; do [[ -n $part && $part != . && $part != .. ]] || return 1; done
+}
+
+write_string_array() {
+    local name=$1 first=true value
+    local -n array=$name
+    printf '['
+    for value in "${array[@]}"; do
+        [[ $first == true ]] || printf ','
+        json_string "$value"
+        first=false
+    done
+    printf ']'
+}
+
+accepted_exit() {
+    local accepted=$1 code=$2 item
+    IFS=, read -r -a items <<<"$accepted"
+    for item in "${items[@]}"; do [[ $item == "$code" ]] && return 0; done
+    return 1
+}
+
+record_truncated() { printf '%s\n' "$1" >>"$META/truncated-paths"; }
+
+record_collector() {
+    local id=$1 critical=$2 status=$3 exit_code=$4 timed_out=$5 output=$6 stderr_path=$7 truncated=$8 original=$9 stored=${10}
+    local outputs=()
+    [[ -n $output ]] && outputs+=("$output")
+    [[ -n $stderr_path ]] && outputs+=("$stderr_path")
+    {
+        printf '{"id":'; json_string "$id"
+        printf ',"critical":'; json_bool "$critical"
+        printf ',"status":'; json_string "$status"
+        printf ',"exit_code":'; [[ -n $exit_code ]] && printf '%s' "$exit_code" || printf null
+        printf ',"timed_out":'; json_bool "$timed_out"
+        printf ',"output_files":'; write_string_array outputs
+        printf ',"stderr_file":'; json_nullable "$stderr_path"
+        printf ',"truncated":'; json_bool "$truncated"
+        printf ',"original_bytes":%s,"stored_bytes":%s}\n' "$original" "$stored"
+    } >>"$META/collectors.jsonl"
+}
+
+limit_copy() {
+    local source=$1 destination=$2 limit=$3 relative=$4 original truncated=false
+    original=$(stat -c %s "$source" 2>/dev/null || printf 0)
+    mkdir -p "$(dirname "$destination")"
+    if (( original > limit )); then
+        head -c "$limit" -- "$source" >"$destination"
+        truncated=true
+        record_truncated "$relative"
+    else
+        cp --no-dereference -- "$source" "$destination"
+    fi
+    chmod 600 "$destination"
+    printf '%s %s %s\n' "$original" "$(stat -c %s "$destination")" "$truncated"
+}
+
+collect_command() {
+    local id=$1 critical=$2 relative=$3 limit=$4 accepted=$5
+    shift 5
+    safe_relative_path "$relative" || fail "unsafe collector path: $relative"
+    local raw_out="$META/$id.stdout" raw_err="$META/$id.stderr" code status timed_out=false
+    local stderr_relative="collector-errors/$id.txt" stderr_path='' output_path='' original=0 stored=0 truncated=false
+    set +e
+    timeout --signal=TERM --kill-after=2s "${TIMEOUT_SECONDS}s" "$@" >"$raw_out" 2>"$raw_err"
+    code=$?
+    set -e
+    [[ $code -eq 124 || $code -eq 137 ]] && timed_out=true
+    if accepted_exit "$accepted" "$code"; then status=collected
+    elif [[ $code -eq 126 || $code -eq 127 ]]; then status=unavailable
+    else status=failed
+    fi
+    if [[ -s $raw_out || $status == collected ]]; then
+        read -r original stored truncated < <(limit_copy "$raw_out" "$STAGE/$relative" "$limit" "$relative")
+        output_path=$relative
+    fi
+    if [[ -s $raw_err ]]; then
+        read -r _ _ stderr_truncated < <(limit_copy "$raw_err" "$STAGE/$stderr_relative" "$INDIVIDUAL_LIMIT" "$stderr_relative")
+        stderr_path=$stderr_relative
+        [[ $stderr_truncated == true ]] && truncated=true
+    fi
+    if [[ $status != collected ]]; then
+        if [[ $critical == true ]]; then error "Critical collector $id failed."
+        else warn "Optional collector $id is $status."
+        fi
+    fi
+    [[ $timed_out != true ]] || warn "Collector $id timed out."
+    record_collector "$id" "$critical" "$status" "$code" "$timed_out" "$output_path" "$stderr_path" "$truncated" "$original" "$stored"
+}
+
+collect_file() {
+    local id=$1 critical=$2 source=$3 relative=$4 limit=$5 status=collected original=0 stored=0 truncated=false
+    safe_relative_path "$relative" || fail "unsafe collector path: $relative"
+    if [[ -L $source ]]; then
+        status=failed
+        if [[ $critical == true ]]; then error "Critical source $source is a symlink."
+        else warn "Optional source $source is a symlink and was omitted."
+        fi
+    elif [[ ! -f $source || ! -r $source ]]; then
+        status=unavailable
+        if [[ $critical == true ]]; then error "Critical source $source is unavailable."
+        else warn "Optional source $source is unavailable."
+        fi
+    else
+        read -r original stored truncated < <(limit_copy "$source" "$STAGE/$relative" "$limit" "$relative")
+    fi
+    record_collector "$id" "$critical" "$status" "" false "$([[ $status == collected ]] && printf '%s' "$relative")" "" "$truncated" "$original" "$stored"
+}
+
+collect_receipts() {
+    local install transitions recovery path index=0
+    install=$(root_path /var/lib/kitpro-linux/install-receipt.json)
+    collect_file install-receipt false "$install" receipts/install-receipt.json "$INDIVIDUAL_LIMIT"
+    transitions=$(root_path /var/lib/kitpro-linux/kernel-transitions)
+    if [[ -d $transitions && ! -L $transitions ]]; then
+        while IFS= read -r path; do
+            ((index+=1)); collect_file "kernel-transition-$index" false "$path" "receipts/kernel-transition-$index.json" "$INDIVIDUAL_LIMIT"
+        done < <(find -P "$transitions" -maxdepth 1 -type f -name '*.json' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n3 | cut -d' ' -f2-)
+    fi
+    recovery=$(root_path /var/lib/kitpro-linux/recovery); index=0
+    if [[ -d $recovery && ! -L $recovery ]]; then
+        while IFS= read -r path; do
+            ((index+=1)); collect_file "recovery-$index" false "$path" "receipts/recovery-$index.json" "$INDIVIDUAL_LIMIT"
+        done < <(find -P "$recovery" -maxdepth 1 -type f -name '*.json' -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -n5 | cut -d' ' -f2-)
+    fi
+}
+
+collect_numbered_files() {
+    local id_prefix=$1 directory=$2 pattern=$3 target=$4 maximum=$5 index=0 path
+    [[ -d $directory && ! -L $directory ]] || return 0
+    while IFS= read -r path; do
+        ((index+=1)); collect_file "$id_prefix-$index" false "$path" "$target/$(basename "$path")" "$INDIVIDUAL_LIMIT"
+    done < <(find -P "$directory" -maxdepth 1 -type f -name "$pattern" -print 2>/dev/null | sort | head -n "$maximum")
+}
+
+payload_files() {
+    find "$STAGE" -type f ! -path "$META/*" ! -name manifest.json ! -name manifest.sha256 -print | sort
+}
+
+add_redaction_event() {
+    local path=$1 category=$2 count=$3
+    (( count > 0 )) || return 0
+    printf '{"path":%s,"category":%s,"replacements":%s}\n' "$(json_string "$path")" "$(json_string "$category")" "$count" >>"$META/redaction-events.jsonl"
+    ((REDACTION_TOTAL+=count))
+}
+
+redact_regex() {
+    local category=$1 regex=$2 replacement=$3 file count relative temporary
+    while IFS= read -r file; do
+        count=$(LC_ALL=C grep -Eio "$regex" "$file" 2>/dev/null | wc -l || true)
+        (( count > 0 )) || continue
+        relative=${file#"$STAGE/"}
+        temporary="$META/redact.$RANDOM"
+        LC_ALL=C sed -E "s~$regex~$replacement~Ig" "$file" >"$temporary"
+        cat "$temporary" >"$file"
+        rm -f "$temporary"
+        add_redaction_event "$relative" "$category" "$count"
+    done < <(payload_files)
+    REDACTION_CATEGORIES+=("$category")
+}
+
+redact_non_json_regex() {
+    local category=$1 regex=$2 replacement=$3 file count relative temporary
+    while IFS= read -r file; do
+        [[ $file != *.json ]] || continue
+        count=$(LC_ALL=C grep -Eio "$regex" "$file" 2>/dev/null | wc -l || true)
+        (( count > 0 )) || continue
+        relative=${file#"$STAGE/"}
+        temporary="$META/redact.$RANDOM"
+        LC_ALL=C sed -E "s~$regex~$replacement~Ig" "$file" >"$temporary"
+        cat "$temporary" >"$file"
+        rm -f "$temporary"
+        add_redaction_event "$relative" "$category" "$count"
+    done < <(payload_files)
+    REDACTION_CATEGORIES+=("$category")
+}
+
+redact_structured_json_credentials() {
+    local file relative temporary count
+    while IFS= read -r file; do
+        [[ $file == *.json ]] || continue
+        relative=${file#"$STAGE/"}
+        temporary="$META/redact.$RANDOM"
+        count=$(/usr/bin/python - "$file" "$temporary" <<'PY'
+import json
+from pathlib import Path
+import re
+import sys
+
+source, destination = map(Path, sys.argv[1:])
+try:
+    document = json.loads(source.read_text(encoding="utf-8"))
+except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+    print(0)
+    raise SystemExit
+
+safe_policy_fields = {
+    "password_authentication",
+    "ssh_password_authentication",
+    "keyboard_interactive_authentication",
+    "kbd_interactive_authentication",
+    "permit_root_login",
+    "root_login",
+    "pubkey_authentication",
+    "public_key_authentication",
+    "publickey_authentication",
+}
+safe_policy_values = {
+    "yes", "no", "enabled", "disabled", "true", "false", "required",
+    "publickey", "unavailable", "unknown", "without-password",
+    "prohibit-password", "forced-commands-only",
+}
+sensitive_key = re.compile(r"(?:password|passwd|token|secret|authorization|api_?key)")
+replacement = "[REDACTED]"
+count = 0
+
+
+def normalized(value: str) -> str:
+    return re.sub(r"[- ]+", "_", value.strip().lower())
+
+
+def safe_policy_value(key: str, value: object) -> bool:
+    if key not in safe_policy_fields:
+        return False
+    if isinstance(value, bool):
+        return True
+    return isinstance(value, str) and value.strip().lower() in safe_policy_values
+
+
+def redact(value: object) -> object:
+    global count
+    if isinstance(value, dict):
+        result = {}
+        for key, item in value.items():
+            normalized_key = normalized(str(key))
+            if sensitive_key.search(normalized_key) and not safe_policy_value(normalized_key, item):
+                result[key] = replacement
+                count += 1
+            else:
+                result[key] = redact(item)
+        return result
+    if isinstance(value, list):
+        return [redact(item) for item in value]
+    return value
+
+
+updated = redact(document)
+if count:
+    destination.write_text(
+        json.dumps(updated, indent=2, sort_keys=True, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+print(count)
+PY
+)
+        if (( count > 0 )); then
+            cat "$temporary" >"$file"
+            add_redaction_event "$relative" json_credential "$count"
+        fi
+        rm -f "$temporary"
+    done < <(payload_files)
+    REDACTION_CATEGORIES+=(json_credential)
+}
+
+replace_literal() {
+    local category=$1 needle=$2 replacement=$3 file count relative escaped temporary
+    [[ -n $needle && $needle != "$replacement" ]] || return 0
+    escaped=$(printf '%s' "$needle" | sed 's/[][\\.^$*+?{}()|/~]/\\&/g')
+    while IFS= read -r file; do
+        count=$(LC_ALL=C grep -Fo -- "$needle" "$file" 2>/dev/null | wc -l || true)
+        (( count > 0 )) || continue
+        relative=${file#"$STAGE/"}
+        temporary="$META/redact.$RANDOM"
+        LC_ALL=C sed -E "s~$escaped~$replacement~g" "$file" >"$temporary"
+        cat "$temporary" >"$file"
+        rm -f "$temporary"
+        add_redaction_event "$relative" "$category" "$count"
+    done < <(payload_files)
+}
+
+replace_token_literal() {
+    local category=$1 needle=$2 replacement=$3 file count relative temporary
+    [[ -n $needle && $needle != "$replacement" ]] || return 0
+    while IFS= read -r file; do
+        relative=${file#"$STAGE/"}
+        temporary="$META/redact.$RANDOM"
+        count=$(/usr/bin/python - "$file" "$needle" "$replacement" "$temporary" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+source, needle, replacement, destination = sys.argv[1:]
+text = Path(source).read_text(encoding="utf-8", errors="replace")
+pattern = re.compile(
+    r"(?<![A-Za-z0-9._-])" + re.escape(needle) + r"(?![A-Za-z0-9._-])"
+)
+updated, count = pattern.subn(replacement, text)
+Path(destination).write_text(updated, encoding="utf-8")
+print(count)
+PY
+)
+        if (( count > 0 )); then
+            cat "$temporary" >"$file"
+            add_redaction_event "$relative" "$category" "$count"
+        fi
+        rm -f "$temporary"
+    done < <(payload_files)
+    REDACTION_CATEGORIES+=("$category")
+}
+
+map_matches() {
+    local category=$1 regex=$2 prefix=$3 values value index=0
+    values=$(payload_files | xargs -r grep -Eho "$regex" 2>/dev/null | sort -u || true)
+    while IFS= read -r value; do
+        [[ -n $value ]] || continue
+        ((index+=1)); replace_literal "$category" "$value" "${prefix}_${index}"
+    done <<<"$values"
+    REDACTION_CATEGORIES+=("$category")
+}
+
+redact_all() {
+    : >"$META/redaction-events.jsonl"
+    redact_regex authorization_header '(Proxy-)?Authorization:[[:space:]]*[^[:space:]][^\r\n]*' 'Authorization: [REDACTED]'
+    redact_regex cookie_header '(Set-)?Cookie:[[:space:]]*[^[:space:]][^\r\n]*' 'Cookie: [REDACTED]'
+    redact_regex credential_assignment '([A-Za-z0-9_]*(PASSWORD|PASSWD|TOKEN|SECRET|API_?KEY)[A-Za-z0-9_]*[[:space:]]*=[[:space:]]*)[^[:space:],;]+' '\1[REDACTED]'
+    redact_structured_json_credentials
+    redact_non_json_regex json_credential '("[^"]*(password|passwd|token|secret|authorization|api[_-]?key)[^"]*"[[:space:]]*:[[:space:]]*)"[^"]*"' '\1"[REDACTED]"'
+    redact_regex url_userinfo '(https?://)[^/@[:space:]]+:[^/@[:space:]]+@' '\1[REDACTED]@'
+    redact_regex kernel_cmdline_secret '((rd\.luks\.key|cryptkey|password|token|secret)=)[^[:space:]]+' '\1[REDACTED]'
+
+    map_matches mac_address '([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}' MAC
+    map_matches ipv4_address '([0-9]{1,3}\.){3}[0-9]{1,3}' IPV4
+    map_matches ipv6_address '(([[:xdigit:]]{1,4}:){3,7}[[:xdigit:]]{0,4}|([[:xdigit:]]{1,4}:){1,7}:[[:xdigit:]]{0,4})' IPV6
+    map_matches uuid '([[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12})' UUID
+
+    local hostname username index=0
+    hostname=$(tr -d '\r\n' <"$(root_path /etc/hostname)" 2>/dev/null || true)
+    # A short hostname such as "kitpro" is also a prefix of stable schema
+    # identifiers (for example, "kitpro-system-health").  Replace it only
+    # when it appears as a standalone hostname token so redaction cannot
+    # corrupt the structured diagnostic contract it must subsequently verify.
+    [[ -n $hostname ]] && replace_token_literal hostname "$hostname" HOST_1
+    REDACTION_CATEGORIES+=(hostname)
+    if [[ -r $(root_path /etc/passwd) ]]; then
+        while IFS= read -r username; do
+            [[ -n $username ]] || continue
+            ((index+=1)); replace_literal username "$username" "USER_${index}"
+        done < <(awk -F: '$3 >= 1000 && $3 < 60000 {print $1}' "$(root_path /etc/passwd)" | sort -u)
+    fi
+    REDACTION_CATEGORIES+=(username)
+
+    local domains value
+    domains=$(payload_files | xargs -r grep -Eih 'DNS (Domain|Domains|Servers)|Search Domains|Domains=|https?://' 2>/dev/null \
+        | grep -Eo '([A-Za-z0-9-]+\.)+[A-Za-z]{2,}' | sort -u || true)
+    index=0
+    while IFS= read -r value; do
+        [[ -n $value ]] || continue
+        ((index+=1)); replace_literal dns_domain "$value" "DOMAIN_${index}"
+    done <<<"$domains"
+    REDACTION_CATEGORIES+=(dns_domain)
+}
+
+scan_tree() {
+    local root=$1 report=$2
+    local findings="$root/.kitpro-scan-findings.jsonl" file relative category count regex total=0
+    : >"$findings"
+    while IFS= read -r file; do
+        relative=${file#"$root/"}
+        for category in private_key authorization_header credential_assignment common_token; do
+            case $category in
+                private_key) regex='-----BEGIN (OPENSSH|RSA|EC|DSA|PGP) PRIVATE KEY-----|BEGIN PGP PRIVATE KEY BLOCK' ;;
+                authorization_header) regex='(Proxy-)?Authorization:[[:space:]]*(Basic|Bearer)[[:space:]]+[^[]' ;;
+                credential_assignment) regex='[A-Za-z0-9_]*(PASSWORD|PASSWD|TOKEN|SECRET|API_?KEY)[A-Za-z0-9_]*[[:space:]]*=[[:space:]]*[^[][^[:space:],;]*' ;;
+                common_token) regex='gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}' ;;
+            esac
+            count=$(LC_ALL=C grep -Eio -- "$regex" "$file" 2>/dev/null | wc -l || true)
+            if (( count > 0 )); then
+                ((total+=count))
+                printf '{"path":%s,"category":%s,"count":%s}\n' "$(json_string "$relative")" "$(json_string "$category")" "$count" >>"$findings"
+            fi
+        done
+        if [[ -n ${KITPRO_SUPPORT_KNOWN_SECRET_FILE:-} && -r $KITPRO_SUPPORT_KNOWN_SECRET_FILE ]]; then
+            count=0
+            while IFS= read -r value; do
+                [[ -n $value ]] && LC_ALL=C grep -Fq -- "$value" "$file" 2>/dev/null && ((count+=1))
+            done <"$KITPRO_SUPPORT_KNOWN_SECRET_FILE"
+            if (( count > 0 )); then
+                ((total+=count)); printf '{"path":%s,"category":"known_secret","count":%s}\n' "$(json_string "$relative")" "$count" >>"$findings"
+            fi
+        fi
+    done < <(find "$root" -type f -print | sort)
+    local scanned
+    scanned=$(find "$root" -type f | wc -l)
+    {
+        printf '{\n  "schema_version": 1,\n  "kind": "kitpro-support-secret-scan",\n'
+        printf '  "status": %s,\n  "scanned_file_count": %s,\n  "finding_count": %s,\n  "findings": [' "$(json_string "$([[ $total -eq 0 ]] && printf passed || printf failed)")" "$scanned" "$total"
+        local first=true line
+        while IFS= read -r line; do [[ $first == true ]] || printf ','; printf '\n    %s' "$line"; first=false; done <"$findings"
+        [[ $first == true ]] || printf '\n  '
+        printf ']\n}\n'
+    } >"$report"
+    chmod 600 "$report"
+    rm -f "$findings"
+    (( total == 0 ))
+}
+
+write_redaction_report() {
+    mkdir -p "$STAGE/redaction"
+    local categories=() category last=''
+    while IFS= read -r category; do [[ -n $category && $category != "$last" ]] && categories+=("$category"); last=$category; done < <(printf '%s\n' "${REDACTION_CATEGORIES[@]}" | sort -u)
+    {
+        printf '{\n  "schema_version": 1,\n  "kind": "kitpro-support-redaction-report",\n'
+        printf '  "profile": "support-sanitized-v1",\n  "status": "sanitized",\n'
+        printf '  "total_replacements": %s,\n  "categories": ' "$REDACTION_TOTAL"; write_string_array categories
+        printf ',\n  "events": ['
+        local first=true line
+        while IFS= read -r line; do [[ $first == true ]] || printf ','; printf '\n    %s' "$line"; first=false; done <"$META/redaction-events.jsonl"
+        [[ $first == true ]] || printf '\n  '
+        printf '],\n  "omitted": ["authorized_keys contents", "SSH private keys", "GPG private keys", "package archives", "user data"]\n}\n'
+    } >"$STAGE/redaction/report.json"
+    chmod 600 "$STAGE/redaction/report.json"
+}
+
+check_staging_size() {
+    local size
+    size=$(du -sb "$STAGE" | awk '{print $1}')
+    if (( size > STAGING_LIMIT )); then error "Uncompressed staging size exceeds the configured limit."; return 1; fi
+}
+
+json_scalar() {
+    local file=$1 key=$2
+    # The health document embeds kernel status, which has its own
+    # overall_status.  The document-level fields are emitted last, so select
+    # the final matching scalar rather than the nested kernel value.
+    sed -n "s/^[[:space:]]*\"$key\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\"[,[:space:]]*$/\1/p" "$file" | tail -n1
+}
+
+write_manifest() {
+    local manifest="$STAGE/manifest.json" health="$STAGE/health/system-health.json"
+    local release generation architecture kernel product health_status health_hash git_commit package_build result
+    release=$(sed -n 's/.*"release"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$health" | head -n1)
+    generation=$(sed -n 's/.*"generation"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$health" | head -n1)
+    health_status=$(json_scalar "$health" overall_status); [[ -n $health_status ]] || health_status=unknown
+    architecture=$(sed -n 's/.*"architecture"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$health" | head -n1)
+    [[ -n $architecture ]] || architecture=$(uname -m 2>/dev/null || printf unknown)
+    if [[ $MODE == live ]]; then kernel=$(uname -r 2>/dev/null || printf unavailable)
+    else kernel=$(sed -n 's/.*"kernel_release"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$health" | head -n1); [[ -n $kernel ]] || kernel=unavailable
+    fi
+    product='KITPro Linux Server'
+    health_hash=$(sha256sum "$health" | awk '{print $1}')
+    git_commit=${KITPRO_SUPPORT_SOURCE_GIT_COMMIT:-$(sed -n 's/.*"source_git_commit"[[:space:]]*:[[:space:]]*"\([0-9a-f]\{40\}\)".*/\1/p' "$(root_path /etc/kitpro-installation.json)" 2>/dev/null | head -n1 || true)}
+    package_build=${KITPRO_SUPPORT_SOURCE_PACKAGE_BUILD:-$(sed -n 's/.*"installer_version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$(root_path /etc/kitpro-installation.json)" 2>/dev/null | head -n1 || true)}
+    if (( ${#ERRORS[@]} > 0 )); then result=failed
+    elif (( ${#WARNINGS[@]} > 0 )) || [[ $health_status != healthy ]]; then result=complete-with-warnings
+    else result=complete
+    fi
+    BUNDLE_RESULT=$result
+    local file path hash size truncated files_first=true collectors_first=true
+    {
+        printf '{\n  "schema_version": 1,\n  "kind": "kitpro-support-bundle-manifest",\n'
+        printf '  "bundle_format_version": %s,\n  "bundle_id": %s,\n  "created_at": %s,\n' "$FORMAT_VERSION" "$(json_string "$BUNDLE_ID")" "$(json_string "$CREATED_AT")"
+        printf '  "mode": %s,\n  "redaction_profile": "support-sanitized-v1",\n' "$(json_string "$MODE")"
+        printf '  "product": {"name":%s,"release":%s,"generation":%s,"architecture":%s,"kernel":%s,"hostname_pseudonym":"HOST_1"},\n' "$(json_string "$product")" "$(json_nullable "$release")" "$(json_nullable "$generation")" "$(json_string "$architecture")" "$(json_string "$kernel")"
+        printf '  "source": {"command":"kitpro-support-bundle","version":%s,"git_commit":%s,"package_build":%s},\n' "$(json_string "$VERSION")" "$(json_nullable "$git_commit")" "$(json_nullable "$package_build")"
+        printf '  "limits": {"individual_file_bytes":%s,"journal_file_bytes":%s,"staging_bytes":%s,"archive_bytes":%s,"collector_timeout_seconds":%s},\n' "$INDIVIDUAL_LIMIT" "$JOURNAL_LIMIT" "$STAGING_LIMIT" "$ARCHIVE_LIMIT" "$TIMEOUT_SECONDS"
+        printf '  "health": {"path":"health/system-health.json","sha256":%s,"overall_status":%s},\n' "$(json_string "$health_hash")" "$(json_string "$health_status")"
+        printf '  "collectors": ['
+        while IFS= read -r file; do
+            while IFS= read -r line; do [[ $collectors_first == true ]] || printf ','; printf '\n    %s' "$line"; collectors_first=false; done <"$file"
+        done < <(find "$META" -maxdepth 1 -type f -name 'collectors.jsonl' -print | sort)
+        [[ $collectors_first == true ]] || printf '\n  '
+        printf '],\n  "files": ['
+        while IFS= read -r file; do
+            path=${file#"$STAGE/"}; hash=$(sha256sum "$file" | awk '{print $1}'); size=$(stat -c %s "$file")
+            truncated=false; grep -Fxq "$path" "$META/truncated-paths" 2>/dev/null && truncated=true
+            [[ $files_first == true ]] || printf ','
+            printf '\n    {"path":%s,"sha256":%s,"size_bytes":%s,"truncated":%s,"redaction_status":"sanitized"}' "$(json_string "$path")" "$(json_string "$hash")" "$size" "$truncated"
+            files_first=false
+        done < <(payload_files)
+        [[ $files_first == true ]] || printf '\n  '
+        printf '],\n  "redaction": {"report":"redaction/report.json","status":"sanitized","total_replacements":%s,"categories":' "$REDACTION_TOTAL"
+        local categories=() category
+        while IFS= read -r category; do [[ -n $category ]] && categories+=("$category"); done < <(printf '%s\n' "${REDACTION_CATEGORIES[@]}" | sort -u)
+        write_string_array categories
+        printf '},\n  "secret_scan": {"report":"redaction/secret-scan.json","status":"passed","finding_count":0},\n'
+        printf '  "warnings": '; write_string_array WARNINGS; printf ',\n  "errors": '; write_string_array ERRORS
+        printf ',\n  "collector_result": %s,\n' "$(json_string "$result")"
+        printf '  "archive": {"format":"tar.zst","filename":%s,"sha256_recorded_externally":true}\n}\n' "$(json_string "$(basename "$OUTPUT")")"
+    } >"$manifest"
+    chmod 600 "$manifest"
+    printf '%s  manifest.json\n' "$(sha256sum "$manifest" | awk '{print $1}')" >"$STAGE/manifest.sha256"
+    chmod 600 "$STAGE/manifest.sha256"
+}
+
+safe_archive_members() {
+    local archive=$1 member normalized type member_count total_size listing members seen=$'\n'
+    listing=$(tar --zstd --quoting-style=escape -tvf "$archive") || return 1
+    members=$(tar --zstd --quoting-style=escape -tf "$archive") || return 1
+    member_count=$(wc -l <<<"$listing")
+    total_size=$(awk '$1 ~ /^-/ {sum += $3} END {print sum + 0}' <<<"$listing")
+    (( member_count <= 256 && total_size <= STAGING_LIMIT )) || return 1
+    while IFS= read -r member; do
+        [[ -n $member && $member != ./* ]] || return 1
+        normalized=${member%/}
+        safe_relative_path "$normalized" || return 1
+        [[ $seen != *$'\n'"$normalized"$'\n'* ]] || return 1
+        seen+="$normalized"$'\n'
+    done <<<"$members"
+    while IFS= read -r type; do
+        [[ $type == -* || $type == d* ]] || return 1
+    done < <(cut -c1 <<<"$listing")
+}
+
+prepare_verified_archive() {
+    local archive=$1 result_variable=$2 workspace expected actual inventory line path hash size status
+    [[ -f $archive && ! -L $archive ]] || { printf 'kitpro-support-bundle: archive is unavailable or is a symlink: %s\n' "$archive" >&2; return 3; }
+    (( $(stat -c %s "$archive") <= ARCHIVE_LIMIT )) || { printf 'kitpro-support-bundle: archive exceeds the size limit\n' >&2; return 2; }
+    safe_archive_members "$archive" || { printf 'kitpro-support-bundle: archive has an unsafe member\n' >&2; return 2; }
+    workspace=$(mktemp -d "${TMPDIR:-/var/tmp}/.kitpro-support-verify.XXXXXX") || return 3
+    chmod 700 "$workspace"
+    if ! tar --zstd --no-same-owner --no-same-permissions -xf "$archive" -C "$workspace"; then rm -rf "$workspace"; return 2; fi
+    [[ -f $workspace/manifest.json && ! -L $workspace/manifest.json && -f $workspace/manifest.sha256 && ! -L $workspace/manifest.sha256 ]] || { rm -rf "$workspace"; return 2; }
+    (cd "$workspace" && sha256sum -c manifest.sha256 >/dev/null) || { rm -rf "$workspace"; return 2; }
+    if inspection_helper validate "$workspace" >/dev/null; then status=0; else status=$?; fi
+    if [[ $status -ne 0 ]]; then rm -rf "$workspace"; [[ $status -eq 3 ]] && return 3 || return 2; fi
+    expected="$workspace/.expected"
+    actual="$workspace/.actual"
+    if inventory=$(inspection_helper inventory "$workspace"); then status=0; else status=$?; fi
+    if [[ $status -ne 0 ]]; then rm -rf "$workspace"; [[ $status -eq 3 ]] && return 3 || return 2; fi
+    printf '%s\n' "$inventory" >"$expected"
+    [[ -s $expected ]] || { rm -rf "$workspace"; return 2; }
+    while read -r path hash size; do
+        safe_relative_path "$path" || { rm -rf "$workspace"; return 2; }
+        [[ -f $workspace/$path && ! -L $workspace/$path ]] || { rm -rf "$workspace"; return 2; }
+        [[ $(stat -c %s "$workspace/$path") == "$size" ]] || { rm -rf "$workspace"; return 2; }
+        [[ $(sha256sum "$workspace/$path" | awk '{print $1}') == "$hash" ]] || { rm -rf "$workspace"; return 2; }
+    done <"$expected"
+    find "$workspace" -type f ! -name manifest.json ! -name manifest.sha256 ! -name .expected ! -name .actual -printf '%P\n' | sort >"$actual"
+    cut -d' ' -f1 "$expected" | sort | cmp -s - "$actual" || { rm -rf "$workspace"; return 2; }
+    scan_tree "$workspace" "$workspace/.verification-scan.json" || { rm -rf "$workspace"; return 2; }
+    rm -f "$expected" "$actual" "$workspace/.verification-scan.json"
+    printf -v "$result_variable" '%s' "$workspace"
+    return 0
+}
+
+verify_archive() {
+    local archive=$1 quiet=${2:-false} verify_root
+    prepare_verified_archive "$archive" verify_root || return $?
+    rm -rf "$verify_root"
+    [[ $quiet == true ]] || printf 'Bundle verification: passed\nArchive SHA-256: %s\n' "$(sha256sum "$archive" | awk '{print $1}')"
+    return 0
+}
+
+inspect_archive() {
+    local archive=$1 output_format=$2 verbose=$3 verify_root output before after size status
+    before=$(sha256sum "$archive" 2>/dev/null | awk '{print $1}') || return 3
+    size=$(stat -c %s "$archive" 2>/dev/null) || return 3
+    prepare_verified_archive "$archive" verify_root || return $?
+    output=$(mktemp "${TMPDIR:-/var/tmp}/.kitpro-support-inspect-output.XXXXXX") || { rm -rf "$verify_root"; return 3; }
+    chmod 600 "$output"
+    local arguments=(summarize "$verify_root" --archive-path "$archive" --archive-sha256 "$before" --archive-size "$size")
+    [[ $output_format == json ]] && arguments+=(--json)
+    [[ $verbose == true ]] && arguments+=(--verbose)
+    if inspection_helper "${arguments[@]}" >"$output"; then status=0; else status=$?; fi
+    after=$(sha256sum "$archive" 2>/dev/null | awk '{print $1}') || after=unavailable
+    if [[ $before != "$after" ]]; then
+        printf 'kitpro-support-bundle: archive changed during inspection\n' >&2
+        status=2
+    fi
+    if [[ $status -eq 0 || $status -eq 1 ]]; then cat "$output"; fi
+    rm -f "$output"
+    rm -rf "$verify_root"
+    return "$status"
+}
+
+view_archive() {
+    local archive=$1 member=$2 pretty=$3 list_only=$4 private_root private_archive verify_root output before after copied status
+    [[ -f $archive && ! -L $archive ]] || { printf 'kitpro-support-bundle: archive is unavailable or is a symlink: %s\n' "$archive" >&2; return 3; }
+    before=$(sha256sum "$archive" 2>/dev/null | awk '{print $1}') || return 3
+    private_root=$(mktemp -d "${TMPDIR:-/var/tmp}/.kitpro-support-view.XXXXXX") || return 3
+    chmod 700 "$private_root"
+    WORK=$private_root
+    private_archive=$private_root/archive.tar.zst
+    if ! cp --no-preserve=all -- "$archive" "$private_archive"; then rm -rf "$private_root"; return 3; fi
+    chmod 600 "$private_archive"
+    copied=$(sha256sum "$private_archive" 2>/dev/null | awk '{print $1}') || { rm -rf "$private_root"; return 3; }
+    if [[ $before != "$copied" ]]; then
+        printf 'kitpro-support-bundle: archive changed while creating the private verification copy\n' >&2
+        rm -rf "$private_root"
+        return 2
+    fi
+    TMPDIR=$private_root prepare_verified_archive "$private_archive" verify_root || { status=$?; rm -rf "$private_root"; return "$status"; }
+    output=$private_root/output
+    local arguments
+    if [[ $list_only == true ]]; then
+        arguments=(members "$verify_root")
+    else
+        arguments=(view "$verify_root" "$member")
+        [[ $pretty == true ]] && arguments+=(--pretty)
+    fi
+    if inspection_helper "${arguments[@]}" >"$output"; then status=0; else status=$?; fi
+    after=$(sha256sum "$archive" 2>/dev/null | awk '{print $1}') || after=unavailable
+    if [[ $before != "$after" ]]; then
+        printf 'kitpro-support-bundle: archive changed during viewing\n' >&2
+        status=2
+    fi
+    if [[ $status -eq 0 || $status -eq 1 ]]; then cat "$output"; fi
+    rm -rf "$private_root"
+    WORK=
+    return "$status"
+}
+
+capacity_preflight() {
+    local directory=$1 available required=$((STAGING_LIMIT + ARCHIVE_LIMIT + CAPACITY_RESERVE))
+    available=${KITPRO_SUPPORT_TEST_AVAILABLE_BYTES:-$(df -B1 --output=avail "$directory" 2>/dev/null | tail -n1 | xargs)}
+    [[ $available =~ ^[0-9]+$ ]] || fail "cannot determine free space for $directory"
+    (( available >= required )) || fail "insufficient free space in $directory: need $required bytes, have $available"
+}
+
+write_failure_report() {
+    local path=${OUTPUT}.failure.json temporary
+    [[ ! -e $path && ! -L $path ]] || return 0
+    temporary=$(mktemp "$(dirname "$path")/.kitpro-support-failure.XXXXXX") || return 0
+    {
+        printf '{"schema_version":1,"kind":"kitpro-support-bundle-failure","bundle_id":%s,"created_at":%s,"status":"failed","errors":' "$(json_string "$BUNDLE_ID")" "$(json_string "$CREATED_AT")"
+        write_string_array ERRORS; printf '}\n'
+    } >"$temporary"
+    chmod 600 "$temporary"; mv "$temporary" "$path"
+}
+
+collect_offline_packages() {
+    local database raw path name version status=collected original=0 stored=0 truncated=false
+    database=$(root_path /var/lib/pacman/local)
+    raw="$META/offline-packages.stdout"
+    : >"$raw"
+    if [[ ! -d $database || -L $database ]]; then
+        status=unavailable
+        warn 'Optional collector packages is unavailable.'
+    else
+        while IFS= read -r -d '' path; do
+            name=$(sed -n '/^%NAME%$/{n;p;q}' "$path" 2>/dev/null || true)
+            version=$(sed -n '/^%VERSION%$/{n;p;q}' "$path" 2>/dev/null || true)
+            if [[ -n $name && -n $version ]]; then printf '%s %s\n' "$name" "$version" >>"$raw"; fi
+        done < <(find -P "$database" -mindepth 2 -maxdepth 2 -type f -name desc -print0 2>/dev/null | sort -z)
+        LC_ALL=C sort -o "$raw" "$raw"
+        read -r original stored truncated < <(limit_copy "$raw" "$STAGE/repository/installed-packages.txt" "$INDIVIDUAL_LIMIT" repository/installed-packages.txt)
+    fi
+    record_collector packages false "$status" "" false "$([[ $status == collected ]] && printf repository/installed-packages.txt)" "" "$truncated" "$original" "$stored"
+}
+
+collect_offline_link() {
+    local id=$1 source=$2 relative=$3 value status=collected original=0 stored=0 truncated=false raw
+    raw="$META/$id.link"
+    if [[ ! -L $source ]]; then
+        status=unavailable
+        warn "Optional collector $id is unavailable."
+    else
+        value=$(readlink "$source" 2>/dev/null || true)
+        printf '%s -> %s\n' "${source#"${ROOT%/}"}" "$value" >"$raw"
+        read -r original stored truncated < <(limit_copy "$raw" "$STAGE/$relative" "$INDIVIDUAL_LIMIT" "$relative")
+    fi
+    record_collector "$id" false "$status" "" false "$([[ $status == collected ]] && printf '%s' "$relative")" "" "$truncated" "$original" "$stored"
+}
+
+collect_bundle() {
+    local stamp random destination_directory archive_temp archive_size health_command
+    stamp=$(date -u +%Y%m%dT%H%M%SZ) || fail 'cannot read system time'
+    CREATED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ) || fail 'cannot read system time'
+    random=$(od -An -N4 -tx1 /dev/urandom | tr -d ' \n')
+    BUNDLE_ID="support-$stamp-$random"
+    [[ -n $OUTPUT ]] || OUTPUT="/var/tmp/kitpro-support-$stamp.tar.zst"
+    [[ $OUTPUT == /* && $OUTPUT == *.tar.zst ]] || fail 'output must be an absolute .tar.zst path'
+    [[ $(basename "$OUTPUT") =~ ^[a-zA-Z0-9._-]+$ ]] || fail 'output filename contains unsupported characters'
+    [[ ! -L $OUTPUT ]] || fail 'refusing an output symlink'
+    destination_directory=$(dirname "$OUTPUT")
+    [[ -d $destination_directory && ! -L $destination_directory ]] || fail 'output directory is unavailable or is a symlink'
+    if [[ -e $OUTPUT && $OVERWRITE != true ]]; then fail "output already exists: $OUTPUT"; fi
+    capacity_preflight "$destination_directory"
+    capacity_preflight "${TMPDIR:-/var/tmp}"
+    umask 077
+    WORK=$(mktemp -d "${TMPDIR:-/var/tmp}/.kitpro-support.XXXXXX") || fail 'cannot create private workspace'
+    chmod 700 "$WORK"; STAGE=$WORK/stage; META=$WORK/meta; mkdir -m 700 "$STAGE" "$META"
+    : >"$META/collectors.jsonl"; : >"$META/truncated-paths"
+
+    health_command=${KITPRO_SYSTEM_HEALTH_COMMAND:-kitpro-health}
+    if [[ $MODE == live ]]; then
+        collect_command system-health true health/system-health.json "$INDIVIDUAL_LIMIT" 0,1,2 "$health_command" --json
+    else
+        collect_command system-health true health/system-health.json "$INDIVIDUAL_LIMIT" 0,1,2 "$health_command" --root "$ROOT" --mode offline --json
+    fi
+    [[ -f $STAGE/health/system-health.json ]] || error 'System health JSON was not collected.'
+    if [[ -f $STAGE/health/system-health.json ]]; then
+        grep -Fq '"kind": "kitpro-system-health"' "$STAGE/health/system-health.json" || error 'System health JSON is invalid.'
+        grep -Fxq 'health/system-health.json' "$META/truncated-paths" 2>/dev/null && error 'System health JSON exceeded its size limit.'
+    fi
+
+    local os_release_source os_release_link
+    os_release_source=$(root_path /etc/os-release)
+    if [[ -L $os_release_source ]]; then
+        os_release_link=$(readlink "$os_release_source" 2>/dev/null || true)
+        if [[ $os_release_link == ../usr/lib/os-release || $os_release_link == /usr/lib/os-release ]]; then
+            os_release_source=$(root_path /usr/lib/os-release)
+        fi
+    fi
+    collect_file os-release true "$os_release_source" system/os-release.txt "$INDIVIDUAL_LIMIT"
+    collect_file release-metadata false "$(root_path /etc/kitpro-linux-release.json)" system/kitpro-release.json "$INDIVIDUAL_LIMIT"
+    if [[ $MODE == live ]]; then
+        collect_command uname false system/uname.txt "$INDIVIDUAL_LIMIT" 0 uname -a
+        collect_command uptime false system/uptime.txt "$INDIVIDUAL_LIMIT" 0 uptime -p
+        collect_command systemd-failed false system/systemd-failed.txt "$INDIVIDUAL_LIMIT" 0 systemctl --failed --no-legend --plain
+        collect_command bootctl-status false boot/bootctl-status.txt "$INDIVIDUAL_LIMIT" 0,1 bootctl status --no-pager
+        collect_command bootctl-list false boot/bootctl-list.txt "$INDIVIDUAL_LIMIT" 0,1 bootctl list --no-pager
+        collect_command kernel-status false boot/kernel-status.json "$INDIVIDUAL_LIMIT" 0,1,2 kitpro-kernel-status --json --verbose
+        collect_command networkctl false network/networkctl.txt "$INDIVIDUAL_LIMIT" 0,1 networkctl status --all --no-pager
+        collect_command ip-address false network/ip-address.txt "$INDIVIDUAL_LIMIT" 0 ip -details address show
+        collect_command ip-route false network/ip-route.txt "$INDIVIDUAL_LIMIT" 0 ip route show table all
+        collect_command resolvectl false network/resolvectl.txt "$INDIVIDUAL_LIMIT" 0,1 resolvectl status --no-pager
+        collect_command nft-ruleset false firewall/nftables.txt "$INDIVIDUAL_LIMIT" 0 nft list ruleset
+        collect_command sshd-effective false ssh/sshd-effective.txt "$INDIVIDUAL_LIMIT" 0 sshd -T
+        collect_command packages false repository/installed-packages.txt "$INDIVIDUAL_LIMIT" 0 pacman -Q
+        collect_command mounts false storage/mounts.txt "$INDIVIDUAL_LIMIT" 0 findmnt -rn -o TARGET,SOURCE,FSTYPE,OPTIONS
+        collect_command filesystems false storage/filesystems.txt "$INDIVIDUAL_LIMIT" 0 df -hT
+        collect_command inodes false storage/inodes.txt "$INDIVIDUAL_LIMIT" 0 df -hi
+        collect_command cpu false hardware/cpu.txt "$INDIVIDUAL_LIMIT" 0 lscpu
+        collect_command memory false hardware/memory.txt "$INDIVIDUAL_LIMIT" 0 free -b
+        collect_command virtualization false hardware/virtualization.txt "$INDIVIDUAL_LIMIT" 0,1 systemd-detect-virt
+        collect_command block-devices false hardware/block-devices.txt "$INDIVIDUAL_LIMIT" 0 lsblk -d -o NAME,TYPE,SIZE,MODEL
+        collect_command journal-current false logs/journal-current-boot.txt "$JOURNAL_LIMIT" 0,1 journalctl -b 0 --no-pager -o short-iso --lines=2000
+        collect_command journal-previous false logs/journal-previous-boot.txt "$((JOURNAL_LIMIT / 2))" 0,1 journalctl -b -1 --no-pager -o short-iso --lines=1000
+        collect_command journal-kernel false logs/journal-kernel.txt "$((JOURNAL_LIMIT / 2))" 0,1 journalctl -b 0 -k --no-pager -o short-iso --lines=1000
+        collect_command journal-services false logs/journal-services.txt "$JOURNAL_LIMIT" 0,1 journalctl -b 0 --no-pager -o short-iso --lines=1000 -u systemd-networkd -u systemd-resolved -u nftables -u sshd
+    elif [[ $MODE == offline-rescue ]]; then
+        collect_offline_packages
+        collect_file fstab false "$(root_path /etc/fstab)" storage/fstab.txt "$INDIVIDUAL_LIMIT"
+        collect_file ssh-policy false "$(root_path /etc/ssh/sshd_config.d/10-kitpro-server.conf)" ssh/sshd-policy.conf "$INDIVIDUAL_LIMIT"
+        collect_offline_link resolv-conf "$(root_path /etc/resolv.conf)" network/resolv-conf-link.txt
+        if [[ -d $(root_path /var/log/journal) && ! -L $(root_path /var/log/journal) ]]; then
+            collect_command journal-current false logs/journal-current-boot.txt "$JOURNAL_LIMIT" 0,1 journalctl --directory="$(root_path /var/log/journal)" -b 0 --no-pager -o short-iso --lines=2000
+            collect_command journal-previous false logs/journal-previous-boot.txt "$((JOURNAL_LIMIT / 2))" 0,1 journalctl --directory="$(root_path /var/log/journal)" -b -1 --no-pager -o short-iso --lines=1000
+            collect_command journal-kernel false logs/journal-kernel.txt "$((JOURNAL_LIMIT / 2))" 0,1 journalctl --directory="$(root_path /var/log/journal)" -b 0 -k --no-pager -o short-iso --lines=1000
+            collect_command journal-services false logs/journal-services.txt "$JOURNAL_LIMIT" 0,1 journalctl --directory="$(root_path /var/log/journal)" -b 0 --no-pager -o short-iso --lines=1000 -u systemd-networkd -u systemd-resolved -u nftables -u sshd
+        else
+            warn 'Target persistent journal is unavailable.'
+        fi
+    else
+        collect_command packages false repository/installed-packages.txt "$INDIVIDUAL_LIMIT" 0 \
+            find "$(root_path /var/lib/pacman/local)" -mindepth 1 -maxdepth 1 -type d -printf '%f\n'
+    fi
+    collect_file loader-config false "$(root_path /efi/loader/loader.conf)" boot/loader.conf "$INDIVIDUAL_LIMIT"
+    collect_numbered_files loader-entry "$(root_path /efi/loader/entries)" 'kitpro-linux*.conf' boot/loader-entries 8
+    collect_file kernel-state false "$(root_path /var/lib/kitpro-linux/kernel-state.json)" boot/kernel-state.json "$INDIVIDUAL_LIMIT"
+    collect_numbered_files network-config "$(root_path /etc/systemd/network)" '*.network' network/config 20
+    collect_file nft-config false "$(root_path /etc/nftables.conf)" firewall/nftables.conf "$INDIVIDUAL_LIMIT"
+    collect_file pacman-config true "$(root_path /etc/pacman.conf)" repository/pacman.conf "$INDIVIDUAL_LIMIT"
+    collect_receipts
+
+    redact_all
+    write_redaction_report
+    mkdir -p "$STAGE/redaction"
+    if ! scan_tree "$STAGE" "$STAGE/redaction/secret-scan.json"; then
+        error 'High-confidence secret material remains after redaction.'
+        write_failure_report
+        return 2
+    fi
+    check_staging_size || { write_failure_report; return 2; }
+    if (( ${#ERRORS[@]} > 0 )); then write_failure_report; return 2; fi
+    write_manifest
+
+    archive_temp=$(mktemp "$destination_directory/.kitpro-support-archive.XXXXXX") || fail 'cannot create temporary archive'
+    local list="$META/archive-files"
+    (cd "$STAGE" && find . -type f -printf '%P\0' | sort -z) >"$list"
+    if ! tar -C "$STAGE" --null --files-from="$list" --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner --mode='u+rw,go-rwx' --zstd -cf "$archive_temp"; then
+        rm -f "$archive_temp"; fail 'archive creation failed'
+    fi
+    chmod 600 "$archive_temp"
+    archive_size=$(stat -c %s "$archive_temp")
+    if (( archive_size > ARCHIVE_LIMIT )); then rm -f "$archive_temp"; error 'Final archive exceeds the configured limit.'; write_failure_report; return 2; fi
+    if ! verify_archive "$archive_temp" true; then rm -f "$archive_temp"; error 'Final archive failed integrity or secret verification.'; write_failure_report; return 2; fi
+    if [[ -e $OUTPUT && $OVERWRITE != true ]]; then rm -f "$archive_temp"; fail 'output appeared during creation'; fi
+    mv -f "$archive_temp" "$OUTPUT"; chmod 600 "$OUTPUT"
+    printf 'Support bundle: %s\nBundle ID: %s\nStatus: %s\nArchive SHA-256: %s\n' "$OUTPUT" "$BUNDLE_ID" "$BUNDLE_RESULT" "$(sha256sum "$OUTPUT" | awk '{print $1}')"
+    [[ $BUNDLE_RESULT == complete-with-warnings ]] && return 1
+    return 0
+}
+
+set -e
+[[ $MODE == live || $MODE == offline || $MODE == offline-rescue ]] || fail "unsupported collection mode: $MODE"
+if [[ ${1:-} == verify ]]; then
+    [[ $# -eq 2 ]] || { usage >&2; exit 3; }
+    verify_archive "$2" || exit $?
+    exit 0
+fi
+if [[ ${1:-} == inspect ]]; then
+    [[ $# -ge 2 ]] || { usage >&2; exit 3; }
+    inspect_archive_path=$2
+    inspect_format=human
+    inspect_verbose=false
+    shift 2
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --json) inspect_format=json; shift ;;
+            --verbose) inspect_verbose=true; shift ;;
+            -h|--help) usage; exit 0 ;;
+            *) fail "unknown inspect argument: $1" ;;
+        esac
+    done
+    inspect_archive "$inspect_archive_path" "$inspect_format" "$inspect_verbose" || exit $?
+    exit 0
+fi
+if [[ ${1:-} == view ]]; then
+    [[ $# -ge 3 ]] || { usage >&2; exit 3; }
+    view_archive_path=$2
+    view_member=$3
+    view_pretty=false
+    view_list=false
+    shift 3
+    if [[ $view_member == --list ]]; then
+        view_list=true
+        [[ $# -eq 0 ]] || fail 'view --list accepts no additional arguments'
+    else
+        while [[ $# -gt 0 ]]; do
+            case $1 in
+                --pretty) view_pretty=true; shift ;;
+                -h|--help) usage; exit 0 ;;
+                *) fail "unknown view argument: $1" ;;
+            esac
+        done
+    fi
+    view_archive "$view_archive_path" "$view_member" "$view_pretty" "$view_list" || exit $?
+    exit 0
+fi
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --output) [[ $# -ge 2 ]] || fail '--output requires a path'; OUTPUT=$2; shift 2 ;;
+        --overwrite) OVERWRITE=true; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) fail "unknown argument: $1" ;;
+    esac
+done
+collect_bundle

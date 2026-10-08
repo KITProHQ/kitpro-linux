@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/production-publication-receipt.schema.json",
+  "title": "KITPro Linux production publication receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "timestamp",
+    "release",
+    "previous_generation",
+    "new_generation",
+    "generation_manifest_sha256",
+    "repository_db_sha256",
+    "repository_db_signature_sha256",
+    "pointer_update_method",
+    "validation_result",
+    "publisher_identity",
+    "signing_fingerprints",
+    "publication_host_identity"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "release": {"type": "string", "pattern": "^1\\.0$"},
+    "previous_generation": {"type": ["string", "null"], "pattern": "^1\\.0-g[0-9]{4}$"},
+    "new_generation": {"type": "string", "pattern": "^1\\.0-g[0-9]{4}$"},
+    "generation_manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "repository_db_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "repository_db_signature_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "pointer_update_method": {"enum": ["atomic-symlink-replace"]},
+    "validation_result": {"enum": ["passed"]},
+    "publisher_identity": {"type": "string", "minLength": 1},
+    "signing_fingerprints": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package", "repository"],
+      "properties": {
+        "package": {"type": "string", "pattern": "^[0-9A-F]{40}$"},
+        "repository": {"type": "string", "pattern": "^[0-9A-F]{40}$"}
+      }
+    },
+    "publication_host_identity": {"type": "string", "minLength": 1}
+  }
+}

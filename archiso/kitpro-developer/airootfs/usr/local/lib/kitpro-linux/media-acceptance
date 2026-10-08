@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+export PYTHONPATH=/opt/kitpro-linux
+readonly runtime=/run/kitpro-install
+readonly firmware=/sys/firmware/qemu_fw_cfg/by_name/opt/kitpro/acceptance/raw
+readonly spec="${runtime}/install-spec.json"
+readonly plan="${runtime}/install-plan.json"
+readonly source=/opt/kitpro-linux/media/source-metadata.json
+readonly log="${runtime}/media-acceptance.log"
+
+failure() {
+  local status=$?
+  if [[ -r "${log}" ]]; then
+    printf 'KITPRO_MEDIA_ACCEPTANCE_LOG_BEGIN\n' | tee /dev/ttyS0
+    tail -n 200 "${log}" | tee /dev/ttyS0 || true
+    printf 'KITPRO_MEDIA_ACCEPTANCE_LOG_END\n' | tee /dev/ttyS0
+  fi
+  printf 'KITPRO_MEDIA_INSTALL_FAILED status=%s\n' "${status}" | tee /dev/ttyS0
+  systemctl --no-block poweroff
+  exit "${status}"
+}
+trap failure ERR
+
+install -d -m 700 "${runtime}"
+touch "${log}"
+chmod 600 "${log}"
+exec > >(tee -a "${log}") 2>&1
+cp "${firmware}" "${spec}"
+printf 'KITPRO_MEDIA_ACCEPTANCE_STAGE prepare\n'
+python -m tools.phase4_live prepare
+printf 'KITPRO_MEDIA_ACCEPTANCE_STAGE validate\n'
+kitpro-install validate "${spec}"
+printf 'KITPRO_MEDIA_ACCEPTANCE_STAGE plan\n'
+kitpro-install plan "${spec}" --output "${plan}"
+printf 'KITPRO_MEDIA_ACCEPTANCE_STAGE apply\n'
+kitpro-install apply "${spec}" --plan "${plan}" --source-metadata "${source}" --allow-disk-erase
+printf 'KITPRO_MEDIA_ACCEPTANCE_STAGE verify-result\n'
+python -m tools.phase4_live verify-result
+# The final kernel console is tty0 for physical usability. Replay only the
+# validated, bounded result to ttyS0 so QEMU can prove the install milestones
+# without trying to share the serial device with the active getty for the
+# entire installation.
+cat "${runtime}/media-install-result.json" | tee /dev/ttyS0
+printf 'KITPRO_MEDIA_INSTALL_OK\n' | tee /dev/ttyS0
+sync
+systemctl --no-block poweroff

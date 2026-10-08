@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/install-spec-v1.schema.json",
+  "title": "KITPro Linux installation specification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "release", "system", "disk", "administrator"],
+  "properties": {
+    "version": { "const": 1 },
+    "release": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "generation"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+(?:-dev)?$" },
+        "generation": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+(?:-dev)?-g[0-9]{4}$" }
+      }
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hostname"],
+      "properties": {
+        "hostname": { "type": "string", "pattern": "^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$" },
+        "locale": { "enum": ["C.UTF-8", "en_US.UTF-8"], "default": "C.UTF-8" },
+        "timezone": { "type": "string", "default": "UTC" }
+      }
+    },
+    "disk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device"],
+      "properties": {
+        "device": { "type": "string", "pattern": "^/" },
+        "target_type": { "enum": ["image", "block"], "default": "image" },
+        "layout": { "const": "standard", "default": "standard" },
+        "filesystem": { "const": "ext4", "default": "ext4" },
+        "minimum_capacity_gib": { "type": "integer", "minimum": 6, "default": 6 }
+      }
+    },
+    "network": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "mode": { "const": "dhcp" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mode", "address", "prefix", "gateway", "dns"],
+          "properties": {
+            "mode": { "const": "static" },
+            "address": { "type": "string" },
+            "prefix": { "type": "integer", "minimum": 1, "maximum": 32 },
+            "gateway": { "type": "string" },
+            "dns": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+          }
+        }
+      ],
+      "default": { "mode": "dhcp" }
+    },
+    "administrator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["username"],
+      "properties": {
+        "username": { "type": "string", "pattern": "^[a-z_][a-z0-9_-]{0,30}$" },
+        "ssh_authorized_keys": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "password_hash": {
+          "type": "string",
+          "pattern": "^\\$y\\$[./A-Za-z0-9]+\\$[./A-Za-z0-9]+\\$[./A-Za-z0-9]+$",
+          "description": "Optional precomputed yescrypt hash for unattended local-console login. Plaintext passwords are forbidden."
+        }
+      }
+    },
+    "ssh": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "enabled": { "type": "boolean", "default": false } },
+      "default": { "enabled": false }
+    },
+    "firewall": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "ssh": { "type": "boolean" } },
+      "default": {}
+    },
+    "boot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": { "mode": { "const": "uefi", "default": "uefi" } },
+      "default": { "mode": "uefi" }
+    }
+  }
+}

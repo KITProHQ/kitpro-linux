@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/kernel-state.schema.json",
+  "title": "KITPro Linux kernel lifecycle state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "state", "root_partuuid",
+    "source_repository_generation", "current_kernel_package_version",
+    "current_kernel_release", "current_kernel_image_path",
+    "current_kernel_image_sha256", "current_initramfs_path",
+    "current_initramfs_sha256", "current_module_tree", "current_boot_entry",
+    "previous_kernel_package_version", "previous_kernel_release",
+    "previous_kernel_image_path", "previous_kernel_image_sha256",
+    "previous_initramfs_path", "previous_initramfs_sha256",
+    "previous_module_tree", "previous_boot_entry", "candidate_status",
+    "last_successful_boot", "last_successful_boot_kernel",
+    "last_successful_boot_role", "transition_operation_id", "transition_stage",
+    "transition_started_at", "transition_receipt", "superseded_previous_release",
+    "superseded_previous_kernel_path", "superseded_previous_initramfs_path",
+    "superseded_previous_module_tree", "updated_at"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-kernel-state"},
+    "state": {"enum": ["candidate", "known-good"]},
+    "root_partuuid": {"type": "string", "pattern": "^[0-9A-Fa-f-]{36}$"},
+    "source_repository_generation": {"type": "string", "pattern": "^0\\.1-dev-g[0-9]{4}$"},
+    "current_kernel_package_version": {"type": "string"},
+    "current_kernel_release": {"type": "string"},
+    "current_kernel_image_path": {"type": "string", "pattern": "^/efi/EFI/KITPro/kernels/"},
+    "current_kernel_image_sha256": {"$ref": "#/$defs/sha256"},
+    "current_initramfs_path": {"type": "string", "pattern": "^/efi/EFI/KITPro/kernels/"},
+    "current_initramfs_sha256": {"$ref": "#/$defs/sha256"},
+    "current_module_tree": {"type": "string", "pattern": "^/usr/lib/modules/"},
+    "current_boot_entry": {"const": "/efi/loader/entries/kitpro-linux.conf"},
+    "previous_kernel_package_version": {"$ref": "#/$defs/nullableString"},
+    "previous_kernel_release": {"$ref": "#/$defs/nullableString"},
+    "previous_kernel_image_path": {"$ref": "#/$defs/nullableString"},
+    "previous_kernel_image_sha256": {"$ref": "#/$defs/nullableSha256"},
+    "previous_initramfs_path": {"$ref": "#/$defs/nullableString"},
+    "previous_initramfs_sha256": {"$ref": "#/$defs/nullableSha256"},
+    "previous_module_tree": {"$ref": "#/$defs/nullableString"},
+    "previous_boot_entry": {"$ref": "#/$defs/nullableString"},
+    "candidate_status": {"enum": ["pending-first-boot", "pending-validation", "validated"]},
+    "last_successful_boot": {"$ref": "#/$defs/nullableString"},
+    "last_successful_boot_kernel": {"$ref": "#/$defs/nullableString"},
+    "last_successful_boot_role": {
+      "type": ["string", "null"],
+      "enum": ["current", "previous-known-good", null]
+    },
+    "transition_operation_id": {"$ref": "#/$defs/nullableString"},
+    "transition_stage": {
+      "enum": ["fresh-install-pending-validation", "previous-staged", "reboot-pending", "complete"]
+    },
+    "transition_started_at": {"$ref": "#/$defs/nullableString"},
+    "transition_receipt": {"$ref": "#/$defs/nullableString"},
+    "superseded_previous_release": {"$ref": "#/$defs/nullableString"},
+    "superseded_previous_kernel_path": {"$ref": "#/$defs/nullableString"},
+    "superseded_previous_initramfs_path": {"$ref": "#/$defs/nullableString"},
+    "superseded_previous_module_tree": {"$ref": "#/$defs/nullableString"},
+    "updated_at": {"type": "string"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableSha256": {
+      "anyOf": [
+        {"$ref": "#/$defs/sha256"},
+        {"type": "null"}
+      ]
+    },
+    "nullableString": {"type": ["string", "null"]}
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.example/schemas/kernel-status.schema.json",
+  "title": "KITPro Linux kernel status",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "timestamp", "running_kernel", "boot_mode",
+    "expected_running_kernel_match", "current", "candidate",
+    "previous_known_good", "fallback", "reboot_required", "transition_stage",
+    "transition_id", "latest_transition_receipt", "retention_preflight",
+    "metadata_consistency", "overall_status", "warnings", "errors"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-kernel-status"},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "running_kernel": {"type": ["string", "null"]},
+    "boot_mode": {"enum": ["current", "previous-known-good", "unexpected", "unavailable"]},
+    "expected_running_kernel_match": {"type": ["boolean", "null"]},
+    "current": {"$ref": "#/$defs/current"},
+    "candidate": {"$ref": "#/$defs/candidate"},
+    "previous_known_good": {"$ref": "#/$defs/previous"},
+    "fallback": {"$ref": "#/$defs/fallback"},
+    "reboot_required": {"type": "boolean"},
+    "transition_stage": {"type": ["string", "null"]},
+    "transition_id": {"type": ["string", "null"]},
+    "latest_transition_receipt": {"type": ["string", "null"]},
+    "retention_preflight": {"$ref": "#/$defs/preflight"},
+    "metadata_consistency": {"type": "boolean"},
+    "overall_status": {"enum": ["healthy", "warning", "error"]},
+    "warnings": {"type": "array", "items": {"type": "string"}},
+    "errors": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "nullableString": {"type": ["string", "null"]},
+    "nullableBoolean": {"type": ["boolean", "null"]},
+    "current": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package_version", "kernel_release", "state", "repository_generation",
+        "kernel_path", "kernel_sha256", "kernel_valid", "initramfs_path",
+        "initramfs_sha256", "initramfs_valid", "module_tree",
+        "module_tree_valid", "boot_entry", "boot_entry_valid"
+      ],
+      "properties": {
+        "package_version": {"$ref": "#/$defs/nullableString"},
+        "kernel_release": {"$ref": "#/$defs/nullableString"},
+        "state": {"type": ["string", "null"]},
+        "repository_generation": {"$ref": "#/$defs/nullableString"},
+        "kernel_path": {"$ref": "#/$defs/nullableString"},
+        "kernel_sha256": {"$ref": "#/$defs/nullableString"},
+        "kernel_valid": {"type": "boolean"},
+        "initramfs_path": {"$ref": "#/$defs/nullableString"},
+        "initramfs_sha256": {"$ref": "#/$defs/nullableString"},
+        "initramfs_valid": {"type": "boolean"},
+        "module_tree": {"$ref": "#/$defs/nullableString"},
+        "module_tree_valid": {"type": "boolean"},
+        "boot_entry": {"$ref": "#/$defs/nullableString"},
+        "boot_entry_valid": {"type": "boolean"}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "package_version", "kernel_release", "status"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "package_version": {"$ref": "#/$defs/nullableString"},
+        "kernel_release": {"$ref": "#/$defs/nullableString"},
+        "status": {"type": ["string", "null"]}
+      }
+    },
+    "previous": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "present", "package_version", "kernel_release", "kernel_path",
+        "kernel_sha256", "kernel_valid", "initramfs_path", "initramfs_sha256",
+        "initramfs_valid", "module_tree", "module_tree_valid", "boot_entry",
+        "boot_entry_valid"
+      ],
+      "properties": {
+        "present": {"type": "boolean"},
+        "package_version": {"$ref": "#/$defs/nullableString"},
+        "kernel_release": {"$ref": "#/$defs/nullableString"},
+        "kernel_path": {"$ref": "#/$defs/nullableString"},
+        "kernel_sha256": {"$ref": "#/$defs/nullableString"},
+        "kernel_valid": {"$ref": "#/$defs/nullableBoolean"},
+        "initramfs_path": {"$ref": "#/$defs/nullableString"},
+        "initramfs_sha256": {"$ref": "#/$defs/nullableString"},
+        "initramfs_valid": {"$ref": "#/$defs/nullableBoolean"},
+        "module_tree": {"$ref": "#/$defs/nullableString"},
+        "module_tree_valid": {"$ref": "#/$defs/nullableBoolean"},
+        "boot_entry": {"$ref": "#/$defs/nullableString"},
+        "boot_entry_valid": {"$ref": "#/$defs/nullableBoolean"}
+      }
+    },
+    "fallback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["availability", "available", "reason"],
+      "properties": {
+        "availability": {"enum": ["yes", "no", "degraded"]},
+        "available": {"type": "boolean"},
+        "reason": {"type": "string"}
+      }
+    },
+    "preflight": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root_space_required_bytes", "root_space_available_bytes",
+        "esp_space_required_bytes", "esp_space_available_bytes", "result"
+      ],
+      "properties": {
+        "root_space_required_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "root_space_available_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "esp_space_required_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "esp_space_available_bytes": {"type": ["integer", "null"], "minimum": 0},
+        "result": {"enum": ["ready", "insufficient-space", "unavailable"]}
+      }
+    }
+  }
+}

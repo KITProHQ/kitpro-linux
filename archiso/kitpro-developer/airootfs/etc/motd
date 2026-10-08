@@ -1,0 +1,7 @@
+KITPro Linux Server Development Media
+
+This is non-production development media. Use the guided installer, KITPro
+Rescue, or the existing noninteractive installation engine.
+
+Start with: kitpro-installer, kitpro-rescue --help, or kitpro-install --help
+Documentation: /opt/kitpro-linux/docs/installation-media.md

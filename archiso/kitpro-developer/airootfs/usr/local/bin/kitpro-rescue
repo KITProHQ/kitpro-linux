@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export PYTHONPATH=/opt/kitpro-linux
+mkdir -p /run/kitpro-rescue
+python -m tools.phase4_live prepare >/run/kitpro-rescue/live-prepare.json
+exec python -m tools.rescue "$@"

@@ -1,0 +1,37 @@
+#!/usr/bin/bash
+set -euo pipefail
+for _ in {1..30}; do
+    if networkctl --no-pager --no-legend | grep -q 'routable'; then
+        break
+    fi
+    sleep 1
+done
+networkctl --no-pager --no-legend | grep -q 'routable'
+failed_units=$(systemctl --failed --no-legend | grep -v 'kitpro-kernel-boot-validation.service' || true)
+test -z "$failed_units"
+test -f /var/lib/kitpro-linux/first-boot-validation
+systemctl is-active --quiet systemd-networkd systemd-resolved systemd-timesyncd
+test "$(systemctl show nftables -p Result --value)" = success
+grep -q '^ID=kitpro-linux$' /etc/os-release
+kernel_generation=$(sed -n 's/.*"source_repository_generation": "\([^"]*\)".*/\1/p' /var/lib/kitpro-linux/kernel-state.json)
+test -n "$kernel_generation"
+identity_generation=$(sed -n 's/.*"generation"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /etc/kitpro-linux-release.json)
+test -n "$identity_generation"
+product_release=$(sed -n 's/.*"release"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' /etc/kitpro-linux-release.json)
+if [[ $product_release == 1.0 ]]; then
+    [[ $identity_generation =~ ^1\.0-g[0-9]{4}$ ]]
+    test "$kernel_generation" = "$identity_generation"
+    cmp -s /usr/share/kitpro-linux/pacman.conf /etc/pacman.conf
+    grep -Fxq '[kitpro-1.0-core]' /etc/pacman.conf
+    # shellcheck disable=SC2016 # pacman expands the literal architecture variable.
+    grep -Fxq 'Server = https://repo.kitpro.us/kitpro-linux/stable/1.0/current/core/os/$arch' /etc/pacman.conf
+    grep -Fxq 'SigLevel = Required DatabaseRequired TrustedOnly' /etc/pacman.conf
+else
+    grep -q "/$identity_generation/" /etc/pacman.conf
+fi
+if grep -Eq '^\[(core|extra|.*testing|.*staging|multilib|aur)\]' /etc/pacman.conf; then
+    exit 1
+fi
+resolvectl status --no-pager >/dev/null
+/usr/lib/kitpro-linux/kernel-lifecycle record-successful-boot
+printf '%s\n' KITPRO_KERNEL_BOOT_OK > /dev/ttyS0

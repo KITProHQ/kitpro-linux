@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/phase7-runner-capability-v2.json",
+  "title": "KITPro Linux Phase 7 external runner capability",
+  "type": "object",
+  "required": [
+    "schema_version", "kind", "generated_at", "status", "identity",
+    "capabilities", "connectivity", "requirements", "labels", "report_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 2},
+    "kind": {"const": "kitpro-phase7-runner-capability"},
+    "generated_at": {"type": "string"},
+    "status": {"enum": ["qualified", "unqualified"]},
+    "identity": {"type": "object"},
+    "capabilities": {"type": "object"},
+    "connectivity": {"type": "object"},
+    "requirements": {"type": "object"},
+    "labels": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+set -euo pipefail
+
+runtime=${KITPRO_SYSTEM_HEALTH:-/usr/lib/kitpro-linux/system-health}
+if [[ ! -f $runtime ]]; then
+    printf 'kitpro-health: system-health runtime is unavailable: %s\n' "$runtime" >&2
+    exit 3
+fi
+exec /usr/bin/bash "$runtime" "$@"

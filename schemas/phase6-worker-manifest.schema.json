@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/phase6-worker-manifest-v1.json",
+  "title": "KITPro Linux Phase 6 worker manifest",
+  "type": "object",
+  "required": [
+    "schema_version", "kind", "base_image_digest", "arch_snapshot",
+    "architecture", "package_count", "packages", "pacman_databases",
+    "tools", "requirements", "manifest_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"enum": ["kitpro-phase6-worker-lock", "kitpro-phase6-worker-manifest"]},
+    "base_image_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "arch_snapshot": {"const": "2026/09/24"},
+    "architecture": {"const": "x86_64"},
+    "package_count": {"type": "integer", "minimum": 1},
+    "packages": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "pacman_databases": {"type": "array", "minItems": 2, "items": {"type": "object"}},
+    "tools": {"type": "object"},
+    "requirements": {"type": "object"},
+    "worker_lock_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "worker_image_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "host_kernel": {"type": "string"},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

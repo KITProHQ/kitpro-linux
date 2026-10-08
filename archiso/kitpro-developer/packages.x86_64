@@ -1,0 +1,16 @@
+arch-install-scripts
+base
+dosfstools
+e2fsprogs
+iproute2
+iputils
+linux-lts
+mkinitcpio
+mkinitcpio-archiso
+mtools
+nftables
+openssh
+parted
+procps-ng
+python
+sudo

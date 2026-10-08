@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.example/schemas/support-bundle-manifest.schema.json",
+  "title": "KITPro Linux support bundle manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "bundle_format_version", "bundle_id",
+    "created_at", "mode", "redaction_profile", "product", "source",
+    "limits", "health", "collectors", "files", "redaction",
+    "secret_scan", "warnings", "errors", "collector_result", "archive"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-support-bundle-manifest"},
+    "bundle_format_version": {"const": 1},
+    "bundle_id": {"type": "string", "pattern": "^support-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "mode": {"enum": ["live", "offline", "offline-rescue"]},
+    "redaction_profile": {"const": "support-sanitized-v1"},
+    "product": {"$ref": "#/$defs/product"},
+    "source": {"$ref": "#/$defs/source"},
+    "limits": {"$ref": "#/$defs/limits"},
+    "health": {"$ref": "#/$defs/health"},
+    "collectors": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/collector"}
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/file"}
+    },
+    "redaction": {"$ref": "#/$defs/redaction"},
+    "secret_scan": {"$ref": "#/$defs/secretScan"},
+    "warnings": {"$ref": "#/$defs/messages"},
+    "errors": {"$ref": "#/$defs/messages"},
+    "collector_result": {"enum": ["complete", "complete-with-warnings", "failed"]},
+    "archive": {"$ref": "#/$defs/archive"}
+  },
+  "$defs": {
+    "nullableString": {"type": ["string", "null"]},
+    "nullableInteger": {"type": ["integer", "null"], "minimum": 0},
+    "messages": {"type": "array", "items": {"type": "string"}},
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "release", "generation", "architecture", "kernel", "hostname_pseudonym"],
+      "properties": {
+        "name": {"type": "string"},
+        "release": {"$ref": "#/$defs/nullableString"},
+        "generation": {"$ref": "#/$defs/nullableString"},
+        "architecture": {"type": "string"},
+        "kernel": {"type": "string"},
+        "hostname_pseudonym": {"type": "string", "pattern": "^HOST_[0-9]+$"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "version", "git_commit", "package_build"],
+      "properties": {
+        "command": {"const": "kitpro-support-bundle"},
+        "version": {"enum": ["0.1", "0.2", "0.3", "0.4"]},
+        "git_commit": {"$ref": "#/$defs/nullableString"},
+        "package_build": {"$ref": "#/$defs/nullableString"}
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["individual_file_bytes", "journal_file_bytes", "staging_bytes", "archive_bytes", "collector_timeout_seconds"],
+      "properties": {
+        "individual_file_bytes": {"type": "integer", "minimum": 1},
+        "journal_file_bytes": {"type": "integer", "minimum": 1},
+        "staging_bytes": {"type": "integer", "minimum": 1},
+        "archive_bytes": {"type": "integer", "minimum": 1},
+        "collector_timeout_seconds": {"type": "integer", "minimum": 1}
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "overall_status"],
+      "properties": {
+        "path": {"const": "health/system-health.json"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "overall_status": {"enum": ["healthy", "warning", "error", "unknown"]}
+      }
+    },
+    "collector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "critical", "status", "exit_code", "timed_out", "output_files", "stderr_file", "truncated", "original_bytes", "stored_bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]*$"},
+        "critical": {"type": "boolean"},
+        "status": {"enum": ["collected", "unavailable", "failed"]},
+        "exit_code": {"$ref": "#/$defs/nullableInteger"},
+        "timed_out": {"type": "boolean"},
+        "output_files": {"type": "array", "items": {"type": "string"}},
+        "stderr_file": {"$ref": "#/$defs/nullableString"},
+        "truncated": {"type": "boolean"},
+        "original_bytes": {"type": "integer", "minimum": 0},
+        "stored_bytes": {"type": "integer", "minimum": 0}
+      }
+    },
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "size_bytes", "truncated", "redaction_status"],
+      "properties": {
+        "path": {"type": "string", "pattern": "^[a-z0-9][a-zA-Z0-9._/-]*$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "truncated": {"type": "boolean"},
+        "redaction_status": {"const": "sanitized"}
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report", "status", "total_replacements", "categories"],
+      "properties": {
+        "report": {"const": "redaction/report.json"},
+        "status": {"const": "sanitized"},
+        "total_replacements": {"type": "integer", "minimum": 0},
+        "categories": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "secretScan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["report", "status", "finding_count"],
+      "properties": {
+        "report": {"const": "redaction/secret-scan.json"},
+        "status": {"const": "passed"},
+        "finding_count": {"const": 0}
+      }
+    },
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["format", "filename", "sha256_recorded_externally"],
+      "properties": {
+        "format": {"const": "tar.zst"},
+        "filename": {"type": "string", "pattern": "^[a-zA-Z0-9._-]+\\.tar\\.zst$"},
+        "sha256_recorded_externally": {"const": true}
+      }
+    }
+  }
+}

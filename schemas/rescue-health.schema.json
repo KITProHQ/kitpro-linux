@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/rescue-health.schema.json",
+  "title": "KITPro Linux rescue health report",
+  "type": "object",
+  "required": [
+    "schema_version", "kind", "generated_at", "status", "installation", "checks",
+    "boot", "kernel_lifecycle", "repository", "packages", "network", "nftables", "sshd", "journal",
+    "filesystem"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-rescue-health"},
+    "generated_at": {"type": "string"},
+    "status": {"enum": ["healthy", "degraded"]},
+    "installation": {"type": "object"},
+    "checks": {"type": "object", "additionalProperties": {"type": "boolean"}},
+    "boot": {"type": "object"},
+    "kernel_lifecycle": {"type": "object"},
+    "repository": {"type": "object"},
+    "packages": {"type": "object"},
+    "network": {"type": "object"},
+    "nftables": {"type": "object"},
+    "sshd": {"type": "object"},
+    "journal": {"type": "object"},
+    "filesystem": {"type": "object"}
+  }
+}

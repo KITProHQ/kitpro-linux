@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export PYTHONPATH=/opt/kitpro-linux
+python -m tools.phase4_live prepare
+python -m tools.guided_installer \
+  --source-metadata /opt/kitpro-linux/media/source-metadata.json
+if [[ -r /sys/firmware/qemu_fw_cfg/by_name/opt/kitpro/phase8-guided/raw ]]; then
+  printf '%s\n' 'KITPRO_GUIDED_POWEROFF'
+  sync
+  systemctl --no-block poweroff
+  exit 0
+fi
+printf '%s\n' 'Remove the installation medium before the next boot.'
+read -r -p "Type POWEROFF to shut down, or press Enter for the development shell: " action
+if [[ ${action} == POWEROFF ]]; then
+  sync
+  systemctl poweroff
+fi

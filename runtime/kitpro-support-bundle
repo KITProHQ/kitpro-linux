@@ -1,0 +1,9 @@
+#!/usr/bin/bash
+set -u
+
+runtime=${KITPRO_SUPPORT_BUNDLE_RUNTIME:-/usr/lib/kitpro-linux/support-bundle}
+if [[ ! -x $runtime ]]; then
+    printf 'kitpro-support-bundle: runtime is unavailable: %s\n' "$runtime" >&2
+    exit 3
+fi
+exec "$runtime" "$@"

@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.example.invalid/schemas/generation-manifest-v1.json",
+  "title": "KITPro Linux repository generation manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "release",
+    "generation_id",
+    "created_at",
+    "source_epoch",
+    "source_arch_snapshot",
+    "channel",
+    "repositories",
+    "promotion_history",
+    "previous_generation",
+    "signing",
+    "validation",
+    "known_exceptions"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "release": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+-dev$"},
+    "generation_id": {"type": "string", "minLength": 1},
+    "created_at": {"type": "string", "format": "date-time"},
+    "source_epoch": {"type": "integer", "minimum": 0},
+    "source_arch_snapshot": {
+      "type": "object",
+      "required": ["id", "archive_date", "database_hashes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^arch-"},
+        "archive_date": {"type": "string", "pattern": "^[0-9]{4}/[0-9]{2}/[0-9]{2}$"},
+        "database_hashes": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "channel": {"enum": ["edge", "testing", "stable"]},
+    "repositories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "architecture", "database", "packages"],
+        "properties": {
+          "name": {"type": "string"},
+          "architecture": {"type": "string"},
+          "database": {
+            "type": "object",
+            "required": [
+              "filename",
+              "sha256",
+              "signature_filename",
+              "signature_sha256",
+              "signer_fingerprint"
+            ],
+            "properties": {
+              "filename": {"type": "string"},
+              "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "signature_filename": {"type": "string"},
+              "signature_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+              "signer_fingerprint": {"type": "string", "pattern": "^[0-9A-F]{40}$"}
+            },
+            "additionalProperties": true
+          },
+          "packages": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"$ref": "#/$defs/package"}
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "promotion_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "at", "artifact_set_sha256"],
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "at": {"type": "string", "format": "date-time"},
+          "artifact_set_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        }
+      }
+    },
+    "previous_generation": {"type": ["string", "null"]},
+    "signing": {
+      "type": "object",
+      "required": ["development_only", "roles"],
+      "properties": {
+        "development_only": {"const": true},
+        "roles": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "validation": {
+      "type": "object",
+      "required": ["status", "checks"],
+      "properties": {
+        "status": {"enum": ["passed", "failed"]},
+        "checks": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": true
+    },
+    "known_exceptions": {"type": "array", "items": {"type": "object"}}
+  },
+  "$defs": {
+    "signature": {
+      "type": ["object", "null"],
+      "properties": {
+        "filename": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "signer_fingerprint": {"type": "string", "pattern": "^[0-9A-F]{40}$"}
+      },
+      "required": ["filename", "sha256", "signer_fingerprint"]
+    },
+    "package": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "package_release",
+        "architecture",
+        "filename",
+        "sha256",
+        "origin_type",
+        "upstream_origin",
+        "upstream_signature",
+        "kitpro_signature",
+        "source",
+        "dependencies",
+        "provides",
+        "explicit",
+        "support_class",
+        "update_policy",
+        "metadata"
+      ],
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "package_release": {"type": "string"},
+        "architecture": {"type": "string"},
+        "filename": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "origin_type": {"enum": ["upstream-binary", "kitpro-rebuild", "kitpro-native"]},
+        "upstream_origin": {"type": ["object", "null"]},
+        "upstream_signature": {"$ref": "#/$defs/signature"},
+        "kitpro_signature": {"$ref": "#/$defs/signature"},
+        "source": {"type": "object"},
+        "dependencies": {"type": "array", "items": {"type": "string"}},
+        "provides": {"type": "array", "items": {"type": "string"}},
+        "explicit": {"type": "boolean"},
+        "support_class": {"type": "string"},
+        "update_policy": {"type": "string"},
+        "metadata": {"type": "object"}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

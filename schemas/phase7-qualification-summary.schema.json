@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/phase7-qualification-summary-v1.json",
+  "title": "KITPro Linux Phase 7 remote qualification",
+  "type": "object",
+  "required": [
+    "schema_version", "kind", "qualification_id", "status", "mode", "completed_at",
+    "source", "runner", "worker", "bundle", "media", "acceptance",
+    "phase6_summary_sha256", "summary_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-phase7-qualification"},
+    "qualification_id": {"type": "string", "pattern": "^phase7-[0-9a-f]{7,40}-[A-Za-z0-9._-]+$"},
+    "status": {"enum": ["passed", "failed"]},
+    "mode": {"enum": ["media", "full", "unknown"]},
+    "completed_at": {"type": "string"},
+    "source": {"type": "object"},
+    "runner": {"type": "object"},
+    "worker": {"type": "object"},
+    "bundle": {"type": "object"},
+    "media": {"type": "object"},
+    "acceptance": {"type": "object"},
+    "phase6_summary_sha256": {"type": ["string", "null"]},
+    "summary_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

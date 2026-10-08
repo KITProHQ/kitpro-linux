@@ -1,0 +1,8 @@
+NAME="KITPro Linux Server Development Media"
+PRETTY_NAME="KITPro Linux Server Development Media 0.8.0-dev.18"
+ID=kitpro-linux-installer
+ID_LIKE=arch
+VERSION_ID="0.8.0-dev.18"
+BUILD_ID="0.1-dev-g0010"
+HOME_URL="https://kitpro.us/"
+DOCUMENTATION_URL="https://github.com/KITProHQ/kitpro-linux"

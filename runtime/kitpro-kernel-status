@@ -1,0 +1,10 @@
+#!/usr/bin/bash
+# Read-only operator entry point for the authoritative kernel lifecycle status.
+set -euo pipefail
+
+runtime=${KITPRO_KERNEL_LIFECYCLE:-/usr/lib/kitpro-linux/kernel-lifecycle}
+if [[ ! -x $runtime ]]; then
+    printf 'kitpro-kernel-status: lifecycle runtime is unavailable: %s\n' "$runtime" >&2
+    exit 3
+fi
+exec "$runtime" status "$@"

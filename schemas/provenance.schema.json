@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.example/schemas/provenance.schema.json",
+  "title": "KITPro Linux Arch packaging provenance augmentation",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generation",
+    "generation_manifest_sha256",
+    "resolved_at",
+    "method",
+    "summary",
+    "packages"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "generation": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+-dev-g[0-9]{4}$" },
+    "generation_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "resolved_at": { "type": "string", "format": "date-time" },
+    "method": { "type": "object" },
+    "summary": {
+      "type": "object",
+      "required": ["upstream_packages", "unique_packaging_repositories", "resolved", "unresolved"]
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "artifact_sha256",
+          "packaging_git_url",
+          "expected_tag",
+          "status",
+          "packaging_commit",
+          "resolution"
+        ],
+        "properties": {
+          "status": { "enum": ["resolved", "unresolved"] },
+          "artifact_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "packaging_commit": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

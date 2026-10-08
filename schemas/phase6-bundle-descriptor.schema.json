@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/phase6-bundle-descriptor-v1.json",
+  "title": "KITPro Linux Phase 6 immutable input-bundle descriptor",
+  "type": "object",
+  "required": [
+    "schema_version", "kind", "bundle_id", "stable_generation",
+    "generation_manifest_sha256", "artifact_set_sha256", "bundle_manifest_sha256",
+    "package_count", "object_count", "archive_filename", "archive_size",
+    "archive_sha256", "source_date_epoch", "descriptor_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-phase6-immutable-input-bundle"},
+    "bundle_id": {"type": "string", "pattern": "^0\\.1-dev-g[0-9]{4}-[0-9a-f]{16}$"},
+    "stable_generation": {"type": "string", "pattern": "^0\\.1-dev-g[0-9]{4}$"},
+    "generation_manifest_sha256": {"$ref": "#/$defs/hash"},
+    "artifact_set_sha256": {"$ref": "#/$defs/hash"},
+    "bundle_manifest_sha256": {"$ref": "#/$defs/hash"},
+    "package_count": {"type": "integer", "minimum": 1},
+    "object_count": {"type": "integer", "minimum": 1},
+    "archive_filename": {"const": "bundle.tar"},
+    "archive_size": {"type": "integer", "minimum": 1},
+    "archive_sha256": {"$ref": "#/$defs/hash"},
+    "source_date_epoch": {"type": "integer", "minimum": 1},
+    "descriptor_sha256": {"$ref": "#/$defs/hash"}
+  },
+  "$defs": {"hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+  "additionalProperties": false
+}

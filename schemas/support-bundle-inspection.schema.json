@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.example/schemas/support-bundle-inspection.schema.json",
+  "title": "KITPro Linux support bundle inspection summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "archive", "manifest", "bundle", "health",
+    "collection", "redaction", "source", "warning_count", "error_count",
+    "warnings", "errors"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-support-bundle-inspection"},
+    "archive": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "name", "size_bytes", "sha256", "verification"],
+      "properties": {
+        "path": {"type": "string"},
+        "name": {"type": "string"},
+        "size_bytes": {"type": "integer", "minimum": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "verification": {"const": "passed"}
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "bundle_format_version", "sha256"],
+      "properties": {
+        "schema_version": {"const": 1},
+        "bundle_format_version": {"const": 1},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "bundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "mode", "created_at", "product", "release", "generation", "architecture", "kernel"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^support-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{8}$"},
+        "mode": {"enum": ["live", "offline", "offline-rescue"]},
+        "created_at": {"type": "string", "format": "date-time"},
+        "product": {"type": "string"},
+        "release": {"$ref": "#/$defs/nullableString"},
+        "generation": {"$ref": "#/$defs/nullableString"},
+        "architecture": {"type": "string"},
+        "kernel": {"type": "string"}
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overall_status", "mode", "subsystems"],
+      "properties": {
+        "overall_status": {"$ref": "#/$defs/status"},
+        "mode": {"enum": ["live", "offline"]},
+        "subsystems": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kernel", "boot", "systemd", "repository", "storage", "networking", "dns", "firewall", "ssh"],
+          "properties": {
+            "kernel": {"$ref": "#/$defs/status"},
+            "boot": {"$ref": "#/$defs/status"},
+            "systemd": {"$ref": "#/$defs/status"},
+            "repository": {"$ref": "#/$defs/status"},
+            "storage": {"$ref": "#/$defs/status"},
+            "networking": {"$ref": "#/$defs/status"},
+            "dns": {"$ref": "#/$defs/status"},
+            "firewall": {"$ref": "#/$defs/status"},
+            "ssh": {"$ref": "#/$defs/status"}
+          }
+        }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "collector_count", "payload_file_count", "truncation_count", "collector_attention", "categories", "logs"],
+      "properties": {
+        "result": {"enum": ["complete", "complete-with-warnings", "failed"]},
+        "collector_count": {"type": "integer", "minimum": 0},
+        "payload_file_count": {"type": "integer", "minimum": 1},
+        "truncation_count": {"type": "integer", "minimum": 0},
+        "collector_attention": {"type": "array", "items": {"$ref": "#/$defs/collectorAttention"}},
+        "categories": {"$ref": "#/$defs/strings"},
+        "logs": {"type": "array", "items": {"$ref": "#/$defs/log"}},
+        "included_files": {"$ref": "#/$defs/strings"},
+        "collectors": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile", "result", "total_replacements", "omitted_category_count", "secret_scan", "secret_finding_count"],
+      "properties": {
+        "profile": {"const": "support-sanitized-v1"},
+        "result": {"const": "sanitized"},
+        "total_replacements": {"type": "integer", "minimum": 0},
+        "omitted_category_count": {"type": "integer", "minimum": 0},
+        "secret_scan": {"const": "passed"},
+        "secret_finding_count": {"const": 0},
+        "categories": {"$ref": "#/$defs/strings"}
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command_version", "git_commit", "package_build", "rescue_media_version"],
+      "properties": {
+        "command_version": {"enum": ["0.1", "0.2", "0.3"]},
+        "git_commit": {"$ref": "#/$defs/nullableString"},
+        "package_build": {"$ref": "#/$defs/nullableString"},
+        "rescue_media_version": {"$ref": "#/$defs/nullableString"}
+      }
+    },
+    "warning_count": {"type": "integer", "minimum": 0},
+    "error_count": {"type": "integer", "minimum": 0},
+    "warnings": {"$ref": "#/$defs/strings"},
+    "errors": {"$ref": "#/$defs/strings"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullableString": {"type": ["string", "null"]},
+    "strings": {"type": "array", "items": {"type": "string"}},
+    "status": {"enum": ["healthy", "warning", "error", "unknown", "unavailable"]},
+    "collectorAttention": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "truncated", "timed_out"],
+      "properties": {
+        "id": {"type": "string"},
+        "status": {"enum": ["collected", "unavailable", "failed"]},
+        "truncated": {"type": "boolean"},
+        "timed_out": {"type": "boolean"}
+      }
+    },
+    "log": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "size_bytes", "truncated"],
+      "properties": {
+        "path": {"type": "string"},
+        "size_bytes": {"type": "integer", "minimum": 0},
+        "truncated": {"type": "boolean"}
+      }
+    }
+  }
+}

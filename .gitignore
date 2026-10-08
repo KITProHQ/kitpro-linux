@@ -1,0 +1,18 @@
+# Generated repository state and disposable development keys.
+repo/*
+!repo/README.md
+.state/
+.work/
+
+# Python and test output.
+__pycache__/
+*.pyc
+.coverage
+
+# Package build output and signing material.
+*.pkg.tar.*
+*.sig
+*.key
+*.sec
+private-keys-v1.d/
+openpgp-revocs.d/

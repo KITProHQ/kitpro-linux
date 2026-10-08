@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/phase6-validation-summary-v1.json",
+  "title": "KITPro Linux Phase 6 validation summary",
+  "type": "object",
+  "required": [
+    "schema_version", "kind", "status", "completed_at", "last_stage", "mode",
+    "source_git_commit", "worker_image_digest", "worker_manifest_sha256",
+    "worker_lock_sha256", "bundle_descriptor_sha256", "stable_generation",
+    "builds", "bit_for_bit_reproducible", "tcg_acceptance", "kvm_acceptance",
+    "evidence", "summary_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-phase6-validation-summary"},
+    "status": {"enum": ["passed", "failed"]},
+    "completed_at": {"type": "string"},
+    "last_stage": {"type": "string"},
+    "mode": {"enum": ["media", "full"]},
+    "source_git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "worker_image_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "worker_manifest_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "worker_lock_sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "bundle_descriptor_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "stable_generation": {"type": ["string", "null"]},
+    "builds": {"type": "array", "items": {"type": "object"}},
+    "bit_for_bit_reproducible": {"type": ["boolean", "null"]},
+    "tcg_acceptance": {"type": "string"},
+    "kvm_acceptance": {"type": "string"},
+    "evidence": {"type": "object"},
+    "summary_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

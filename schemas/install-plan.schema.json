@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/install-plan.schema.json",
+  "title": "KITPro Linux deterministic install plan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "installer_version", "install_spec_version",
+    "install_spec_sha256", "plan_sha256", "target", "release",
+    "repository_generation", "repository", "rootfs", "partition_table",
+    "system", "network", "administrator", "ssh", "firewall", "boot",
+    "capacity_policy", "destructive_actions"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "installer_version": { "type": "string" },
+    "install_spec_version": { "const": 1 },
+    "install_spec_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "plan_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "target": { "type": "object" },
+    "release": { "type": "string" },
+    "repository_generation": { "type": "string" },
+    "repository": { "type": "object" },
+    "rootfs": { "type": "object" },
+    "partition_table": { "type": "object" },
+    "system": { "type": "object" },
+    "network": { "type": "object" },
+    "administrator": { "type": "object" },
+    "ssh": { "type": "object" },
+    "firewall": { "type": "object" },
+    "boot": { "type": "object" },
+    "capacity_policy": { "type": "object" },
+    "destructive_actions": { "type": "array", "items": { "type": "string" } }
+  }
+}

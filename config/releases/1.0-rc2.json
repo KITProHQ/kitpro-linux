@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "product_name": "KITPro Linux Server",
+  "product_version": "1.0",
+  "release_status": "RC2",
+  "rc_status": "rc2",
+  "media_build_identity": "1.0-rc2",
+  "iso_filename": "kitpro-linux-server-1.0-rc2-x86_64.iso",
+  "repository_release": "1.0",
+  "repository_generation": "1.0-g0002",
+  "generation_manifest_sha256": "fb20ff778fd2c4fcbd5cef72809d3104dcb5f0d81c196c708f0825cf60ee3585",
+  "artifact_set_sha256": "bbc64a7dc0fb1fe38d0b9570901913d22eec51ac6d49196e8c6d677e5baa1743",
+  "package_count": 199,
+  "explicit_package_count": 36,
+  "kernel": "6.18.55-1",
+  "worker_lock_sha256": "0d5a4cadf24f8a397d9510e3a618d89dadd06ec1497f1c736e4dfb7942d3a50d",
+  "squashfs_processors": 4,
+  "fingerprints": {
+    "root": "913BDB5D1E06A5B57F46F5B674DAF522F825A435",
+    "recovery": "A785847E90D66198B26E9F4588F26422E49B3FFA",
+    "package": "4742B8D5550858F1723C8E0DB0DCE551DDD9F456",
+    "repository": "52BADA3613798054B7E35840DC088D21DA29F538",
+    "iso": "607D71E399E645164471C8EBA998AA6B6095B621"
+  },
+  "support": {
+    "standard_months": 12,
+    "starts_at": "final-1.0-publication",
+    "start_timestamp": null,
+    "eol_timestamp": null
+  },
+  "qualification_ids": {
+    "tcg": "kitpro-1.0-rc2-tcg",
+    "kvm": "kitpro-1.0-rc2-kvm",
+    "beelink": null
+  }
+}

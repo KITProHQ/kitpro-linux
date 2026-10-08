@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/phase5-static-media-report-v1.json",
+  "title": "KITPro Linux Phase 5 static media validation",
+  "type": "object",
+  "required": [
+    "schema_version", "status", "iso_filename", "iso_sha256", "stable_generation",
+    "checks", "identity", "enabled_repositories", "signatures", "secret_scan",
+    "boot_metadata_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "status": {"const": "passed"},
+    "iso_filename": {"type": "string"},
+    "iso_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "stable_generation": {"type": "string", "pattern": "^0\\.1-dev-g[0-9]{4}$"},
+    "checks": {"type": "object"},
+    "identity": {"const": "kitpro-linux-installer"},
+    "enabled_repositories": {"type": "array", "prefixItems": [{"const": "kitpro-0.1-dev-core"}], "items": false},
+    "signatures": {"type": "object"},
+    "secret_scan": {"type": "object"},
+    "boot_metadata_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

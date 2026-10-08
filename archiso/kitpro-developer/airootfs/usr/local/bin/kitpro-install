@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export PYTHONPATH=/opt/kitpro-linux
+python -m tools.phase4_live prepare
+exec python -m tools.install "$@"

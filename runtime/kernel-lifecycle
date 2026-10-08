@@ -1,0 +1,1041 @@
+#!/usr/bin/bash
+# KITPro Linux previous-known-good kernel lifecycle manager.
+# This runtime intentionally uses only the base system shell and core utilities.
+set -euo pipefail
+
+STATE_REL=/var/lib/kitpro-linux/kernel-state.json
+TRANSITION_REL=/var/lib/kitpro-linux/kernel-transition
+RECEIPT_REL=/var/lib/kitpro-linux/kernel-transitions
+CURRENT_ENTRY_REL=/efi/loader/entries/kitpro-linux.conf
+PREVIOUS_ENTRY_REL=/efi/loader/entries/kitpro-linux-previous.conf
+CURRENT_COMPAT_ENTRY_REL=/efi/loader/entries/kitpro-linux-compatibility.conf
+PREVIOUS_COMPAT_ENTRY_REL=/efi/loader/entries/kitpro-linux-previous-compatibility.conf
+LOADER_REL=/efi/loader/loader.conf
+ARTIFACT_REL=/efi/EFI/KITPro/kernels
+ROOT_RESERVE_BYTES=$((64 * 1024 * 1024))
+ESP_RESERVE_BYTES=$((16 * 1024 * 1024))
+ROOT=/
+
+fail() {
+    printf 'kitpro-kernel: %s\n' "$*" >&2
+    exit 1
+}
+
+now() {
+    date -u +%Y-%m-%dT%H:%M:%SZ
+}
+
+root_path() {
+    local value=${1#/}
+    if [[ $ROOT == / ]]; then
+        printf '/%s\n' "$value"
+    else
+        printf '%s/%s\n' "${ROOT%/}" "$value"
+    fi
+}
+
+state_path() { root_path "$STATE_REL"; }
+
+validate_token() {
+    local name=$1 value=$2
+    [[ $value =~ ^[A-Za-z0-9._:+-]+$ ]] || fail "invalid $name: $value"
+}
+
+validate_partuuid() {
+    [[ $1 =~ ^[0-9A-Fa-f-]{36}$ ]] || fail "invalid root PARTUUID: $1"
+}
+
+sha_file() {
+    [[ -f $1 ]] || fail "required file is missing: $1"
+    sha256sum "$1" | awk '{print $1}'
+}
+
+atomic_file() {
+    local source=$1 destination=$2 temporary
+    mkdir -p "$(dirname "$destination")"
+    temporary="${destination}.tmp.$$"
+    cp --reflink=auto --preserve=mode,timestamps "$source" "$temporary"
+    sync -f "$temporary"
+    mv -f "$temporary" "$destination"
+    sync -f "$(dirname "$destination")"
+}
+
+atomic_text() {
+    local destination=$1 temporary
+    mkdir -p "$(dirname "$destination")"
+    temporary="${destination}.tmp.$$"
+    cat >"$temporary"
+    chmod 0644 "$temporary"
+    sync -f "$temporary"
+    mv -f "$temporary" "$destination"
+    sync -f "$(dirname "$destination")"
+}
+
+state_value() {
+    local key=$1 path
+    path=$(state_path)
+    [[ -f $path ]] || fail "kernel state is missing: $path"
+    sed -n 's/.*"'"$key"'": "\([^"]*\)".*/\1/p' "$path" | head -n 1
+}
+
+null_or_string() {
+    if [[ -n ${1:-} ]]; then
+        printf '"%s"' "$1"
+    else
+        printf 'null'
+    fi
+}
+
+write_state() {
+    local path
+    path=$(state_path)
+    atomic_text "$path" <<EOF
+{
+  "schema_version": 1,
+  "kind": "kitpro-kernel-state",
+  "state": "$STATE_STATUS",
+  "root_partuuid": "$ROOT_PARTUUID",
+  "source_repository_generation": "$SOURCE_GENERATION",
+  "current_kernel_package_version": "$CURRENT_PACKAGE_VERSION",
+  "current_kernel_release": "$CURRENT_RELEASE",
+  "current_kernel_image_path": "$CURRENT_KERNEL_PATH",
+  "current_kernel_image_sha256": "$CURRENT_KERNEL_SHA",
+  "current_initramfs_path": "$CURRENT_INITRAMFS_PATH",
+  "current_initramfs_sha256": "$CURRENT_INITRAMFS_SHA",
+  "current_module_tree": "$CURRENT_MODULE_TREE",
+  "current_boot_entry": "$CURRENT_BOOT_ENTRY",
+  "previous_kernel_package_version": $(null_or_string "${PREVIOUS_PACKAGE_VERSION:-}"),
+  "previous_kernel_release": $(null_or_string "${PREVIOUS_RELEASE:-}"),
+  "previous_kernel_image_path": $(null_or_string "${PREVIOUS_KERNEL_PATH:-}"),
+  "previous_kernel_image_sha256": $(null_or_string "${PREVIOUS_KERNEL_SHA:-}"),
+  "previous_initramfs_path": $(null_or_string "${PREVIOUS_INITRAMFS_PATH:-}"),
+  "previous_initramfs_sha256": $(null_or_string "${PREVIOUS_INITRAMFS_SHA:-}"),
+  "previous_module_tree": $(null_or_string "${PREVIOUS_MODULE_TREE:-}"),
+  "previous_boot_entry": $(null_or_string "${PREVIOUS_BOOT_ENTRY:-}"),
+  "candidate_status": "$CANDIDATE_STATUS",
+  "last_successful_boot": $(null_or_string "${LAST_SUCCESSFUL_BOOT:-}"),
+  "last_successful_boot_kernel": $(null_or_string "${LAST_SUCCESSFUL_BOOT_KERNEL:-}"),
+  "last_successful_boot_role": $(null_or_string "${LAST_SUCCESSFUL_BOOT_ROLE:-}"),
+  "transition_operation_id": $(null_or_string "${TRANSITION_OPERATION_ID:-}"),
+  "transition_stage": "$TRANSITION_STAGE",
+  "transition_started_at": $(null_or_string "${TRANSITION_STARTED_AT:-}"),
+  "transition_receipt": $(null_or_string "${TRANSITION_RECEIPT:-}"),
+  "superseded_previous_release": $(null_or_string "${SUPERSEDED_PREVIOUS_RELEASE:-}"),
+  "superseded_previous_kernel_path": $(null_or_string "${SUPERSEDED_PREVIOUS_KERNEL_PATH:-}"),
+  "superseded_previous_initramfs_path": $(null_or_string "${SUPERSEDED_PREVIOUS_INITRAMFS_PATH:-}"),
+  "superseded_previous_module_tree": $(null_or_string "${SUPERSEDED_PREVIOUS_MODULE_TREE:-}"),
+  "updated_at": "$(now)"
+}
+EOF
+}
+
+load_state() {
+    STATE_STATUS=$(state_value state)
+    ROOT_PARTUUID=$(state_value root_partuuid)
+    SOURCE_GENERATION=$(state_value source_repository_generation)
+    CURRENT_PACKAGE_VERSION=$(state_value current_kernel_package_version)
+    CURRENT_RELEASE=$(state_value current_kernel_release)
+    CURRENT_KERNEL_PATH=$(state_value current_kernel_image_path)
+    CURRENT_KERNEL_SHA=$(state_value current_kernel_image_sha256)
+    CURRENT_INITRAMFS_PATH=$(state_value current_initramfs_path)
+    CURRENT_INITRAMFS_SHA=$(state_value current_initramfs_sha256)
+    CURRENT_MODULE_TREE=$(state_value current_module_tree)
+    CURRENT_BOOT_ENTRY=$(state_value current_boot_entry)
+    PREVIOUS_PACKAGE_VERSION=$(state_value previous_kernel_package_version || true)
+    PREVIOUS_RELEASE=$(state_value previous_kernel_release || true)
+    PREVIOUS_KERNEL_PATH=$(state_value previous_kernel_image_path || true)
+    PREVIOUS_KERNEL_SHA=$(state_value previous_kernel_image_sha256 || true)
+    PREVIOUS_INITRAMFS_PATH=$(state_value previous_initramfs_path || true)
+    PREVIOUS_INITRAMFS_SHA=$(state_value previous_initramfs_sha256 || true)
+    PREVIOUS_MODULE_TREE=$(state_value previous_module_tree || true)
+    PREVIOUS_BOOT_ENTRY=$(state_value previous_boot_entry || true)
+    CANDIDATE_STATUS=$(state_value candidate_status)
+    LAST_SUCCESSFUL_BOOT=$(state_value last_successful_boot || true)
+    LAST_SUCCESSFUL_BOOT_KERNEL=$(state_value last_successful_boot_kernel || true)
+    LAST_SUCCESSFUL_BOOT_ROLE=$(state_value last_successful_boot_role || true)
+    TRANSITION_OPERATION_ID=$(state_value transition_operation_id || true)
+    TRANSITION_STAGE=$(state_value transition_stage)
+    TRANSITION_STARTED_AT=$(state_value transition_started_at || true)
+    TRANSITION_RECEIPT=$(state_value transition_receipt || true)
+    SUPERSEDED_PREVIOUS_RELEASE=$(state_value superseded_previous_release || true)
+    SUPERSEDED_PREVIOUS_KERNEL_PATH=$(state_value superseded_previous_kernel_path || true)
+    SUPERSEDED_PREVIOUS_INITRAMFS_PATH=$(state_value superseded_previous_initramfs_path || true)
+    SUPERSEDED_PREVIOUS_MODULE_TREE=$(state_value superseded_previous_module_tree || true)
+}
+
+kernel_artifact_path() {
+    printf '%s/%s/%s\n' "$ARTIFACT_REL" "$1" "$2"
+}
+
+entry_text() {
+    local role=$1 release=$2 kernel_path=$3 initramfs_path=$4 graphics=${5:-normal}
+    local title boot_kernel_path boot_initramfs_path sort_key extra_options=
+    [[ $kernel_path == /efi/* ]] || fail "kernel artifact is outside the ESP: $kernel_path"
+    [[ $initramfs_path == /efi/* ]] || fail "initramfs artifact is outside the ESP: $initramfs_path"
+    boot_kernel_path=${kernel_path#/efi}
+    boot_initramfs_path=${initramfs_path#/efi}
+    if [[ $role == current ]]; then
+        title="KITPro Linux Server ($release)"
+    else
+        title="KITPro Linux Server (Previous Kernel $release)"
+    fi
+    sort_key="kitpro-linux-$role"
+    if [[ $graphics == compatibility ]]; then
+        title="$title - Compatibility Graphics"
+        sort_key="$sort_key-compatibility"
+        extra_options=" nomodeset"
+    fi
+    cat <<EOF
+title $title
+version $release
+sort-key $sort_key
+linux $boot_kernel_path
+initrd $boot_initramfs_path
+options root=PARTUUID=$ROOT_PARTUUID rw console=ttyS0,115200n8 console=tty0$extra_options
+EOF
+}
+
+write_entry() {
+    local role=$1 release=$2 kernel_path=$3 initramfs_path=$4 relative compatibility_relative
+    if [[ $role == current ]]; then
+        relative=$CURRENT_ENTRY_REL
+        compatibility_relative=$CURRENT_COMPAT_ENTRY_REL
+    else
+        relative=$PREVIOUS_ENTRY_REL
+        compatibility_relative=$PREVIOUS_COMPAT_ENTRY_REL
+    fi
+    entry_text "$role" "$release" "$kernel_path" "$initramfs_path" |
+        atomic_text "$(root_path "$relative")"
+    entry_text "$role" "$release" "$kernel_path" "$initramfs_path" compatibility |
+        atomic_text "$(root_path "$compatibility_relative")"
+}
+
+write_loader_configuration() {
+    atomic_text "$(root_path "$LOADER_REL")" <<'EOF'
+default kitpro-linux.conf
+timeout 5
+console-mode keep
+EOF
+}
+
+install_artifacts() {
+    local release=$1 kernel_source=$2 initramfs_source=$3 directory
+    directory=$(root_path "$ARTIFACT_REL/$release")
+    mkdir -p "$directory"
+    atomic_file "$kernel_source" "$directory/vmlinuz-linux-lts"
+    atomic_file "$initramfs_source" "$directory/initramfs-linux-lts.img"
+}
+
+validate_record() {
+    local role=$1 release kernel_path initramfs_path module_tree kernel_sha initramfs_sha
+    if [[ $role == current ]]; then
+        release=$CURRENT_RELEASE kernel_path=$CURRENT_KERNEL_PATH initramfs_path=$CURRENT_INITRAMFS_PATH
+        module_tree=$CURRENT_MODULE_TREE kernel_sha=$CURRENT_KERNEL_SHA initramfs_sha=$CURRENT_INITRAMFS_SHA
+    else
+        release=$PREVIOUS_RELEASE kernel_path=$PREVIOUS_KERNEL_PATH initramfs_path=$PREVIOUS_INITRAMFS_PATH
+        module_tree=$PREVIOUS_MODULE_TREE kernel_sha=$PREVIOUS_KERNEL_SHA initramfs_sha=$PREVIOUS_INITRAMFS_SHA
+    fi
+    [[ -n $release ]] || fail "$role kernel is not recorded"
+    [[ $(sha_file "$(root_path "$kernel_path")") == "$kernel_sha" ]] || fail "$role kernel hash mismatch"
+    [[ $(sha_file "$(root_path "$initramfs_path")") == "$initramfs_sha" ]] || fail "$role initramfs hash mismatch"
+    [[ -d $(root_path "$module_tree") ]] || fail "$role module tree is missing: $module_tree"
+    [[ -f $(root_path "$module_tree/pkgbase") ]] || fail "$role module tree lacks pkgbase"
+    [[ $(<"$(root_path "$module_tree/pkgbase")") == linux-lts ]] || fail "$role module tree is not linux-lts"
+    [[ -f $(root_path "$module_tree/vmlinuz") ]] || fail "$role module tree lacks its kernel image"
+}
+
+discover_release() {
+    local canonical candidate
+    canonical=$(sha_file "$(root_path /boot/vmlinuz-linux-lts)")
+    while IFS= read -r candidate; do
+        [[ -f $candidate/pkgbase && $(<"$candidate/pkgbase") == linux-lts ]] || continue
+        [[ -f $candidate/vmlinuz ]] || continue
+        if [[ $(sha_file "$candidate/vmlinuz") == "$canonical" ]]; then
+            basename "$candidate"
+            return
+        fi
+    done < <(find "$(root_path /usr/lib/modules)" -mindepth 1 -maxdepth 1 -type d | sort)
+    fail "cannot match /boot/vmlinuz-linux-lts to a linux-lts module tree"
+}
+
+installed_package_version() {
+    local desc
+    desc=$(find "$(root_path /var/lib/pacman/local)" -maxdepth 2 -path '*/linux-lts-*/desc' -type f | sort | tail -n 1)
+    [[ -n $desc ]] || fail "linux-lts local package metadata is missing"
+    awk '$0=="%VERSION%" {getline; print; exit}' "$desc"
+}
+
+installed_generation() {
+    local release_file
+    release_file=$(root_path /etc/kitpro-linux-release.json)
+    sed -n 's/.*"generation"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$release_file" | head -n 1
+}
+
+bytes_used() {
+    du -sb "$@" | awk '{sum += $1} END {print sum + 0}'
+}
+
+available_bytes() {
+    local path=$1 override=$2
+    if [[ -n $override ]]; then
+        printf '%s\n' "$override"
+    else
+        df -Pk "$path" | awk 'NR==2 {print $4 * 1024}'
+    fi
+}
+
+retention_space_requirements() {
+    RETENTION_ROOT_REQUIRED=$(( $(bytes_used \
+        "$(root_path "$CURRENT_MODULE_TREE")" \
+        "$(root_path "$CURRENT_KERNEL_PATH")" \
+        "$(root_path "$CURRENT_INITRAMFS_PATH")") + ROOT_RESERVE_BYTES ))
+    RETENTION_ESP_REQUIRED=$(( $(bytes_used \
+        "$(root_path "$CURRENT_KERNEL_PATH")" \
+        "$(root_path "$CURRENT_INITRAMFS_PATH")") + ESP_RESERVE_BYTES ))
+    RETENTION_ROOT_AVAILABLE=$(available_bytes \
+        "$(root_path /var/lib/kitpro-linux)" "${KITPRO_TEST_ROOT_FREE_BYTES:-}")
+    RETENTION_ESP_AVAILABLE=$(available_bytes \
+        "$(root_path /efi)" "${KITPRO_TEST_ESP_FREE_BYTES:-}")
+}
+
+initialize() {
+    local package_version= generation= root_partuuid= kernel_release=
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --package-version) package_version=$2; shift 2 ;;
+            --generation) generation=$2; shift 2 ;;
+            --root-partuuid) root_partuuid=$2; shift 2 ;;
+            --kernel-release) kernel_release=$2; shift 2 ;;
+            *) fail "unknown initialize argument: $1" ;;
+        esac
+    done
+    validate_token package-version "$package_version"
+    validate_token generation "$generation"
+    validate_token kernel-release "$kernel_release"
+    validate_partuuid "$root_partuuid"
+    [[ ! -e $(state_path) ]] || fail "kernel state already exists"
+    [[ -d $(root_path "/usr/lib/modules/$kernel_release") ]] || fail "initial module tree is missing"
+    install_artifacts "$kernel_release" \
+        "$(root_path /boot/vmlinuz-linux-lts)" "$(root_path /boot/initramfs-linux-lts.img)"
+    ROOT_PARTUUID=$root_partuuid
+    SOURCE_GENERATION=$generation
+    CURRENT_PACKAGE_VERSION=$package_version
+    CURRENT_RELEASE=$kernel_release
+    CURRENT_KERNEL_PATH=$(kernel_artifact_path "$kernel_release" vmlinuz-linux-lts)
+    CURRENT_INITRAMFS_PATH=$(kernel_artifact_path "$kernel_release" initramfs-linux-lts.img)
+    CURRENT_KERNEL_SHA=$(sha_file "$(root_path "$CURRENT_KERNEL_PATH")")
+    CURRENT_INITRAMFS_SHA=$(sha_file "$(root_path "$CURRENT_INITRAMFS_PATH")")
+    CURRENT_MODULE_TREE="/usr/lib/modules/$kernel_release"
+    CURRENT_BOOT_ENTRY=$CURRENT_ENTRY_REL
+    PREVIOUS_PACKAGE_VERSION= PREVIOUS_RELEASE= PREVIOUS_KERNEL_PATH= PREVIOUS_KERNEL_SHA=
+    PREVIOUS_INITRAMFS_PATH= PREVIOUS_INITRAMFS_SHA= PREVIOUS_MODULE_TREE= PREVIOUS_BOOT_ENTRY=
+    STATE_STATUS=candidate
+    CANDIDATE_STATUS=pending-first-boot
+    LAST_SUCCESSFUL_BOOT= LAST_SUCCESSFUL_BOOT_KERNEL= LAST_SUCCESSFUL_BOOT_ROLE=
+    TRANSITION_OPERATION_ID= TRANSITION_STARTED_AT= TRANSITION_RECEIPT=
+    TRANSITION_STAGE=fresh-install-pending-validation
+    SUPERSEDED_PREVIOUS_RELEASE= SUPERSEDED_PREVIOUS_KERNEL_PATH=
+    SUPERSEDED_PREVIOUS_INITRAMFS_PATH= SUPERSEDED_PREVIOUS_MODULE_TREE=
+    write_entry current "$CURRENT_RELEASE" "$CURRENT_KERNEL_PATH" "$CURRENT_INITRAMFS_PATH"
+    rm -f "$(root_path "$PREVIOUS_ENTRY_REL")"
+    rm -f "$(root_path "$PREVIOUS_COMPAT_ENTRY_REL")"
+    write_loader_configuration
+    write_state
+}
+
+stage_transition() {
+    load_state
+    [[ $STATE_STATUS == known-good ]] || fail "current kernel is not known-good; refusing transition"
+    validate_record current
+    local running=${KITPRO_RUNNING_KERNEL:-$(uname -r)}
+    [[ $running == "$CURRENT_RELEASE" ]] || fail "running kernel $running is not known-good current $CURRENT_RELEASE"
+    local operation staging
+    retention_space_requirements
+    if (( RETENTION_ROOT_AVAILABLE < RETENTION_ROOT_REQUIRED || RETENTION_ESP_AVAILABLE < RETENTION_ESP_REQUIRED )); then
+        fail "insufficient space for safe kernel retention: root required=$RETENTION_ROOT_REQUIRED available=$RETENTION_ROOT_AVAILABLE; ESP required=$RETENTION_ESP_REQUIRED available=$RETENTION_ESP_AVAILABLE"
+    fi
+    operation="kernel-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+    staging=$(root_path "$TRANSITION_REL/$operation")
+    mkdir -p "$staging"
+    atomic_file "$(root_path "$CURRENT_KERNEL_PATH")" "$staging/vmlinuz-linux-lts"
+    atomic_file "$(root_path "$CURRENT_INITRAMFS_PATH")" "$staging/initramfs-linux-lts.img"
+    cp -a "$(root_path "$CURRENT_MODULE_TREE")" "$staging/modules"
+    sync -f "$staging"
+    TRANSITION_OPERATION_ID=$operation
+    TRANSITION_STARTED_AT=$(now)
+    TRANSITION_STAGE=previous-staged
+    TRANSITION_RECEIPT=
+    write_state
+    printf 'kitpro-kernel: staged known-good %s; root_required=%s esp_required=%s\n' \
+        "$CURRENT_RELEASE" "$RETENTION_ROOT_REQUIRED" "$RETENTION_ESP_REQUIRED"
+}
+
+write_transition_receipt() {
+    local result=$1 health=$2 final_state=$3 completed=$4 path temporary digest
+    path=$(root_path "$TRANSITION_RECEIPT")
+    temporary="${path}.body.$$"
+    mkdir -p "$(dirname "$path")"
+    cat >"$temporary" <<EOF
+{
+  "schema_version": 1,
+  "kind": "kitpro-kernel-transition-receipt",
+  "operation_id": "$TRANSITION_OPERATION_ID",
+  "old_current_version": "$PREVIOUS_PACKAGE_VERSION",
+  "new_candidate_version": "$CURRENT_PACKAGE_VERSION",
+  "retained_previous_version": "$PREVIOUS_PACKAGE_VERSION",
+  "source_repository_generation": "$SOURCE_GENERATION",
+  "current_kernel_sha256": "$CURRENT_KERNEL_SHA",
+  "current_initramfs_sha256": "$CURRENT_INITRAMFS_SHA",
+  "previous_kernel_sha256": "$PREVIOUS_KERNEL_SHA",
+  "previous_initramfs_sha256": "$PREVIOUS_INITRAMFS_SHA",
+  "current_module_tree": "$CURRENT_MODULE_TREE",
+  "previous_module_tree": "$PREVIOUS_MODULE_TREE",
+  "current_boot_entry_sha256": "$(sha_file "$(root_path "$CURRENT_BOOT_ENTRY")")",
+  "previous_boot_entry_sha256": "$(sha_file "$(root_path "$PREVIOUS_BOOT_ENTRY")")",
+  "started_at": "$TRANSITION_STARTED_AT",
+  "completed_at": $(null_or_string "$completed"),
+  "reboot_required": true,
+  "candidate_health_result": "$health",
+  "result": "$result",
+  "final_state": "$final_state"
+}
+EOF
+    digest=$(sha_file "$temporary")
+    sed '$d' "$temporary" >"${temporary}.final"
+    printf ',\n  "receipt_sha256": "%s"\n}\n' "$digest" >>"${temporary}.final"
+    atomic_file "${temporary}.final" "$path"
+    rm -f "$temporary" "${temporary}.final"
+}
+
+activate_candidate() {
+    load_state
+    [[ $TRANSITION_STAGE == previous-staged ]] || fail "no staged kernel transition is ready"
+    local staging new_release new_package new_generation
+    staging=$(root_path "$TRANSITION_REL/$TRANSITION_OPERATION_ID")
+    [[ -d $staging/modules ]] || fail "staged known-good module tree is missing"
+    new_release=${KITPRO_NEW_KERNEL_RELEASE:-$(discover_release)}
+    new_package=${KITPRO_NEW_PACKAGE_VERSION:-$(installed_package_version)}
+    new_generation=${KITPRO_NEW_GENERATION:-$(installed_generation)}
+    validate_token kernel-release "$new_release"
+    validate_token package-version "$new_package"
+    validate_token generation "$new_generation"
+    if [[ $new_release == "$CURRENT_RELEASE" ]]; then
+        rm -rf "$staging"
+        TRANSITION_OPERATION_ID= TRANSITION_STARTED_AT= TRANSITION_RECEIPT=
+        TRANSITION_STAGE=complete
+        write_state
+        printf 'kitpro-kernel: linux-lts was reinstalled without a kernel transition\n'
+        return
+    fi
+    [[ -d $(root_path "/usr/lib/modules/$new_release") ]] || fail "candidate module tree is missing"
+    [[ -f $(root_path /boot/initramfs-linux-lts.img) ]] || fail "candidate initramfs is missing"
+    if [[ ! -d $(root_path "$CURRENT_MODULE_TREE") ]]; then
+        cp -a "$staging/modules" "$(root_path "$CURRENT_MODULE_TREE")"
+    fi
+    install_artifacts "$new_release" \
+        "$(root_path /boot/vmlinuz-linux-lts)" "$(root_path /boot/initramfs-linux-lts.img)"
+    SUPERSEDED_PREVIOUS_RELEASE=${PREVIOUS_RELEASE:-}
+    SUPERSEDED_PREVIOUS_KERNEL_PATH=${PREVIOUS_KERNEL_PATH:-}
+    SUPERSEDED_PREVIOUS_INITRAMFS_PATH=${PREVIOUS_INITRAMFS_PATH:-}
+    SUPERSEDED_PREVIOUS_MODULE_TREE=${PREVIOUS_MODULE_TREE:-}
+    PREVIOUS_PACKAGE_VERSION=$CURRENT_PACKAGE_VERSION
+    PREVIOUS_RELEASE=$CURRENT_RELEASE
+    PREVIOUS_KERNEL_PATH=$CURRENT_KERNEL_PATH
+    PREVIOUS_KERNEL_SHA=$CURRENT_KERNEL_SHA
+    PREVIOUS_INITRAMFS_PATH=$CURRENT_INITRAMFS_PATH
+    PREVIOUS_INITRAMFS_SHA=$CURRENT_INITRAMFS_SHA
+    PREVIOUS_MODULE_TREE=$CURRENT_MODULE_TREE
+    PREVIOUS_BOOT_ENTRY=$PREVIOUS_ENTRY_REL
+    CURRENT_PACKAGE_VERSION=$new_package
+    CURRENT_RELEASE=$new_release
+    CURRENT_KERNEL_PATH=$(kernel_artifact_path "$new_release" vmlinuz-linux-lts)
+    CURRENT_INITRAMFS_PATH=$(kernel_artifact_path "$new_release" initramfs-linux-lts.img)
+    CURRENT_KERNEL_SHA=$(sha_file "$(root_path "$CURRENT_KERNEL_PATH")")
+    CURRENT_INITRAMFS_SHA=$(sha_file "$(root_path "$CURRENT_INITRAMFS_PATH")")
+    CURRENT_MODULE_TREE="/usr/lib/modules/$new_release"
+    CURRENT_BOOT_ENTRY=$CURRENT_ENTRY_REL
+    SOURCE_GENERATION=$new_generation
+    STATE_STATUS=candidate
+    CANDIDATE_STATUS=pending-validation
+    TRANSITION_STAGE=reboot-pending
+    TRANSITION_RECEIPT="$RECEIPT_REL/$TRANSITION_OPERATION_ID.json"
+    write_entry current "$CURRENT_RELEASE" "$CURRENT_KERNEL_PATH" "$CURRENT_INITRAMFS_PATH"
+    write_entry previous "$PREVIOUS_RELEASE" "$PREVIOUS_KERNEL_PATH" "$PREVIOUS_INITRAMFS_PATH"
+    write_loader_configuration
+    validate_record current
+    validate_record previous
+    write_state
+    write_transition_receipt pending not-run candidate ""
+    rm -rf "$staging"
+    printf 'kitpro-kernel: candidate %s staged; previous known-good %s retained\n' \
+        "$CURRENT_RELEASE" "$PREVIOUS_RELEASE"
+}
+
+remove_superseded_previous() {
+    [[ -n ${SUPERSEDED_PREVIOUS_RELEASE:-} ]] || return 0
+    [[ $SUPERSEDED_PREVIOUS_RELEASE != "$CURRENT_RELEASE" ]] || return 0
+    [[ $SUPERSEDED_PREVIOUS_RELEASE != "$PREVIOUS_RELEASE" ]] || return 0
+    [[ $SUPERSEDED_PREVIOUS_KERNEL_PATH == "$ARTIFACT_REL/$SUPERSEDED_PREVIOUS_RELEASE/vmlinuz-linux-lts" ]] ||
+        fail "refusing unsafe superseded kernel cleanup path"
+    [[ $SUPERSEDED_PREVIOUS_INITRAMFS_PATH == "$ARTIFACT_REL/$SUPERSEDED_PREVIOUS_RELEASE/initramfs-linux-lts.img" ]] ||
+        fail "refusing unsafe superseded initramfs cleanup path"
+    [[ $SUPERSEDED_PREVIOUS_MODULE_TREE == "/usr/lib/modules/$SUPERSEDED_PREVIOUS_RELEASE" ]] ||
+        fail "refusing unsafe superseded module cleanup path"
+    rm -f \
+        "$(root_path "$SUPERSEDED_PREVIOUS_KERNEL_PATH")" \
+        "$(root_path "$SUPERSEDED_PREVIOUS_INITRAMFS_PATH")"
+    rm -rf "$(root_path "$SUPERSEDED_PREVIOUS_MODULE_TREE")"
+    local directory
+    directory=$(root_path "$ARTIFACT_REL/$SUPERSEDED_PREVIOUS_RELEASE")
+    rmdir "$directory" 2>/dev/null || true
+    SUPERSEDED_PREVIOUS_RELEASE= SUPERSEDED_PREVIOUS_KERNEL_PATH=
+    SUPERSEDED_PREVIOUS_INITRAMFS_PATH= SUPERSEDED_PREVIOUS_MODULE_TREE=
+}
+
+record_successful_boot() {
+    load_state
+    local running=${KITPRO_RUNNING_KERNEL:-$(uname -r)} role
+    if [[ $running == "$CURRENT_RELEASE" ]]; then
+        validate_record current
+        role=current
+        if [[ $STATE_STATUS == candidate ]]; then
+            STATE_STATUS=known-good
+            CANDIDATE_STATUS=validated
+            TRANSITION_STAGE=complete
+            remove_superseded_previous
+        fi
+    elif [[ -n ${PREVIOUS_RELEASE:-} && $running == "$PREVIOUS_RELEASE" ]]; then
+        validate_record previous
+        role=previous-known-good
+    else
+        fail "running kernel $running is not current or previous-known-good"
+    fi
+    LAST_SUCCESSFUL_BOOT=$(now)
+    LAST_SUCCESSFUL_BOOT_KERNEL=$running
+    LAST_SUCCESSFUL_BOOT_ROLE=$role
+    write_state
+    if [[ $role == current && -n ${TRANSITION_RECEIPT:-} ]]; then
+        write_transition_receipt passed passed known-good "$LAST_SUCCESSFUL_BOOT"
+    fi
+    printf 'kitpro-kernel: successful %s boot recorded for %s\n' "$role" "$running"
+}
+
+validate_fallback() {
+    load_state
+    validate_record previous
+    local entry boot_kernel_path boot_initramfs_path
+    entry=$(root_path "$PREVIOUS_BOOT_ENTRY")
+    boot_kernel_path=${PREVIOUS_KERNEL_PATH#/efi}
+    boot_initramfs_path=${PREVIOUS_INITRAMFS_PATH#/efi}
+    [[ -f $entry ]] || fail "previous boot entry is missing"
+    grep -Fq "linux $boot_kernel_path" "$entry" || fail "previous boot entry kernel path is wrong"
+    grep -Fq "initrd $boot_initramfs_path" "$entry" || fail "previous boot entry initramfs path is wrong"
+    grep -Fq "root=PARTUUID=$ROOT_PARTUUID" "$entry" || fail "previous boot entry root identifier is wrong"
+    printf '{"status":"valid","previous_kernel_release":"%s","boot_entry":"%s"}\n' \
+        "$PREVIOUS_RELEASE" "$PREVIOUS_BOOT_ENTRY"
+}
+
+repair_fallback_entry() {
+    load_state
+    validate_record previous
+    write_entry previous "$PREVIOUS_RELEASE" "$PREVIOUS_KERNEL_PATH" "$PREVIOUS_INITRAMFS_PATH"
+    validate_fallback >/dev/null
+}
+
+refresh_current_artifacts() {
+    load_state
+    [[ -f $(root_path /boot/vmlinuz-linux-lts) ]] || fail "current package kernel is missing"
+    [[ -f $(root_path /boot/initramfs-linux-lts.img) ]] || fail "current package initramfs is missing"
+    install_artifacts "$CURRENT_RELEASE" \
+        "$(root_path /boot/vmlinuz-linux-lts)" "$(root_path /boot/initramfs-linux-lts.img)"
+    CURRENT_KERNEL_SHA=$(sha_file "$(root_path "$CURRENT_KERNEL_PATH")")
+    CURRENT_INITRAMFS_SHA=$(sha_file "$(root_path "$CURRENT_INITRAMFS_PATH")")
+    write_entry current "$CURRENT_RELEASE" "$CURRENT_KERNEL_PATH" "$CURRENT_INITRAMFS_PATH"
+    write_loader_configuration
+    write_state
+    validate_record current
+}
+
+regenerate_previous_initramfs() {
+    load_state
+    [[ -n ${PREVIOUS_RELEASE:-} ]] || fail "no previous known-good kernel is recorded"
+    [[ -d $(root_path "$PREVIOUS_MODULE_TREE") ]] || fail "previous module tree is missing"
+    local temporary destination
+    temporary="/boot/.kitpro-initramfs-$PREVIOUS_RELEASE.img"
+    mkinitcpio -k "$PREVIOUS_RELEASE" -g "$temporary"
+    destination=$(root_path "$PREVIOUS_INITRAMFS_PATH")
+    atomic_file "$(root_path "$temporary")" "$destination"
+    rm -f "$(root_path "$temporary")"
+    PREVIOUS_INITRAMFS_SHA=$(sha_file "$destination")
+    write_entry previous "$PREVIOUS_RELEASE" "$PREVIOUS_KERNEL_PATH" "$PREVIOUS_INITRAMFS_PATH"
+    write_state
+    validate_fallback >/dev/null
+}
+
+json_escape() {
+    local value=${1:-}
+    value=${value//\\/\\\\}
+    value=${value//\"/\\\"}
+    value=${value//$'\n'/\\n}
+    value=${value//$'\r'/\\r}
+    value=${value//$'\t'/\\t}
+    printf '%s' "$value"
+}
+
+json_string_or_null() {
+    if [[ -n ${1:-} ]]; then
+        printf '"%s"' "$(json_escape "$1")"
+    else
+        printf 'null'
+    fi
+}
+
+json_bool() {
+    [[ $1 == true ]] && printf true || printf false
+}
+
+json_array() {
+    local -n values=$1
+    local separator= value
+    printf '['
+    for value in "${values[@]}"; do
+        printf '%s"%s"' "$separator" "$(json_escape "$value")"
+        separator=,
+    done
+    printf ']'
+}
+
+status_warning() { STATUS_WARNINGS+=("$*"); }
+status_error() { STATUS_ERRORS+=("$*"); }
+
+status_key_present() {
+    grep -Eq '^[[:space:]]*"'"$1"'"[[:space:]]*:' "$(state_path)"
+}
+
+status_token_valid() {
+    [[ ${1:-} =~ ^[A-Za-z0-9._:+-]+$ ]]
+}
+
+status_sha_valid() {
+    [[ ${1:-} =~ ^[0-9a-f]{64}$ ]]
+}
+
+status_artifact_valid() {
+    local relative=${1:-} expected=${2:-} path
+    [[ $relative == /* ]] || return 1
+    status_sha_valid "$expected" || return 1
+    path=$(root_path "$relative")
+    [[ -f $path ]] || return 1
+    [[ $(sha256sum "$path" | awk '{print $1}') == "$expected" ]]
+}
+
+status_modules_valid() {
+    local relative=${1:-} path
+    [[ $relative == /usr/lib/modules/* ]] || return 1
+    path=$(root_path "$relative")
+    [[ -d $path && -f $path/pkgbase && -f $path/vmlinuz ]] || return 1
+    [[ $(<"$path/pkgbase") == linux-lts ]]
+}
+
+status_entry_valid() {
+    local entry_relative=${1:-} kernel_relative=${2:-} initramfs_relative=${3:-}
+    local entry boot_kernel boot_initramfs
+    [[ $entry_relative == /efi/loader/entries/* ]] || return 1
+    [[ $kernel_relative == /efi/* && $initramfs_relative == /efi/* ]] || return 1
+    entry=$(root_path "$entry_relative")
+    [[ -f $entry ]] || return 1
+    boot_kernel=${kernel_relative#/efi}
+    boot_initramfs=${initramfs_relative#/efi}
+    grep -Fq "linux $boot_kernel" "$entry" &&
+        grep -Fq "initrd $boot_initramfs" "$entry" &&
+        grep -Fq "root=PARTUUID=$ROOT_PARTUUID" "$entry"
+}
+
+status_metadata_valid() {
+    local path key
+    path=$(state_path)
+    if [[ ! -f $path ]]; then
+        status_error "Kernel-state metadata is missing: $STATE_REL"
+        return 1
+    fi
+    local required=(
+        schema_version kind state root_partuuid source_repository_generation
+        current_kernel_package_version current_kernel_release current_kernel_image_path
+        current_kernel_image_sha256 current_initramfs_path current_initramfs_sha256
+        current_module_tree current_boot_entry previous_kernel_package_version
+        previous_kernel_release previous_kernel_image_path previous_kernel_image_sha256
+        previous_initramfs_path previous_initramfs_sha256 previous_module_tree
+        previous_boot_entry candidate_status last_successful_boot
+        last_successful_boot_kernel last_successful_boot_role transition_operation_id
+        transition_stage transition_started_at transition_receipt
+        superseded_previous_release superseded_previous_kernel_path
+        superseded_previous_initramfs_path superseded_previous_module_tree updated_at
+    )
+    for key in "${required[@]}"; do
+        if ! status_key_present "$key"; then
+            status_error "Kernel-state metadata lacks required field: $key"
+            return 1
+        fi
+    done
+    if ! grep -Eq '^[[:space:]]*"schema_version"[[:space:]]*:[[:space:]]*1,' "$path" ||
+       ! grep -Eq '^[[:space:]]*"kind"[[:space:]]*:[[:space:]]*"kitpro-kernel-state",' "$path"; then
+        status_error "Kernel-state metadata has an unsupported schema or kind."
+        return 1
+    fi
+    load_state
+    if [[ $STATE_STATUS != candidate && $STATE_STATUS != known-good ]]; then
+        status_error "Kernel-state metadata has an invalid lifecycle state: $STATE_STATUS"
+        return 1
+    fi
+    if ! status_token_valid "$ROOT_PARTUUID" || [[ ! $ROOT_PARTUUID =~ ^[0-9A-Fa-f-]{36}$ ]]; then
+        status_error "Kernel-state metadata has an invalid root PARTUUID."
+        return 1
+    fi
+    for key in "$SOURCE_GENERATION" "$CURRENT_PACKAGE_VERSION" "$CURRENT_RELEASE"; do
+        if ! status_token_valid "$key"; then
+            status_error "Kernel-state metadata contains an invalid required token."
+            return 1
+        fi
+    done
+    if ! status_sha_valid "$CURRENT_KERNEL_SHA" || ! status_sha_valid "$CURRENT_INITRAMFS_SHA"; then
+        status_error "Kernel-state metadata contains an invalid current artifact hash."
+        return 1
+    fi
+    if [[ $CURRENT_KERNEL_PATH != "$ARTIFACT_REL/$CURRENT_RELEASE/vmlinuz-linux-lts" ||
+          $CURRENT_INITRAMFS_PATH != "$ARTIFACT_REL/$CURRENT_RELEASE/initramfs-linux-lts.img" ||
+          $CURRENT_MODULE_TREE != "/usr/lib/modules/$CURRENT_RELEASE" ||
+          $CURRENT_BOOT_ENTRY != "$CURRENT_ENTRY_REL" ]]; then
+        status_error "Current kernel artifact paths are inconsistent with the recorded release."
+        return 1
+    fi
+    if [[ -n ${PREVIOUS_RELEASE:-} ]]; then
+        if ! status_token_valid "$PREVIOUS_PACKAGE_VERSION" || ! status_token_valid "$PREVIOUS_RELEASE" ||
+           ! status_sha_valid "$PREVIOUS_KERNEL_SHA" || ! status_sha_valid "$PREVIOUS_INITRAMFS_SHA" ||
+           [[ $PREVIOUS_KERNEL_PATH != "$ARTIFACT_REL/$PREVIOUS_RELEASE/vmlinuz-linux-lts" ]] ||
+           [[ $PREVIOUS_INITRAMFS_PATH != "$ARTIFACT_REL/$PREVIOUS_RELEASE/initramfs-linux-lts.img" ]] ||
+           [[ $PREVIOUS_MODULE_TREE != "/usr/lib/modules/$PREVIOUS_RELEASE" ]] ||
+           [[ $PREVIOUS_BOOT_ENTRY != "$PREVIOUS_ENTRY_REL" ]]; then
+            status_error "Previous-known-good metadata is internally inconsistent."
+            return 1
+        fi
+    elif [[ -n ${PREVIOUS_PACKAGE_VERSION:-}${PREVIOUS_KERNEL_PATH:-}${PREVIOUS_KERNEL_SHA:-}${PREVIOUS_INITRAMFS_PATH:-}${PREVIOUS_INITRAMFS_SHA:-}${PREVIOUS_MODULE_TREE:-}${PREVIOUS_BOOT_ENTRY:-} ]]; then
+        status_error "Previous-known-good metadata is only partially populated."
+        return 1
+    fi
+    case "$STATE_STATUS:$CANDIDATE_STATUS" in
+        candidate:pending-first-boot|candidate:pending-validation|known-good:validated) ;;
+        *) status_error "Lifecycle and candidate states are inconsistent."; return 1 ;;
+    esac
+    case $TRANSITION_STAGE in
+        fresh-install-pending-validation|previous-staged|reboot-pending|complete) ;;
+        *) status_error "Kernel transition stage is invalid: $TRANSITION_STAGE"; return 1 ;;
+    esac
+    return 0
+}
+
+status_mib() {
+    printf '%s MiB' "$(( (${1:-0} + 1024 * 1024 - 1) / (1024 * 1024) ))"
+}
+
+emit_status_json() {
+    cat <<EOF
+{
+  "schema_version": 1,
+  "kind": "kitpro-kernel-status",
+  "timestamp": "$STATUS_TIMESTAMP",
+  "running_kernel": $(json_string_or_null "$STATUS_RUNNING"),
+  "boot_mode": "$STATUS_BOOT_MODE",
+  "expected_running_kernel_match": $STATUS_EXPECTED_MATCH,
+  "current": {
+    "package_version": $(json_string_or_null "${CURRENT_PACKAGE_VERSION:-}"),
+    "kernel_release": $(json_string_or_null "${CURRENT_RELEASE:-}"),
+    "state": $(json_string_or_null "${STATE_STATUS:-}"),
+    "repository_generation": $(json_string_or_null "${SOURCE_GENERATION:-}"),
+    "kernel_path": $(json_string_or_null "${CURRENT_KERNEL_PATH:-}"),
+    "kernel_sha256": $(json_string_or_null "${CURRENT_KERNEL_SHA:-}"),
+    "kernel_valid": $(json_bool "$STATUS_CURRENT_KERNEL_VALID"),
+    "initramfs_path": $(json_string_or_null "${CURRENT_INITRAMFS_PATH:-}"),
+    "initramfs_sha256": $(json_string_or_null "${CURRENT_INITRAMFS_SHA:-}"),
+    "initramfs_valid": $(json_bool "$STATUS_CURRENT_INITRAMFS_VALID"),
+    "module_tree": $(json_string_or_null "${CURRENT_MODULE_TREE:-}"),
+    "module_tree_valid": $(json_bool "$STATUS_CURRENT_MODULES_VALID"),
+    "boot_entry": $(json_string_or_null "${CURRENT_BOOT_ENTRY:-}"),
+    "boot_entry_valid": $(json_bool "$STATUS_CURRENT_ENTRY_VALID")
+  },
+  "candidate": {
+    "present": $(json_bool "$STATUS_CANDIDATE_PRESENT"),
+    "package_version": $(json_string_or_null "$STATUS_CANDIDATE_PACKAGE"),
+    "kernel_release": $(json_string_or_null "$STATUS_CANDIDATE_RELEASE"),
+    "status": $(json_string_or_null "$STATUS_CANDIDATE_STATUS")
+  },
+  "previous_known_good": {
+    "present": $(json_bool "$STATUS_PREVIOUS_PRESENT"),
+    "package_version": $(json_string_or_null "${PREVIOUS_PACKAGE_VERSION:-}"),
+    "kernel_release": $(json_string_or_null "${PREVIOUS_RELEASE:-}"),
+    "kernel_path": $(json_string_or_null "${PREVIOUS_KERNEL_PATH:-}"),
+    "kernel_sha256": $(json_string_or_null "${PREVIOUS_KERNEL_SHA:-}"),
+    "kernel_valid": $STATUS_PREVIOUS_KERNEL_VALID_JSON,
+    "initramfs_path": $(json_string_or_null "${PREVIOUS_INITRAMFS_PATH:-}"),
+    "initramfs_sha256": $(json_string_or_null "${PREVIOUS_INITRAMFS_SHA:-}"),
+    "initramfs_valid": $STATUS_PREVIOUS_INITRAMFS_VALID_JSON,
+    "module_tree": $(json_string_or_null "${PREVIOUS_MODULE_TREE:-}"),
+    "module_tree_valid": $STATUS_PREVIOUS_MODULES_VALID_JSON,
+    "boot_entry": $(json_string_or_null "${PREVIOUS_BOOT_ENTRY:-}"),
+    "boot_entry_valid": $STATUS_PREVIOUS_ENTRY_VALID_JSON
+  },
+  "fallback": {
+    "availability": "$STATUS_FALLBACK",
+    "available": $(json_bool "$STATUS_FALLBACK_AVAILABLE"),
+    "reason": "$(json_escape "$STATUS_FALLBACK_REASON")"
+  },
+  "reboot_required": $(json_bool "$STATUS_REBOOT_REQUIRED"),
+  "transition_stage": $(json_string_or_null "${TRANSITION_STAGE:-}"),
+  "transition_id": $(json_string_or_null "${TRANSITION_OPERATION_ID:-}"),
+  "latest_transition_receipt": $(json_string_or_null "${TRANSITION_RECEIPT:-}"),
+  "retention_preflight": {
+    "root_space_required_bytes": $STATUS_ROOT_REQUIRED,
+    "root_space_available_bytes": $STATUS_ROOT_AVAILABLE,
+    "esp_space_required_bytes": $STATUS_ESP_REQUIRED,
+    "esp_space_available_bytes": $STATUS_ESP_AVAILABLE,
+    "result": "$STATUS_RETENTION_RESULT"
+  },
+  "metadata_consistency": $(json_bool "$STATUS_METADATA_VALID"),
+  "overall_status": "$STATUS_OVERALL",
+  "warnings": $(json_array STATUS_WARNINGS),
+  "errors": $(json_array STATUS_ERRORS)
+}
+EOF
+}
+
+emit_status_human() {
+    local current=${CURRENT_RELEASE:-unavailable} previous=${PREVIOUS_RELEASE:-none}
+    local running=${STATUS_RUNNING:-unavailable} generation=${SOURCE_GENERATION:-unavailable}
+    printf 'KITPro Linux Kernel Status\n\n'
+    printf '%-25s %s\n' 'Running kernel:' "$running"
+    printf '%-25s %s\n' 'Current kernel:' "$current"
+    printf '%-25s %s\n' 'State:' "${STATE_STATUS:-unavailable}"
+    printf '%-25s %s\n' 'Boot mode:' "$STATUS_BOOT_MODE"
+    printf '%-25s %s\n\n' 'Repository generation:' "$generation"
+    printf '%-25s %s\n' 'Previous known-good:' "$previous"
+    printf '%-25s %s\n' 'Fallback available:' "$STATUS_FALLBACK"
+    printf '%-25s %s\n' 'Fallback boot entry:' "$STATUS_PREVIOUS_ENTRY_DISPLAY"
+    printf '%-25s %s\n' 'Fallback kernel:' "$STATUS_PREVIOUS_KERNEL_DISPLAY"
+    printf '%-25s %s\n' 'Fallback initramfs:' "$STATUS_PREVIOUS_INITRAMFS_DISPLAY"
+    printf '%-25s %s\n\n' 'Fallback modules:' "$STATUS_PREVIOUS_MODULES_DISPLAY"
+    printf '%-25s %s\n' 'Candidate pending:' "$STATUS_CANDIDATE_PRESENT"
+    if [[ $STATUS_CANDIDATE_PRESENT == true ]]; then
+        printf '%-25s %s (%s)\n' 'Candidate kernel:' "$STATUS_CANDIDATE_RELEASE" "$STATUS_CANDIDATE_STATUS"
+    fi
+    printf '%-25s %s\n' 'Reboot required:' "$STATUS_REBOOT_REQUIRED"
+    printf '%-25s %s\n\n' 'Metadata consistent:' "$STATUS_METADATA_VALID"
+    printf 'Retention preflight:\n'
+    if [[ $STATUS_ROOT_REQUIRED != null ]]; then
+        printf '  %-23s %s\n' 'Root space required:' "$(status_mib "$STATUS_ROOT_REQUIRED")"
+        printf '  %-23s %s\n' 'Root space available:' "$(status_mib "$STATUS_ROOT_AVAILABLE")"
+        printf '  %-23s %s\n' 'ESP space required:' "$(status_mib "$STATUS_ESP_REQUIRED")"
+        printf '  %-23s %s\n' 'ESP space available:' "$(status_mib "$STATUS_ESP_AVAILABLE")"
+    fi
+    printf '  %-23s %s\n\n' 'Next retention:' "$STATUS_RETENTION_RESULT"
+    if [[ ${STATUS_VERBOSE:-false} == true && $STATUS_METADATA_VALID == true ]]; then
+        printf 'Details:\n'
+        printf '  Current kernel:    %s (%s)\n' "$CURRENT_KERNEL_PATH" "$CURRENT_KERNEL_SHA"
+        printf '  Current initramfs: %s (%s)\n' "$CURRENT_INITRAMFS_PATH" "$CURRENT_INITRAMFS_SHA"
+        printf '  Transition ID:     %s\n' "${TRANSITION_OPERATION_ID:-none}"
+        printf '  Latest receipt:    %s\n\n' "${TRANSITION_RECEIPT:-none}"
+    fi
+    local message
+    for message in "${STATUS_WARNINGS[@]}"; do printf 'WARNING: %s\n' "$message"; done
+    for message in "${STATUS_ERRORS[@]}"; do printf 'ERROR: %s\n' "$message"; done
+    printf '\nOverall status:          %s\n' "$STATUS_OVERALL"
+}
+
+kernel_status() {
+    local output=json running_override=
+    STATUS_VERBOSE=false
+    if [[ ${1:-} != --json ]]; then output=human; fi
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --json) output=json; shift ;;
+            --verbose) STATUS_VERBOSE=true; shift ;;
+            --running-kernel)
+                [[ $# -ge 2 ]] || { printf 'kitpro-kernel-status: --running-kernel requires a value\n' >&2; return 3; }
+                running_override=$2; shift 2 ;;
+            -h|--help)
+                printf 'usage: kitpro-kernel-status [--json] [--verbose]\n'
+                return 0
+                ;;
+            *) printf 'kitpro-kernel-status: unknown argument: %s\n' "$1" >&2; return 3 ;;
+        esac
+    done
+
+    STATUS_TIMESTAMP=$(now)
+    STATUS_WARNINGS=()
+    STATUS_ERRORS=()
+    STATUS_METADATA_VALID=false
+    STATUS_RUNNING=$running_override
+    if [[ -z $STATUS_RUNNING ]]; then
+        if [[ $ROOT == / ]]; then STATUS_RUNNING=$(uname -r); else STATUS_RUNNING=unavailable; fi
+    fi
+    STATUS_BOOT_MODE=unavailable
+    STATUS_EXPECTED_MATCH=null
+    STATUS_CURRENT_KERNEL_VALID=false
+    STATUS_CURRENT_INITRAMFS_VALID=false
+    STATUS_CURRENT_MODULES_VALID=false
+    STATUS_CURRENT_ENTRY_VALID=false
+    STATUS_PREVIOUS_PRESENT=false
+    STATUS_PREVIOUS_KERNEL_VALID_JSON=null
+    STATUS_PREVIOUS_INITRAMFS_VALID_JSON=null
+    STATUS_PREVIOUS_MODULES_VALID_JSON=null
+    STATUS_PREVIOUS_ENTRY_VALID_JSON=null
+    STATUS_PREVIOUS_KERNEL_DISPLAY=not-present
+    STATUS_PREVIOUS_INITRAMFS_DISPLAY=not-present
+    STATUS_PREVIOUS_MODULES_DISPLAY=not-present
+    STATUS_PREVIOUS_ENTRY_DISPLAY=not-present
+    STATUS_FALLBACK=no
+    STATUS_FALLBACK_AVAILABLE=false
+    STATUS_FALLBACK_REASON='No previous known-good kernel has been retained yet.'
+    STATUS_CANDIDATE_PRESENT=false
+    STATUS_CANDIDATE_PACKAGE=
+    STATUS_CANDIDATE_RELEASE=
+    STATUS_CANDIDATE_STATUS=
+    STATUS_REBOOT_REQUIRED=false
+    STATUS_ROOT_REQUIRED=null STATUS_ROOT_AVAILABLE=null
+    STATUS_ESP_REQUIRED=null STATUS_ESP_AVAILABLE=null
+    STATUS_RETENTION_RESULT=unavailable
+
+    if status_metadata_valid; then
+        STATUS_METADATA_VALID=true
+        status_artifact_valid "$CURRENT_KERNEL_PATH" "$CURRENT_KERNEL_SHA" && STATUS_CURRENT_KERNEL_VALID=true
+        status_artifact_valid "$CURRENT_INITRAMFS_PATH" "$CURRENT_INITRAMFS_SHA" && STATUS_CURRENT_INITRAMFS_VALID=true
+        status_modules_valid "$CURRENT_MODULE_TREE" && STATUS_CURRENT_MODULES_VALID=true
+        status_entry_valid "$CURRENT_BOOT_ENTRY" "$CURRENT_KERNEL_PATH" "$CURRENT_INITRAMFS_PATH" && STATUS_CURRENT_ENTRY_VALID=true
+        if [[ $STATUS_CURRENT_KERNEL_VALID != true || $STATUS_CURRENT_INITRAMFS_VALID != true ||
+              $STATUS_CURRENT_MODULES_VALID != true || $STATUS_CURRENT_ENTRY_VALID != true ]]; then
+            status_error 'Current kernel artifacts are incomplete or invalid.'
+        fi
+
+        if [[ -n ${PREVIOUS_RELEASE:-} ]]; then
+            STATUS_PREVIOUS_PRESENT=true
+            STATUS_PREVIOUS_KERNEL_VALID_JSON=false
+            STATUS_PREVIOUS_INITRAMFS_VALID_JSON=false
+            STATUS_PREVIOUS_MODULES_VALID_JSON=false
+            STATUS_PREVIOUS_ENTRY_VALID_JSON=false
+            if status_artifact_valid "$PREVIOUS_KERNEL_PATH" "$PREVIOUS_KERNEL_SHA"; then
+                STATUS_PREVIOUS_KERNEL_VALID_JSON=true; STATUS_PREVIOUS_KERNEL_DISPLAY=valid
+            else STATUS_PREVIOUS_KERNEL_DISPLAY=invalid; fi
+            if status_artifact_valid "$PREVIOUS_INITRAMFS_PATH" "$PREVIOUS_INITRAMFS_SHA"; then
+                STATUS_PREVIOUS_INITRAMFS_VALID_JSON=true; STATUS_PREVIOUS_INITRAMFS_DISPLAY=valid
+            else STATUS_PREVIOUS_INITRAMFS_DISPLAY=invalid; fi
+            if status_modules_valid "$PREVIOUS_MODULE_TREE"; then
+                STATUS_PREVIOUS_MODULES_VALID_JSON=true; STATUS_PREVIOUS_MODULES_DISPLAY=present
+            else STATUS_PREVIOUS_MODULES_DISPLAY=missing; fi
+            if status_entry_valid "$PREVIOUS_BOOT_ENTRY" "$PREVIOUS_KERNEL_PATH" "$PREVIOUS_INITRAMFS_PATH"; then
+                STATUS_PREVIOUS_ENTRY_VALID_JSON=true; STATUS_PREVIOUS_ENTRY_DISPLAY=valid
+            else STATUS_PREVIOUS_ENTRY_DISPLAY=invalid; fi
+            if [[ $STATUS_PREVIOUS_KERNEL_VALID_JSON == true &&
+                  $STATUS_PREVIOUS_INITRAMFS_VALID_JSON == true &&
+                  $STATUS_PREVIOUS_MODULES_VALID_JSON == true &&
+                  $STATUS_PREVIOUS_ENTRY_VALID_JSON == true ]]; then
+                STATUS_FALLBACK=yes
+                STATUS_FALLBACK_AVAILABLE=true
+                STATUS_FALLBACK_REASON='All previous-known-good artifacts are valid.'
+            else
+                STATUS_FALLBACK=degraded
+                STATUS_FALLBACK_REASON='One or more previous-known-good artifacts are missing or invalid.'
+                status_warning 'Fallback is degraded. Use kitpro-rescue to inspect or repair it.'
+            fi
+        fi
+
+        if [[ $STATE_STATUS == candidate ]]; then
+            STATUS_CANDIDATE_PRESENT=true
+            STATUS_CANDIDATE_PACKAGE=$CURRENT_PACKAGE_VERSION
+            STATUS_CANDIDATE_RELEASE=$CURRENT_RELEASE
+            STATUS_CANDIDATE_STATUS=$CANDIDATE_STATUS
+            status_warning 'Candidate kernel is not yet known-good.'
+        fi
+        if [[ $TRANSITION_STAGE == reboot-pending ]]; then STATUS_REBOOT_REQUIRED=true; fi
+        if [[ $STATUS_RUNNING == "$CURRENT_RELEASE" ]]; then
+            STATUS_BOOT_MODE=current
+            STATUS_EXPECTED_MATCH=true
+        elif [[ $STATUS_PREVIOUS_PRESENT == true && $STATUS_RUNNING == "$PREVIOUS_RELEASE" ]]; then
+            STATUS_BOOT_MODE=previous-known-good
+            STATUS_EXPECTED_MATCH=false
+            STATUS_REBOOT_REQUIRED=true
+            status_warning 'Running previous-known-good kernel; operator attention is required.'
+        elif [[ $STATUS_RUNNING == unavailable ]]; then
+            STATUS_BOOT_MODE=unavailable
+            STATUS_EXPECTED_MATCH=null
+        else
+            STATUS_BOOT_MODE=unexpected
+            STATUS_EXPECTED_MATCH=false
+            STATUS_REBOOT_REQUIRED=true
+            status_error "Running kernel $STATUS_RUNNING is not tracked by kernel-state metadata."
+        fi
+
+        if [[ $STATUS_CURRENT_KERNEL_VALID == true && $STATUS_CURRENT_INITRAMFS_VALID == true &&
+              $STATUS_CURRENT_MODULES_VALID == true ]]; then
+            retention_space_requirements
+            STATUS_ROOT_REQUIRED=$RETENTION_ROOT_REQUIRED
+            STATUS_ROOT_AVAILABLE=$RETENTION_ROOT_AVAILABLE
+            STATUS_ESP_REQUIRED=$RETENTION_ESP_REQUIRED
+            STATUS_ESP_AVAILABLE=$RETENTION_ESP_AVAILABLE
+            if (( RETENTION_ROOT_AVAILABLE >= RETENTION_ROOT_REQUIRED && RETENTION_ESP_AVAILABLE >= RETENTION_ESP_REQUIRED )); then
+                STATUS_RETENTION_RESULT=ready
+            else
+                STATUS_RETENTION_RESULT=insufficient-space
+                status_warning 'Insufficient free space to retain another previous kernel safely.'
+            fi
+        fi
+    fi
+
+    if (( ${#STATUS_ERRORS[@]} > 0 )); then
+        STATUS_OVERALL=error; STATUS_EXIT=2
+    elif (( ${#STATUS_WARNINGS[@]} > 0 )); then
+        STATUS_OVERALL=warning; STATUS_EXIT=1
+    else
+        STATUS_OVERALL=healthy; STATUS_EXIT=0
+    fi
+    if [[ $output == json ]]; then emit_status_json; else emit_status_human; fi
+    return "$STATUS_EXIT"
+}
+
+usage() {
+    cat <<'EOF'
+usage: kernel-lifecycle [--root PATH] COMMAND [ARGS]
+
+Commands:
+  initialize                   Create fresh-install candidate state
+  stage                        Preserve the current known-good kernel before pacman
+  activate                     Activate a distinct installed kernel as candidate
+  record-successful-boot       Promote a healthy candidate or record fallback health
+  validate-fallback            Validate retained fallback artifacts and entry
+  repair-fallback-entry        Recreate the manual fallback entry
+  refresh-current-artifacts    Refresh current ESP artifacts and boot entry
+  regenerate-previous-initramfs Regenerate the retained kernel's initramfs
+  status                       Report read-only kernel lifecycle status
+EOF
+}
+
+if [[ ${1:-} == --root ]]; then
+    [[ $# -ge 3 ]] || fail "--root requires a path and command"
+    ROOT=${2%/}
+    [[ -n $ROOT ]] || ROOT=/
+    shift 2
+fi
+
+command=${1:-}
+[[ -n $command ]] || { usage; exit 1; }
+shift
+case $command in
+    initialize) initialize "$@" ;;
+    stage) [[ $# -eq 0 ]] || fail "stage takes no arguments"; stage_transition ;;
+    activate) [[ $# -eq 0 ]] || fail "activate takes no arguments"; activate_candidate ;;
+    record-successful-boot) [[ $# -eq 0 ]] || fail "record-successful-boot takes no arguments"; record_successful_boot ;;
+    validate-fallback) [[ $# -eq 0 ]] || fail "validate-fallback takes no arguments"; validate_fallback ;;
+    repair-fallback-entry) [[ $# -eq 0 ]] || fail "repair-fallback-entry takes no arguments"; repair_fallback_entry ;;
+    refresh-current-artifacts) [[ $# -eq 0 ]] || fail "refresh-current-artifacts takes no arguments"; refresh_current_artifacts ;;
+    regenerate-previous-initramfs) [[ $# -eq 0 ]] || fail "regenerate-previous-initramfs takes no arguments"; regenerate_previous_initramfs ;;
+    status) kernel_status "$@" ;;
+    -h|--help|help) usage ;;
+    *) fail "unknown command: $command" ;;
+esac

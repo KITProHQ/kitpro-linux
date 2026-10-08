@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/worker-capability-report-v1.json",
+  "title": "KITPro Linux build-worker capability report",
+  "type": "object",
+  "required": [
+    "schema_version", "generated_at", "status", "worker", "capabilities",
+    "commands", "missing_required_build_commands",
+    "missing_required_acceptance_commands", "degraded_capabilities", "report_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "generated_at": {"type": "string", "minLength": 1},
+    "status": {"enum": ["unsupported", "unqualified", "usable_degraded", "qualified"]},
+    "worker": {"type": "object"},
+    "capabilities": {"type": "object"},
+    "commands": {"type": "object"},
+    "missing_required_build_commands": {"type": "array", "items": {"type": "string"}},
+    "missing_required_acceptance_commands": {"type": "array", "items": {"type": "string"}},
+    "degraded_capabilities": {"type": "array", "items": {"type": "string"}},
+    "report_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,15 @@
+[options]
+Architecture = x86_64
+CheckSpace
+ParallelDownloads = 5
+SigLevel = Required DatabaseOptional TrustedOnly
+LocalFileSigLevel = Required TrustedOnly
+CacheDir = @CACHE_PATH@
+GPGDir = @ARCH_GPG_PATH@
+LogFile = @LOG_PATH@
+
+[core]
+Server = https://archive.archlinux.org/repos/@SNAPSHOT_DATE@/core/os/$arch
+
+[extra]
+Server = https://archive.archlinux.org/repos/@SNAPSHOT_DATE@/extra/os/$arch

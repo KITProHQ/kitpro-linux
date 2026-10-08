@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/media-build-report-v1.json",
+  "title": "KITPro Linux developer media build report",
+  "type": "object",
+  "required": [
+    "schema_version", "status", "media_version", "source_git_commit",
+    "profile_sha256", "build_configuration_sha256", "stable_generation",
+    "repository_source_model", "boot_modes", "archiso_version",
+    "source_date_epoch", "iso_path", "iso_size_bytes", "iso_sha256",
+    "built_at", "tool_versions", "live_root"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "status": { "const": "passed" },
+    "media_version": { "type": "string", "minLength": 1 },
+    "source_git_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "profile_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "build_configuration_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "stable_generation": { "type": "string", "pattern": "^0\\.1-dev-g[0-9]{4}$" },
+    "repository_source_model": { "const": "embedded-immutable-generation" },
+    "boot_modes": {
+      "type": "array",
+      "prefixItems": [{ "const": "uefi.systemd-boot" }],
+      "items": false,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "archiso_version": { "type": "string", "minLength": 1 },
+    "source_date_epoch": { "type": "integer", "minimum": 1 },
+    "iso_path": { "type": "string", "minLength": 1 },
+    "iso_size_bytes": { "type": "integer", "minimum": 1 },
+    "iso_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "built_at": { "type": "string", "minLength": 1 },
+    "tool_versions": { "type": "object" },
+    "live_root": {
+      "type": "object",
+      "required": [
+        "source", "package_count", "base_rootfs_manifest_sha256",
+        "kernel_sha256", "initramfs_sha256"
+      ],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "package_count": { "type": "integer", "minimum": 1 },
+        "base_rootfs_manifest_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "kernel_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "initramfs_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

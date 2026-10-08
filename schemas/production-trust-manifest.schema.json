@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/production-trust-manifest.schema.json",
+  "title": "KITPro Linux production trust manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "ceremony_id", "dry_run", "created_at", "roles", "certifications", "contamination_checks"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "ceremony_id": {"type": "string", "minLength": 1},
+    "dry_run": {"type": "boolean"},
+    "created_at": {"type": "string", "format": "date-time"},
+    "roles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "package", "repository", "iso", "recovery"],
+      "properties": {
+        "root": {"$ref": "#/$defs/role"},
+        "package": {"$ref": "#/$defs/role"},
+        "repository": {"$ref": "#/$defs/role"},
+        "iso": {"$ref": "#/$defs/role"},
+        "recovery": {"$ref": "#/$defs/role"}
+      }
+    },
+    "certifications": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["certifier", "subject", "status"],
+        "properties": {
+          "certifier": {"enum": ["root", "recovery"]},
+          "subject": {"enum": ["package", "repository", "iso", "root"]},
+          "status": {"enum": ["verified", "planned"]}
+        }
+      }
+    },
+    "contamination_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["development_identifiers_absent", "private_material_absent", "home_endpoint_absent"],
+      "properties": {
+        "development_identifiers_absent": {"type": "boolean"},
+        "private_material_absent": {"type": "boolean"},
+        "home_endpoint_absent": {"type": "boolean"}
+      }
+    }
+  },
+  "$defs": {
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uid", "fingerprint", "status", "validity_years", "allowed_use", "public_key_sha256", "revocation_sha256"],
+      "properties": {
+        "uid": {"type": "string", "minLength": 1},
+        "fingerprint": {"type": "string", "pattern": "^[0-9A-F]{40}$"},
+        "status": {"enum": ["offline", "restricted-signing-use", "release-only-use"]},
+        "validity_years": {"type": "integer", "minimum": 1, "maximum": 10},
+        "allowed_use": {"type": "string", "minLength": 1},
+        "public_key_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "revocation_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

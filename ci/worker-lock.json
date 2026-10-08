@@ -1,0 +1,3102 @@
+{
+  "arch_snapshot": "2026/09/24",
+  "architecture": "x86_64",
+  "base_image_digest": "sha256:8745817f349ed24373341ddb92776209eeec3f0364ea48f7f645ac5800d30a50",
+  "kind": "kitpro-phase6-worker-lock",
+  "manifest_sha256": "8274ecbcec3117f01326ffbb74a92817cd0ff345181ada8ab7be4c91220b9a05",
+  "package_count": 437,
+  "packages": [
+    {
+      "archive_filename": "acl-2.4.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "dca9ec50cf51243b86a67367a55e78b1851d31240b1edaf9c011f8511765d999",
+      "installed_metadata_sha256": "d3428b8106b45eafb7abfcddab2c974f0711b5f59ea388dc26c248c459f352a9",
+      "name": "acl",
+      "version": "2.4.0-1"
+    },
+    {
+      "archive_filename": "adwaita-cursors-50.0-1-any.pkg.tar.zst",
+      "archive_sha256": "e74145387e2c0b2660f93de09a4994473229fb29b0924a7413cc5e2d535261b6",
+      "installed_metadata_sha256": "fda5920e579668b254725f5c17d6de3bc64f1ce0e4a715227d4383f034e17a68",
+      "name": "adwaita-cursors",
+      "version": "50.0-1"
+    },
+    {
+      "archive_filename": "adwaita-fonts-51.0-2-any.pkg.tar.zst",
+      "archive_sha256": "f27dd3b4700ef61bed117a6106013b7181ee9348ba038784ccfe5091ef172e4d",
+      "installed_metadata_sha256": "acb9f8bdf82dbfb119a4526737bdc9c20b5e2b17da3fe8bbf1196f0d6a644bd0",
+      "name": "adwaita-fonts",
+      "version": "51.0-2"
+    },
+    {
+      "archive_filename": "adwaita-icon-theme-50.0-1-any.pkg.tar.zst",
+      "archive_sha256": "192223d774c89c353932e954061013a3e53c129f80b64bc3cbca0e098000123c",
+      "installed_metadata_sha256": "ceb42a5f86a58e7c885178edd98defd0a7b83e32ca1bbb95d94cfaecd49d604d",
+      "name": "adwaita-icon-theme",
+      "version": "50.0-1"
+    },
+    {
+      "archive_filename": "adwaita-icon-theme-legacy-46.2-3-any.pkg.tar.zst",
+      "archive_sha256": "c14690d14e1d8a67e6b5570a2b28a2da6de4ebeb592a629b2a70e41411bafc5a",
+      "installed_metadata_sha256": "33f87a0f1c1c05779f78265fa8844143590d8c763afd8e4e5139a370ddd28f3d",
+      "name": "adwaita-icon-theme-legacy",
+      "version": "46.2-3"
+    },
+    {
+      "archive_filename": "alsa-lib-1.2.16.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "2d2f2b3966cebd6ec75abbbdb4709a1093849207ada6624cdfe36f38d0f5c811",
+      "installed_metadata_sha256": "5dfdec22132fa45d2c2b1c9546193075859efd36dbd811081b3c62fca4e77c4e",
+      "name": "alsa-lib",
+      "version": "1.2.16.1-1"
+    },
+    {
+      "archive_filename": "alsa-topology-conf-1.2.5.1-4-any.pkg.tar.zst",
+      "archive_sha256": "a76b237e24973099b3cee9d3c89f4f8b46d9133411f0992bd46a5131e4427a0c",
+      "installed_metadata_sha256": "a0247946d50bd9bce9534fa961e7c92f0dd0e222b7082d362c8f98161db0d8ed",
+      "name": "alsa-topology-conf",
+      "version": "1.2.5.1-4"
+    },
+    {
+      "archive_filename": "alsa-ucm-conf-1.2.16.1-1-any.pkg.tar.zst",
+      "archive_sha256": "73e3a6cf819dfcedf884616c18d2206dea77e98311717dca8135256fabe55fbc",
+      "installed_metadata_sha256": "f70bce2a5b8f3925eb6ba0c5f0d4d511fc9708a14464cbcae6b31d4b2a333707",
+      "name": "alsa-ucm-conf",
+      "version": "1.2.16.1-1"
+    },
+    {
+      "archive_filename": "aom-3.15.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "1356b16c0311b7dff787668f6021ed47a2774dc67dda65d2bb3458850e90b650",
+      "installed_metadata_sha256": "f9b04b7524308edd42c3930006e561816c0aaaa1548b4d5a92ace2f1271caebb",
+      "name": "aom",
+      "version": "3.15.1-1"
+    },
+    {
+      "archive_filename": "arch-install-scripts-31-2-any.pkg.tar.zst",
+      "archive_sha256": "21844567f7811bb957cb57982c697ff6a466a13ea3c8ad2cd159a7603c83608e",
+      "installed_metadata_sha256": "c00165bef2a73af2dbc111da39b59b8740401844ae0440f8a0d76a5c56b0e764",
+      "name": "arch-install-scripts",
+      "version": "31-2"
+    },
+    {
+      "archive_filename": "archiso-90-1-any.pkg.tar.zst",
+      "archive_sha256": "eb98536e4a440927fabc6fc635d3f91f1f26d9453e6277836b8397857d673ece",
+      "installed_metadata_sha256": "22c95acd3f33261cb7d8f339e5aec936effcc1224f845bf40457f4e676e20667",
+      "name": "archiso",
+      "version": "90-1"
+    },
+    {
+      "archive_filename": "archlinux-keyring-20260909-1-any.pkg.tar.zst",
+      "archive_sha256": "6a8ea16f51d3b305c18322d5884ca959f12c32a3f186873090fdc18465605293",
+      "installed_metadata_sha256": "3998bc0cbdd9b607854853aa86356e62b7988774cc246bb5b9f1aeaf6d594a69",
+      "name": "archlinux-keyring",
+      "version": "20260909-1"
+    },
+    {
+      "archive_filename": "at-spi2-core-2.60.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "96573d039cd7de253e66c4b2f3aac99053449397358bcfbe93aa121b5417494c",
+      "installed_metadata_sha256": "61458765e3a0aaec23453740855e4fab572ca109d219feb11dc4a7efa59a0918",
+      "name": "at-spi2-core",
+      "version": "2.60.7-1"
+    },
+    {
+      "archive_filename": "attr-2.6.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "0db32b421f67000950f7b55b531291ce8c13985c5444425b22dce94d485daed1",
+      "installed_metadata_sha256": "88e86d9b0bb7290a5bf945d486d0b4c6658ecd6d18f4f4c13e0f2dce30f3cfd8",
+      "name": "attr",
+      "version": "2.6.0-1"
+    },
+    {
+      "archive_filename": "audit-4.2.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "6b2f7e400336d05bf9a4b1b65015e4a7ac3a3842fbc67790913f9748513b964e",
+      "installed_metadata_sha256": "208e7d72d1b7aacbef7049f875494e4e4d957d8260a64be4d099c90ccfb550c8",
+      "name": "audit",
+      "version": "4.2.1-1"
+    },
+    {
+      "archive_filename": "autoconf-2.73-1-any.pkg.tar.zst",
+      "archive_sha256": "70be528019e04291fe52125c59121a99a3d39da8f1b89826f323ab81a92f492e",
+      "installed_metadata_sha256": "1687ff255443c1fef19be70e771443729a74fe691edc99e1179cfcb68525f016",
+      "name": "autoconf",
+      "version": "2.73-1"
+    },
+    {
+      "archive_filename": "automake-1.18.1-1-any.pkg.tar.zst",
+      "archive_sha256": "47416f72d0d579b391f9be5a55f5b3fa204a09097512b8179d6be5fa0527510a",
+      "installed_metadata_sha256": "895d8180b9d26202f50144a831e62cb214cff4bb959ce5e6675498b819d1cc8f",
+      "name": "automake",
+      "version": "1.18.1-1"
+    },
+    {
+      "archive_filename": "avahi-1:0.9rc5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "21e53fd19a25014c3242f7b43f538dd6033844692a863ace96a122e01eabf74b",
+      "installed_metadata_sha256": "2cbfcb9e70d9ea08bd377e2e21f692e3abfbbfb88fbfa23e29a2e14f7015cd78",
+      "name": "avahi",
+      "version": "1:0.9rc5-1"
+    },
+    {
+      "archive_filename": "base-3-3-any.pkg.tar.zst",
+      "archive_sha256": "e144d83f03b1a003d31bf9c83990bfe0a503bb7bd8721dee88d72c74606acd37",
+      "installed_metadata_sha256": "e31302ce5093955bf3e9431c774013bfc2592f124a1525f31a7a8597ce63697b",
+      "name": "base",
+      "version": "3-3"
+    },
+    {
+      "archive_filename": "base-devel-1-2-any.pkg.tar.zst",
+      "archive_sha256": "412a2effe23751e1c11b2fa68155f1a29ecea5d9dc8ea8cef4e87b7b429d3201",
+      "installed_metadata_sha256": "f65a97276ad97964cb0e2421863df15f5d8eb5746f1ceab9dada46e6f2eca344",
+      "name": "base-devel",
+      "version": "1-2"
+    },
+    {
+      "archive_filename": "bash-5.3.20-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "73a67dc509ed4a6dd64e4c7eca2895643f48083940f49431782ce78c4d4619e1",
+      "installed_metadata_sha256": "00ae5b7586cfb1de3817134c7f11faee55b5bdd83b51fcfdac8edbfb8202e888",
+      "name": "bash",
+      "version": "5.3.20-1"
+    },
+    {
+      "archive_filename": "binutils-2.47-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "d9508ad848fd6c31473ac0925cf8c3ec0d2a71bbbb5c7e39274186338a285660",
+      "installed_metadata_sha256": "9518eb3ba4c00fa1c23da9734eb3314188954ea4490fb680295ee853519460c2",
+      "name": "binutils",
+      "version": "2.47-4"
+    },
+    {
+      "archive_filename": "bison-3.8.2-8-x86_64.pkg.tar.zst",
+      "archive_sha256": "417f8e94f7088e6de69cd36d7927d82988266f298e8d4fed3166abb13e971941",
+      "installed_metadata_sha256": "c4c44c965b4f75d2c41288f6b56166b8ae815f269395cfe285786f9f25c134d7",
+      "name": "bison",
+      "version": "3.8.2-8"
+    },
+    {
+      "archive_filename": "boost-libs-1.92.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4b1392e578e46c1b23910d1c26956927d7e986d6afd5090be59045afb3c04f8d",
+      "installed_metadata_sha256": "8e5f73bd2405b0d20276bd41550b156854da1748d1684cfcbad74cb102aceca4",
+      "name": "boost-libs",
+      "version": "1.92.0-1"
+    },
+    {
+      "archive_filename": "brotli-1.2.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4a0c95d5967476d0efdaf76d344b61e3eee02cd7920a315e457f3fd96311b7ec",
+      "installed_metadata_sha256": "a559385d8c97f06df818d4b674923d6ccee05328a1ff5577be719682bb9966bb",
+      "name": "brotli",
+      "version": "1.2.0-1"
+    },
+    {
+      "archive_filename": "bubblewrap-0.13.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "f9c03933d561a10eccd712a881c59b17b69f6accf734208cdc58574b21e2108b",
+      "installed_metadata_sha256": "fe912d605ae7ff5105eee416f248c3c4e628b24f9fa7813f4dfdcebf05764d0e",
+      "name": "bubblewrap",
+      "version": "0.13.0-1"
+    },
+    {
+      "archive_filename": "bzip2-1.0.8-6-x86_64.pkg.tar.zst",
+      "archive_sha256": "8779003d659c441b952095c19907603a738c1366f25cc51be3fd139fa4e95748",
+      "installed_metadata_sha256": "cc8ac8c9a2fcc656e95a278ea4ba21a0c6dca883bef982d0329b178f05c0dee5",
+      "name": "bzip2",
+      "version": "1.0.8-6"
+    },
+    {
+      "archive_filename": "ca-certificates-20240618-1-any.pkg.tar.zst",
+      "archive_sha256": "982005bd5ecc998c05f561b57bb58b4457407779727e3c3d59e926d34a8b0712",
+      "installed_metadata_sha256": "bfabaa9ed112658175c91d2fa47d2207faa585d12766cf90d240e2d4bdabbc75",
+      "name": "ca-certificates",
+      "version": "20240618-1"
+    },
+    {
+      "archive_filename": "ca-certificates-mozilla-3.129-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "74bf1959555f8b92dd01133796361c7200fa4fba066be312a5498f5a8f17be01",
+      "installed_metadata_sha256": "4a64401fad52c9fafedfa9884ab68ce8598786dfb7af477699a996c9302a2c95",
+      "name": "ca-certificates-mozilla",
+      "version": "3.129-1"
+    },
+    {
+      "archive_filename": "ca-certificates-utils-20240618-1-any.pkg.tar.zst",
+      "archive_sha256": "aabd5b2b7030716ccdd465d607e734e851fe4a01adf8293a3968fe22eb89ce9b",
+      "installed_metadata_sha256": "91344c82fcc5ac6b6e2b2f0d9f08c9b4becaa7323c3513c4030432de9d3b55c4",
+      "name": "ca-certificates-utils",
+      "version": "20240618-1"
+    },
+    {
+      "archive_filename": "cairo-1.18.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "280a524ba7dce88990aace1496abd742b000a7c98a5ec6abd054a4b19f2f4c96",
+      "installed_metadata_sha256": "f4519fd0022625994bcabf729f044f2c0787952a8be46d8944f249284850dda8",
+      "name": "cairo",
+      "version": "1.18.4-1"
+    },
+    {
+      "archive_filename": "capstone-5.0.9-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "76fc16318206289010c1be7977c94d3ee0b48408d5fe3e558c05615a703aa1f5",
+      "installed_metadata_sha256": "72d1672db172d43e13e0ba9ad6175447b0acba4ad8c80bed0a33720689cda6ab",
+      "name": "capstone",
+      "version": "5.0.9-1"
+    },
+    {
+      "archive_filename": "coreutils-9.11-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "8d6668fba51085e680b1510f16ff43d32fbfdd068e78b2000783a4dab1c15513",
+      "installed_metadata_sha256": "830bf5d2b81e57385f99a606ee914855dfc0ad32e301901e6b7170c4a839bfb5",
+      "name": "coreutils",
+      "version": "9.11-2"
+    },
+    {
+      "archive_filename": "cpio-2.15-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "ba1197b73ee8ceaeeb9c1edff84db6550827f94eede50d04b330edcc27b3933c",
+      "installed_metadata_sha256": "41d45d39b653c93c3f2b1d3ca15b719c2f891d16b09502a79933959dccca3e6e",
+      "name": "cpio",
+      "version": "2.15-3"
+    },
+    {
+      "archive_filename": "cryptsetup-2.8.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "322f0e79a7d659d5e645e96cad3d30966f7dd5476f984f96b50a4f4cea274640",
+      "installed_metadata_sha256": "f4aebe4bbcf1c0d6029bda0f24feb019a9ef86b4ec7b234d82a88313ed372ec0",
+      "name": "cryptsetup",
+      "version": "2.8.8-1"
+    },
+    {
+      "archive_filename": "curl-8.22.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "60b5c0ccc169cf1e36c95a5b2cab79d73c1490715e6b122828a9590fd2fcfc1c",
+      "installed_metadata_sha256": "b8dc8c4b4f9191be5eb5159b99b6d0c9b34e8145574a23725c9f512c55081e28",
+      "name": "curl",
+      "version": "8.22.0-1"
+    },
+    {
+      "archive_filename": "dav1d-1.5.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "cf991c63dc289cbe61f7f5d0fd395be2dd75ebda2bd2a4e886b2cd11b8f2795d",
+      "installed_metadata_sha256": "9bf3b9e070097e290f37dc67bda8325dc65823bb5481381b15909cf6376922b8",
+      "name": "dav1d",
+      "version": "1.5.4-1"
+    },
+    {
+      "archive_filename": "db5.3-5.3.28-7-x86_64.pkg.tar.zst",
+      "archive_sha256": "abac3474e766fa8a36fcae945f5e8c8e818665fc41a56daff92db81cd176d389",
+      "installed_metadata_sha256": "b2ce37f0a78ff6fea8f885025a5debbebffd52564a12c5fad60fcaac636a1d48",
+      "name": "db5.3",
+      "version": "5.3.28-7"
+    },
+    {
+      "archive_filename": "dbus-1.16.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "740fb8d02f6a5798984f17bf09c4f9f62f42a8339499c283867d9c35cda0d8af",
+      "installed_metadata_sha256": "444c1480e3da0f819fec1dae2ba535301e1375531a4f9e64ed2046433f4cd85c",
+      "name": "dbus",
+      "version": "1.16.2-1"
+    },
+    {
+      "archive_filename": "dbus-broker-37-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "c3a915bb57188e6a43b9df25c0bf11f87528bc20ac50718b1772ce917c6d6117",
+      "installed_metadata_sha256": "a241ec545302394f40a2221988182222f244f4e3eed5627842ea976019a1af07",
+      "name": "dbus-broker",
+      "version": "37-3"
+    },
+    {
+      "archive_filename": "dbus-broker-units-37-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "f3f73e7c8169f54e3e5447d266917ae7454bd984fc0ede0f85e2ca60e21d97df",
+      "installed_metadata_sha256": "cae6cb88257b142030e77434a7f5dcc7bf032b6871261b30a57094b5360c498b",
+      "name": "dbus-broker-units",
+      "version": "37-3"
+    },
+    {
+      "archive_filename": "dbus-units-37-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "b3c4dee19391724893993ed993522846368bb38257daae4182de980255a995cc",
+      "installed_metadata_sha256": "7ebb88d3e5aefe03d380d6a0227e41a1a2b41f7403aef7c63bfbd77d75effda5",
+      "name": "dbus-units",
+      "version": "37-3"
+    },
+    {
+      "archive_filename": "dconf-0.49.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "6464869f8fcef78b4908e94c8a37a3eaf6f12be773ebaae6ada4461873ca7fbc",
+      "installed_metadata_sha256": "09c356c10c9a76ca32877e41ca16485c8e1e06481739cedae924ccafb9e12871",
+      "name": "dconf",
+      "version": "0.49.0-1"
+    },
+    {
+      "archive_filename": "debugedit-5.3-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "984e5914a6f2a456dff38518e68a67826948454a846b4047222e25a1d721a157",
+      "installed_metadata_sha256": "7e95c0a2e5b79755382965644f0bdeb738152a7ef83091b8d6c5fd4f47b49325",
+      "name": "debugedit",
+      "version": "5.3-2"
+    },
+    {
+      "archive_filename": "default-cursors-3-1-any.pkg.tar.zst",
+      "archive_sha256": "ae52028372c3b2f66547baab41f1614b25472489d927b1a50b596bb8df7c056e",
+      "installed_metadata_sha256": "2df71f28c2cd93f9550abf70a1792a9a2ba49c67ce208534da51ce73652d0268",
+      "name": "default-cursors",
+      "version": "3-1"
+    },
+    {
+      "archive_filename": "desktop-file-utils-0.28-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "cc525a69b6901318f360fae249986e62f233c0320c61274f2bad44449e0c8e44",
+      "installed_metadata_sha256": "9c4cee5dc5fbc65d9506d62fafcc6a050f608f07173226e74a213b6088e32026",
+      "name": "desktop-file-utils",
+      "version": "0.28-1"
+    },
+    {
+      "archive_filename": "device-mapper-2.03.42-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "823b3ae9d616defbd61dbc7cf92f489b996ce520de54a2bbea8ced0918c069c3",
+      "installed_metadata_sha256": "e1fce75a3e6aa705b0a9b0e5aa1211a7b91ac5a38ca8a12db9615381b48bcada",
+      "name": "device-mapper",
+      "version": "2.03.42-1"
+    },
+    {
+      "archive_filename": "diffutils-3.12-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "53830e09d46ceccde48a0fc1dcee026902e2a639a1b8a5e2a091d2a9d90b6967",
+      "installed_metadata_sha256": "7baf8a3f3b8b639cb112a6595d1a82122f641c21b37dbc7b4b5c7e5d2913bbd7",
+      "name": "diffutils",
+      "version": "3.12-2"
+    },
+    {
+      "archive_filename": "dosfstools-4.2-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "03a7d8bd939a80418d9744afad00c22b91c4b411bdf9662744647c383a0ec503",
+      "installed_metadata_sha256": "4b2b757ad4d0e580872ae2b31d483bb1f0f02da78996d51c4b73d48d0ce57fed",
+      "name": "dosfstools",
+      "version": "4.2-5"
+    },
+    {
+      "archive_filename": "dtc-1:1.8.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "c377d325b42c4250102615e779cdeb67816a176cd0c55c018f7c81920057eb43",
+      "installed_metadata_sha256": "bd940dca79263dc9d34b0176818a750f7223428c9e2586a1f34a968960f6abe8",
+      "name": "dtc",
+      "version": "1:1.8.1-1"
+    },
+    {
+      "archive_filename": "duktape-2.7.0-7-x86_64.pkg.tar.zst",
+      "archive_sha256": "92452979e8cc6f34558ee4d9c3f34f8b7e0d7a8ebff94296b68c7926f00895cd",
+      "installed_metadata_sha256": "edcd5f57a73a1610e5c80bdefc415be1c910e9f72f3d051c783ccc4a47096c05",
+      "name": "duktape",
+      "version": "2.7.0-7"
+    },
+    {
+      "archive_filename": "e2fsprogs-1.47.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a78971bbbe0ae89d15a0cbbc952e64462edc5a6f991c1bb9cefd0539ca548bd4",
+      "installed_metadata_sha256": "a08f08757a97896ff98c2067f1c0e2f338eef52202c8e5aaa58d44c057b1c2da",
+      "name": "e2fsprogs",
+      "version": "1.47.4-1"
+    },
+    {
+      "archive_filename": "edk2-ovmf-202608-1-any.pkg.tar.zst",
+      "archive_sha256": "bee34c6036ebd0e96562b7330d2d3ddf75e240cfc44a6d506a5ccb6390eafb91",
+      "installed_metadata_sha256": "472fcfdd5a56d2a0999a3394eef675709b1ab3f8d09a1718fac27f098ec1f9ed",
+      "name": "edk2-ovmf",
+      "version": "202608-1"
+    },
+    {
+      "archive_filename": "elfutils-0.196-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "e62e30022561c2465e6c6bb497522d6e269f2f620379a1eb59c2c03e4c14ef7d",
+      "installed_metadata_sha256": "d1466afe901cb71b6bcf02940fa578d50ebbf8800e67a39684ea34312321cbf0",
+      "name": "elfutils",
+      "version": "0.196-1"
+    },
+    {
+      "archive_filename": "erofs-utils-1.9.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8074e3ce7b21cf7ffb625e5b970a1706e589187cd8a6b17f2c453c94e667fcd4",
+      "installed_metadata_sha256": "044165cfedb4ab0f8cfb32e2735a67c1e90f691dca9bac91ca35b636ba0c7194",
+      "name": "erofs-utils",
+      "version": "1.9.4-1"
+    },
+    {
+      "archive_filename": "expat-2.8.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "25b7b51074df3c851b315a116e3a7a30a5d37b63cbbbc6e18e3a6563ba4e3f27",
+      "installed_metadata_sha256": "d2040b20c8c8d83c3a6b95a1a445ac88637160516054c0e0af03c4c0d8863c77",
+      "name": "expat",
+      "version": "2.8.5-1"
+    },
+    {
+      "archive_filename": "fakeroot-1:1.37.2-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "701b3f060240ce9392613a4dcb132589f1e1d8251b159074d8dbca3cfc032f22",
+      "installed_metadata_sha256": "b33eb99094da17597d9576cb87edf6f48f25a3472644a1ef8895863de892f8a5",
+      "name": "fakeroot",
+      "version": "1:1.37.2-3"
+    },
+    {
+      "archive_filename": "file-5.48-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "b77fe84e1dda2f32fcd11a004347c0a0c6bb9806376533c78abd78b4ea779af2",
+      "installed_metadata_sha256": "128138e6b2c8cb8572163bad2d9c9620e4f966703837a4e9fd8694192766fd28",
+      "name": "file",
+      "version": "5.48-1"
+    },
+    {
+      "archive_filename": "filesystem-2025.10.12-1-any.pkg.tar.zst",
+      "archive_sha256": "6b6c3fee7432204840d3b6afc9bc1a68c28f591a47fb220071715c40cca956df",
+      "installed_metadata_sha256": "f43295f608ef88ce1278d56f1452a1879401852af61aadcbe0fd0adeb40574ff",
+      "name": "filesystem",
+      "version": "2025.10.12-1"
+    },
+    {
+      "archive_filename": "findutils-4.11.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "76ac56a7f03039d163306701e5c02777b9b7170ad5388e66e46c363dd2792edf",
+      "installed_metadata_sha256": "47d933b4aa31b48279535627a2a6cd09ca89c9a00668daa98f8ad0ace26709a8",
+      "name": "findutils",
+      "version": "4.11.0-1"
+    },
+    {
+      "archive_filename": "flac-1.5.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7c8dce6bde402b9d243fd240847722a57b94df1dbf53e0cabc9119219dd04735",
+      "installed_metadata_sha256": "54070c1fcb4aaefee550a72de55b62f34be4684194a79322b4410eaf59b32c5c",
+      "name": "flac",
+      "version": "1.5.0-1"
+    },
+    {
+      "archive_filename": "flex-2.6.4-6-x86_64.pkg.tar.zst",
+      "archive_sha256": "2a4479da79f8f50c940c4bcc7b5c5945081af3f6d8ebbec802d5118800a184ae",
+      "installed_metadata_sha256": "002e0cdd0777f61904883c75f2ec263ffdeeabd237f4df7901cfccfdc077419b",
+      "name": "flex",
+      "version": "2.6.4-6"
+    },
+    {
+      "archive_filename": "fontconfig-2:2.18.3-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "c3d961568e10d0bc035b52554333535d31853310b9b7936eedf5d026425d3adf",
+      "installed_metadata_sha256": "023b7c908a9b6fafc29e80829ef4e10e9e3cbacc1e53116b54fd8bc1ce8180c9",
+      "name": "fontconfig",
+      "version": "2:2.18.3-2"
+    },
+    {
+      "archive_filename": "freeglut-3.8.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "654537d5b3652fb115b018fcb971074929cf9e5101279c3e16bfd296052334ee",
+      "installed_metadata_sha256": "fe0dfdb26941785343fb3fca537cddfa13b0ee17ebeacd4ae0e38e32772b9c52",
+      "name": "freeglut",
+      "version": "3.8.0-1"
+    },
+    {
+      "archive_filename": "freetype2-2.14.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "fcaa410420dea42779d02aa76f1cc95d8430bdc52071ac6219d33306899b8655",
+      "installed_metadata_sha256": "1df29f144b0507d0ea8ffe00ead8191dbfd639469900a006ff2297db8d0e1fa0",
+      "name": "freetype2",
+      "version": "2.14.3-1"
+    },
+    {
+      "archive_filename": "fribidi-1.0.16-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "7146e87f3f68db302ca0e8d507e80f1f9881a05bb00e54bc762c507883c05803",
+      "installed_metadata_sha256": "f06d4dd8e1d83bc0b47860bb47d8bc5950e1bcf1b556c4c96d78e323b2ce74ff",
+      "name": "fribidi",
+      "version": "1.0.16-2"
+    },
+    {
+      "archive_filename": "fuse-common-3.18.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "6948976906ea830ab210401402ab849e8b5211dd34952e82a92e28a9db3a7389",
+      "installed_metadata_sha256": "5cf5601b1474b35d30137e210ecc5f52fa607094f271a27cfea85ee737e44f4b",
+      "name": "fuse-common",
+      "version": "3.18.3-1"
+    },
+    {
+      "archive_filename": "fuse3-3.18.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7171289bad5b88b01b2a2737ecc2a4b0a334a2fc045b6d74c9af57aa863c9547",
+      "installed_metadata_sha256": "f6416db9d855747b3cd4581cdf54e2242b9d313a502677fb0a420fcf6f3cc590",
+      "name": "fuse3",
+      "version": "3.18.3-1"
+    },
+    {
+      "archive_filename": "gawk-5.4.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "875761229b80b29078cd1fafc35a07add9ac4c2dbb9a429bd0b72ddcc14a31bd",
+      "installed_metadata_sha256": "1f59d076a56b7a47e945d69d2f10bc4d1378c22f674d31a8819fc119d5c1dda0",
+      "name": "gawk",
+      "version": "5.4.1-1"
+    },
+    {
+      "archive_filename": "gc-8.2.12-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "f81f6053b8986150529ad125827f00cc8f7652f827cea34fe3f0e97ce078434e",
+      "installed_metadata_sha256": "207a7d9b3f3365117f04b9f96ce29c6a330406856474efdeb100bc54eef827b0",
+      "name": "gc",
+      "version": "8.2.12-1"
+    },
+    {
+      "archive_filename": "gcc-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "1d79371ccf3138e3c172dd83b51560687b65ab824c1ad7e9cb41b7857ed9c55f",
+      "installed_metadata_sha256": "75b6abf180c3e61afc9952a9c0b79e77e22ee8471b968f249bc028b9373957e2",
+      "name": "gcc",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "gcc-libs-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "dbeca7c4844e3112de98ba95f7c2b2618f4dd2b9c693c34076b7ba51ddf4611e",
+      "installed_metadata_sha256": "14ae868f31f3254cdd86a2c182ad9cadbaa48c66fcfacab98abb48be83f60ff2",
+      "name": "gcc-libs",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "gdb-17.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "df022fa98d48a109c09caa8bd9a65bec3c49e39cc8b3e8d5c37dc69fcbb11948",
+      "installed_metadata_sha256": "946ed77a1e3b1dbe412e57a81f82c02e840dc7bc534fdb3856bec82a853a5bdf",
+      "name": "gdb",
+      "version": "17.2-1"
+    },
+    {
+      "archive_filename": "gdb-common-17.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "bf7e03b3ee643a9bb5a6bf7641328b91273e720ab5a29fdcac972d68d6db3e1c",
+      "installed_metadata_sha256": "64d88de9e0721d42affd92b3696dad6c902467d92481b074926c85b0081629ba",
+      "name": "gdb-common",
+      "version": "17.2-1"
+    },
+    {
+      "archive_filename": "gdbm-1.26-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "7bb8768fc7f617c580ae4c7902aed5413984a8374915da42beeecbb085c2a29e",
+      "installed_metadata_sha256": "b655c9f84e308999107b018b9dbf6960d509efabf6f2327bf3ced6670dc3ae65",
+      "name": "gdbm",
+      "version": "1.26-2"
+    },
+    {
+      "archive_filename": "gdk-pixbuf2-2.44.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "2e145c45dc517c8c29e4014aa08098c739e5e8509cb9a7afc5cfcc301d951839",
+      "installed_metadata_sha256": "58056b9a501bd4c4776c955d07e027cc244046ca01f6a354df572147245f63b5",
+      "name": "gdk-pixbuf2",
+      "version": "2.44.7-1"
+    },
+    {
+      "archive_filename": "gettext-1.0-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "bf1bd9d2f096f1446a645a89a26663371ab6ef78a8ed4b1c3f006b60569a2e28",
+      "installed_metadata_sha256": "b597f96207eb44a47559a240d1adc991b862c042d999be74b692995631f82912",
+      "name": "gettext",
+      "version": "1.0-2"
+    },
+    {
+      "archive_filename": "gfxstream-0.1.2-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "91ce9302d467f7656b21457b57f9275db3f52a4c38bd909181d5d41f3c406993",
+      "installed_metadata_sha256": "151904e718cf8b163702bb3b9f9465b39712fa3d6e2689bc298a740a7a0b7b31",
+      "name": "gfxstream",
+      "version": "0.1.2-2"
+    },
+    {
+      "archive_filename": "ghc-libs-9.6.6-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "801af7fcd42dfd6915450c585a3af1362dd5105398a0a1509e73957b643f65ab",
+      "installed_metadata_sha256": "52950ebf349fe1c062cf2fed91ad91205bd6c2ea56a30e0ee84d1980e2d5c974",
+      "name": "ghc-libs",
+      "version": "9.6.6-1"
+    },
+    {
+      "archive_filename": "giflib-6.1.3-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "88c0509823519642af0a3418db529dc3e8130d1d204dc64c071c506fdc7e6ed7",
+      "installed_metadata_sha256": "6c6155c2478b0cb28893c4d706e67019faa5e4d6059de024603b6b82c143f445",
+      "name": "giflib",
+      "version": "6.1.3-2"
+    },
+    {
+      "archive_filename": "git-2.55.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "fbb24f455cb1de1c004a76b5a4dab92e4a9137764fbc3bc46afe13b7a38814fe",
+      "installed_metadata_sha256": "f21d0571d3f1a94afdcd8028879b107d79dd2944bbb258cb8b06a169dd8cd7fa",
+      "name": "git",
+      "version": "2.55.0-1"
+    },
+    {
+      "archive_filename": "glib-networking-1:2.80.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "b44e1fda4d0b447f51bf54f10d4c37bf828a52d25196b2bc82339e5195cffc5f",
+      "installed_metadata_sha256": "9c92277fdb7cbe7df5b4ee531c8b1725489385206df3de22384bdcc1a9d51e8a",
+      "name": "glib-networking",
+      "version": "1:2.80.1-1"
+    },
+    {
+      "archive_filename": "glib2-2.88.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "9569884e1f670d46e40ea0b8ca4ea2a1a29689be297fed1390bc5af9a03967d2",
+      "installed_metadata_sha256": "db68065c6a22c3fbac2ca88fd52d88df549bbe654a9127a80b3abe6d658e8a0f",
+      "name": "glib2",
+      "version": "2.88.3-1"
+    },
+    {
+      "archive_filename": "glibc-2.44+r24+g16be1518495f-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "5db2283f5b46b6114d06b4bc71fcf8ede5f1a04fcccb4d307048fcdc4e501d93",
+      "installed_metadata_sha256": "438e0447fd02d872bb5a5890aa06db20afa2a786ea4a5b7c22429f9b65503431",
+      "name": "glibc",
+      "version": "2.44+r24+g16be1518495f-1"
+    },
+    {
+      "archive_filename": "glm-1.0.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "5749f88b1f6e325253a26e3e3775ce533e391a284a0283991a68d5dc6f158507",
+      "installed_metadata_sha256": "6ac0571f737f22b313850963827c847eace5b4c02c9c8d08ba7a3aa0c86b215e",
+      "name": "glm",
+      "version": "1.0.3-1"
+    },
+    {
+      "archive_filename": "glu-9.0.3-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "a981608b5a1c7d6cdee0e71385035dc45ada61dc1221429adde16909e17222e6",
+      "installed_metadata_sha256": "c98659eb503a292242d1e2ce0ad59fb0d5fe35c8eff78d84c3649cfc07fd8a43",
+      "name": "glu",
+      "version": "9.0.3-3"
+    },
+    {
+      "archive_filename": "glycin-2.1.5-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "2a8e7601791532336b1032dad8240347541a60d51f873f197264d75c4c2559d4",
+      "installed_metadata_sha256": "c5b362297c991ef43cb545bffb35bc559f3e08657d4975005cdbe5d74b0b08b2",
+      "name": "glycin",
+      "version": "2.1.5-2"
+    },
+    {
+      "archive_filename": "gmp-6.3.0-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "2969061e117d2a8c19d89427b0b88e1c956a6269bc0602087d41aecd15097064",
+      "installed_metadata_sha256": "3168d819b2ceb92da2f87029722be4afc417cd591d889ef85812f16b41698a13",
+      "name": "gmp",
+      "version": "6.3.0-3"
+    },
+    {
+      "archive_filename": "gnulib-l10n-20241231-1-any.pkg.tar.zst",
+      "archive_sha256": "86e6ea818cb331171018bef6e4486c1176064655e0d459bcecc9cc9c2bb74a2c",
+      "installed_metadata_sha256": "42f7def6d9911c0c6b3191c0e18bd3866e10306d487993198220bc8f0b27a6ff",
+      "name": "gnulib-l10n",
+      "version": "20241231-1"
+    },
+    {
+      "archive_filename": "gnupg-2.4.9-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "c758ccf2d09d85b033b30828800844609f47016ee93cd790315dea3818a95cc5",
+      "installed_metadata_sha256": "867edf018205fe39e8995b9f91827509251c29e6f7edc2c6a3a0e204649240ef",
+      "name": "gnupg",
+      "version": "2.4.9-3"
+    },
+    {
+      "archive_filename": "gnutls-3.8.13-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "a61d5d908aa83ad2ed6ddffda70ae2ddb5a81852dddcbf68ec42c1744e8a8ee9",
+      "installed_metadata_sha256": "c3378a1671974bbc50ba0c87425b9b7d8dff651482abde706b9662f198889100",
+      "name": "gnutls",
+      "version": "3.8.13-3"
+    },
+    {
+      "archive_filename": "gperftools-2.18.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "10fbb54cbef1e0d0271670b4b94feba17dc58d9a8b40269e0ab6f22a0b854665",
+      "installed_metadata_sha256": "a897e41e069799b1b00908d2fa25f48b4ef9415b34a9b53431ff4d5722235ba0",
+      "name": "gperftools",
+      "version": "2.18.1-1"
+    },
+    {
+      "archive_filename": "gpgme-2.2.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "d720cb9773612a993581e0478724ac0249087236b3e899d7dadc50ee143b279b",
+      "installed_metadata_sha256": "3d61ccf59531205c7620e5c88a9757a42cdba016691a320301c02fddc26d2b7e",
+      "name": "gpgme",
+      "version": "2.2.0-1"
+    },
+    {
+      "archive_filename": "graphite-1:1.3.15-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "b3bd9b30b0715c36b5cfd997ca35ada9c559b1f89f3c386cae7847714c7a5ea2",
+      "installed_metadata_sha256": "76eae7f797b4a539590a0ab5a8e00ef18ae08ece398fcf3898ea3d570c2bcb3d",
+      "name": "graphite",
+      "version": "1:1.3.15-1"
+    },
+    {
+      "archive_filename": "grep-3.12-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "9dd8a5dad99e8d388b1fb1406919de218d30c7e49924f615a12d3f2deaaecfe2",
+      "installed_metadata_sha256": "5c466566a86ab96b092c0591ce04ed74f71329faa9f29eff1c0c386c747132c6",
+      "name": "grep",
+      "version": "3.12-2"
+    },
+    {
+      "archive_filename": "groff-1.24.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "eadef618a9e22a72c657efeb923e8f6991161842d4ac30540dc5d4f29ae57228",
+      "installed_metadata_sha256": "a70067485e14c4c8e29ebf9438952168b288440fe4bf8e7cd748f85f0edba6b6",
+      "name": "groff",
+      "version": "1.24.1-1"
+    },
+    {
+      "archive_filename": "gsettings-desktop-schemas-50.1-1-any.pkg.tar.zst",
+      "archive_sha256": "3fbd6449386bfc8c56425a256a0eb5e87d3107b57faf105bbfa246e442eaaaef",
+      "installed_metadata_sha256": "478fde01d6c9078e999d2183576fe747dd5d81cfc953b0d39f465a8e04036de3",
+      "name": "gsettings-desktop-schemas",
+      "version": "50.1-1"
+    },
+    {
+      "archive_filename": "gsettings-system-schemas-50.1-1-any.pkg.tar.zst",
+      "archive_sha256": "a3984fe31355827ea1bbf6aa92de0c9257ce310693ffa3dc1395ce29588abf38",
+      "installed_metadata_sha256": "69c47e8f453d1d8b860309113f7f0d9d513dfbc81be2e982b40ef90f49f52107",
+      "name": "gsettings-system-schemas",
+      "version": "50.1-1"
+    },
+    {
+      "archive_filename": "gtest-1.18.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a056289240aebf743810c69a9dc3a8503edf9ae98b5be167fddd66598236ebe5",
+      "installed_metadata_sha256": "b870f02269b9733635d4404c0248e3db44a79308706007a807b97dcfe1fd5ba5",
+      "name": "gtest",
+      "version": "1.18.0-1"
+    },
+    {
+      "archive_filename": "gtk-update-icon-cache-1:4.22.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7c6e08f521ef559534fae1bd20a4a465823a8ad37f0fcddf00578225554e7000",
+      "installed_metadata_sha256": "f028c1e486792ef46999e39d30fb5c82cde4c08b71405902f374f0dd10ed64c2",
+      "name": "gtk-update-icon-cache",
+      "version": "1:4.22.5-1"
+    },
+    {
+      "archive_filename": "gtk3-1:3.24.52-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "28cab162b5f20621011d5c69112222d0f47ff2f7c99100bb8d35b99a1329aee7",
+      "installed_metadata_sha256": "b2f3e182f106b78f0e10f98c84f32476988b6e9c12c40f973614dbed8a501e40",
+      "name": "gtk3",
+      "version": "1:3.24.52-1"
+    },
+    {
+      "archive_filename": "guile-3.0.11-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "dbc4c775e0474a5ac8784aab95a77f6fd23ebc930abea34c7a5e0f83dd00873d",
+      "installed_metadata_sha256": "d43af22fb5594121aefce639ed8efb0493947244cb7848fa28da77ef738d3d00",
+      "name": "guile",
+      "version": "3.0.11-1"
+    },
+    {
+      "archive_filename": "gzip-1.15-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4a2d1fd90458bf9751b9aca418f8e8ae6d570cb4a406bd7dc646ad7162a720fa",
+      "installed_metadata_sha256": "b67a02a22b710fec1d3e4d2dc90f1199bd5c7e39f148055228549ca340ca7389",
+      "name": "gzip",
+      "version": "1.15-1"
+    },
+    {
+      "archive_filename": "harfbuzz-14.5.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "0d34449b6875e6402615785543054b850d9b91cde755db0fd3a1681faf37d274",
+      "installed_metadata_sha256": "be3a486fe39da0b43cdd4930bcc35043cf3e58148774a8dfd3792ef7a08acbfc",
+      "name": "harfbuzz",
+      "version": "14.5.0-1"
+    },
+    {
+      "archive_filename": "haskell-aeson-2.2.3.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "57958d69dc987b4ff17556b1347f9a4a67fb9bc47d0aeec82a04af58d0d59507",
+      "installed_metadata_sha256": "9ac16c628afe3748dc042d5256404cc1b389164dcd73b3fef40c79f37d7a528c",
+      "name": "haskell-aeson",
+      "version": "2.2.3.0-1"
+    },
+    {
+      "archive_filename": "haskell-ansi-terminal-1.1-98-x86_64.pkg.tar.zst",
+      "archive_sha256": "00bb9164f4560aeecc770a2797d4a3f2d76820c1ede346287e93e69fcc21a490",
+      "installed_metadata_sha256": "e89f6410f7bf8026b5c601daef996ad2c635b6171103ad8fdf04b2d2071cadf0",
+      "name": "haskell-ansi-terminal",
+      "version": "1.1-98"
+    },
+    {
+      "archive_filename": "haskell-ansi-terminal-types-1.1-99-x86_64.pkg.tar.zst",
+      "archive_sha256": "f6b8f8be832820b893c692da9393eb881ea4532fbdbd8a1018ce82a0fc185411",
+      "installed_metadata_sha256": "c9c5537a80138821b6d85fe91631316b526e226f4ed5e566b4f1b97f39586487",
+      "name": "haskell-ansi-terminal-types",
+      "version": "1.1-99"
+    },
+    {
+      "archive_filename": "haskell-assoc-1.1.1-41-x86_64.pkg.tar.zst",
+      "archive_sha256": "5a486ac6001f7237250728972183bcb3df218ddec690aedeeec11d05c438c2ee",
+      "installed_metadata_sha256": "631dc9eaeeefcf2187f3782ce482614b429e2edb4a51ab743a9a416b56c4b8c5",
+      "name": "haskell-assoc",
+      "version": "1.1.1-41"
+    },
+    {
+      "archive_filename": "haskell-base-orphans-0.9.4-41-x86_64.pkg.tar.zst",
+      "archive_sha256": "2e3abbb01102466325a2c28b9320d6f19518861fdff5c0e04478b944484a156c",
+      "installed_metadata_sha256": "ec7acabcd84edc7ce526387c79c1a036f338f3608bd63dcda9301b899d70b4a8",
+      "name": "haskell-base-orphans",
+      "version": "0.9.4-41"
+    },
+    {
+      "archive_filename": "haskell-bifunctors-5.6.3-46-x86_64.pkg.tar.zst",
+      "archive_sha256": "45d3715f9e79f83fc96cc315b277a575bc25feab4238f0f9c959d4f13a72f041",
+      "installed_metadata_sha256": "f2874472da4b231477aa7b3d05a88862732276714657988e99f4244e0df5ed3c",
+      "name": "haskell-bifunctors",
+      "version": "5.6.3-46"
+    },
+    {
+      "archive_filename": "haskell-character-ps-0.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "72f46b3aa395dbea63d3e55a414dc83bb48beb5c699163e6034b03e47fb1ec3c",
+      "installed_metadata_sha256": "d1556c1bc26f6f768e50582f2769282e2b313fa59507134ebe867393f4e7d044",
+      "name": "haskell-character-ps",
+      "version": "0.1-1"
+    },
+    {
+      "archive_filename": "haskell-colour-2.3.7-65-x86_64.pkg.tar.zst",
+      "archive_sha256": "e0551573b9daff0c2ec0c941db1765f21c7b9d99b2eb356acd81741770a73381",
+      "installed_metadata_sha256": "07b2249ef39f4c31e690b3898b0916157d397413f1491f3c7b1452fedbbe342f",
+      "name": "haskell-colour",
+      "version": "2.3.7-65"
+    },
+    {
+      "archive_filename": "haskell-comonad-5.0.10-34-x86_64.pkg.tar.zst",
+      "archive_sha256": "f41b1ca11d8d9a3f7d4fa8ccf70a083a0f6361d1e30b394bc032f07530387fb5",
+      "installed_metadata_sha256": "4f787e68fa51c4fbbbd785c195257f6e1b4e6b331c38ede7bcaf28caf54cd6e6",
+      "name": "haskell-comonad",
+      "version": "5.0.10-34"
+    },
+    {
+      "archive_filename": "haskell-contravariant-1.5.6-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "045862383c6e3e568624fad27a485ec4e6dbdbb20bf4d2634fb47b35a6d25190",
+      "installed_metadata_sha256": "e80bd667ef06d61818ca65fd5de96a23c3913111bfd62cd7b1a1ef2a2d8d79e2",
+      "name": "haskell-contravariant",
+      "version": "1.5.6-1"
+    },
+    {
+      "archive_filename": "haskell-data-fix-0.3.4-243-x86_64.pkg.tar.zst",
+      "archive_sha256": "b16e5110831ee4bd7470a725c91297c57c89b722aa0c003aebb381106e48f7c6",
+      "installed_metadata_sha256": "d45931674c55b87e1f93f4ed8fb929c18ea70412d9f830829fcab2b2451c320a",
+      "name": "haskell-data-fix",
+      "version": "0.3.4-243"
+    },
+    {
+      "archive_filename": "haskell-diff-1.0-16-x86_64.pkg.tar.zst",
+      "archive_sha256": "e946b7747f69cbecdb2767ea984152dd5a45938cc81beace41ff29a35adb02cb",
+      "installed_metadata_sha256": "d3e9a67f3561a55300a435c8e5a6eda23d899ea9f74beab48f198659f22d868b",
+      "name": "haskell-diff",
+      "version": "1.0-16"
+    },
+    {
+      "archive_filename": "haskell-distributive-0.6.3-49-x86_64.pkg.tar.zst",
+      "archive_sha256": "aeafc233754d1f08e8914bd6770566a2fee8a2a0de36f8819928455b986826ae",
+      "installed_metadata_sha256": "3c89585dfd75008ebceca91570b2e952868422c6cedca8c78d868014ff1f38b0",
+      "name": "haskell-distributive",
+      "version": "0.6.3-49"
+    },
+    {
+      "archive_filename": "haskell-dlist-1.0-465-x86_64.pkg.tar.zst",
+      "archive_sha256": "44958afa2d907e77cca6c66bed781b7d8aa9c911eb4acff5542be8b60ac2962d",
+      "installed_metadata_sha256": "88c72ee95dbd67696838d2f8423d91b0e402938af1ad04cf8cb7ea1681471cd6",
+      "name": "haskell-dlist",
+      "version": "1.0-465"
+    },
+    {
+      "archive_filename": "haskell-erf-2.0.0.0-27-x86_64.pkg.tar.zst",
+      "archive_sha256": "9a181879112f9139589ca68bfae81498dad1104c8cc0950806517475040af90e",
+      "installed_metadata_sha256": "b0ca47f15af22ed46ec3fe8a6eeb69e8a174491eaa1ba6f86f08cae06704fd1e",
+      "name": "haskell-erf",
+      "version": "2.0.0.0-27"
+    },
+    {
+      "archive_filename": "haskell-fgl-5.8.3.1-25-x86_64.pkg.tar.zst",
+      "archive_sha256": "8c59964ecf92ed8e1229e700ff5a5015e3a341b6234c7585383cd2c1c29f3fc6",
+      "installed_metadata_sha256": "2941bfadea3b639ddf5f5f5ca0a1241b2afd2e077f76719ecab45efd0cda6eb1",
+      "name": "haskell-fgl",
+      "version": "5.8.3.1-25"
+    },
+    {
+      "archive_filename": "haskell-generically-0.1.1-137-x86_64.pkg.tar.zst",
+      "archive_sha256": "2a477e4cfa91f55842e1228e5d0221df6135e4c353da49894383138846abcf7a",
+      "installed_metadata_sha256": "f966f4719b5769a19e9811e561cd99463241a2070fb34439b2a51eb774a28b46",
+      "name": "haskell-generically",
+      "version": "0.1.1-137"
+    },
+    {
+      "archive_filename": "haskell-hashable-1.4.7.0-122-x86_64.pkg.tar.zst",
+      "archive_sha256": "457e4b9cff1e7cb2837aacb2c910cb85dd822196c0ffa23edb8f53ec7d7f1805",
+      "installed_metadata_sha256": "fc2f4364a02973792aa54a3c01b19b3b09e4e4eba62612cf1a5fb2d72c308252",
+      "name": "haskell-hashable",
+      "version": "1.4.7.0-122"
+    },
+    {
+      "archive_filename": "haskell-indexed-traversable-0.1.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "d20216ff109d72161bad66d5a9ed1481234f32455e1f7ee3eb2153935e0bc9c6",
+      "installed_metadata_sha256": "e9e246a3da93dac6f4050e7ed3dc7105a0599e421625fad67782b74f55cff810",
+      "name": "haskell-indexed-traversable",
+      "version": "0.1.5-1"
+    },
+    {
+      "archive_filename": "haskell-indexed-traversable-instances-0.1.2.1-37-x86_64.pkg.tar.zst",
+      "archive_sha256": "9041cc36f9db51c14fca6ed80dd6fa938c4ab6c405f99efe227efb2518343f9c",
+      "installed_metadata_sha256": "7251240d82addcb1f0e68d7956234b1353f8719efe39c02c83fe06949a6b9a4f",
+      "name": "haskell-indexed-traversable-instances",
+      "version": "0.1.2.1-37"
+    },
+    {
+      "archive_filename": "haskell-integer-conversion-0.1.1-103-x86_64.pkg.tar.zst",
+      "archive_sha256": "d1bea7d07b13ef676dbf0c13d8aef9cb91631f2fd3166a5cd033edf2ae05e9e4",
+      "installed_metadata_sha256": "f41272ee7d8a29afffbcc3a0e350734e1c03bbba06672aa1547dd7df2786be47",
+      "name": "haskell-integer-conversion",
+      "version": "0.1.1-103"
+    },
+    {
+      "archive_filename": "haskell-integer-logarithms-1.0.4-242-x86_64.pkg.tar.zst",
+      "archive_sha256": "599e272061ef5980dac968b4570d6bbbf387dddb8cc9bf4836bae86e8b63c7e5",
+      "installed_metadata_sha256": "d0a4de1e4cb8d6f176008574ee0cca0635bd63bc5d97d47187b8241803c2801d",
+      "name": "haskell-integer-logarithms",
+      "version": "1.0.4-242"
+    },
+    {
+      "archive_filename": "haskell-network-uri-2.6.4.2-183-x86_64.pkg.tar.zst",
+      "archive_sha256": "58f3406e9bd3865d7a0ec215b4e6316715c037743beb53a35cf7b82349a768ce",
+      "installed_metadata_sha256": "8e1b8ac1d4859c6e224a1c8d7d9ca70bb6612ffa6bc899a778ca0b7e551fbf00",
+      "name": "haskell-network-uri",
+      "version": "2.6.4.2-183"
+    },
+    {
+      "archive_filename": "haskell-onetuple-0.4.3-20-x86_64.pkg.tar.zst",
+      "archive_sha256": "c585d73c4cf02b01fdb402423c61b153092ecd222f58966b6a394be2281b61e4",
+      "installed_metadata_sha256": "8624c5be5f0bc32bdc85f5ad200783e3e50e574d3ffaed89ba8cb55af00090c3",
+      "name": "haskell-onetuple",
+      "version": "0.4.3-20"
+    },
+    {
+      "archive_filename": "haskell-optparse-applicative-0.18.1.0-434-x86_64.pkg.tar.zst",
+      "archive_sha256": "7491b32ebb9f27221c5162635ec03889172f4a8cc430985c0ac81c8b4ea4f379",
+      "installed_metadata_sha256": "31da498a9479f10a10355c597cfbbdd1490149d4989220ea31f49f8e931487ab",
+      "name": "haskell-optparse-applicative",
+      "version": "0.18.1.0-434"
+    },
+    {
+      "archive_filename": "haskell-os-string-2.0.11-47-x86_64.pkg.tar.zst",
+      "archive_sha256": "999873ddd36e919ec5338b1ec054093a17a2a8a6683a4b00b8e696b4ba51da4b",
+      "installed_metadata_sha256": "e7f4927d39a2b62fc6e94602bcafe7bb1a0f2972f69f3a5b6643ea09957d460b",
+      "name": "haskell-os-string",
+      "version": "2.0.11-47"
+    },
+    {
+      "archive_filename": "haskell-prettyprinter-1.7.2-22-x86_64.pkg.tar.zst",
+      "archive_sha256": "b1370614678922b4467fe872e9d55395db491aefc705ba087572e9a61d5af38b",
+      "installed_metadata_sha256": "b27dc9e1e4046f0e7d410e6272def182c181a85bc8783ba67f541e4fa2dcc097",
+      "name": "haskell-prettyprinter",
+      "version": "1.7.2-22"
+    },
+    {
+      "archive_filename": "haskell-prettyprinter-ansi-terminal-1.1.4-98-x86_64.pkg.tar.zst",
+      "archive_sha256": "e4d61a73d88c344ccb4261ddce0512661691c279a80ab1a391a9e288f7719b26",
+      "installed_metadata_sha256": "aa415ad7b3c178311d48b711f4e7ad31067ad58799f710a6137597d319d4771d",
+      "name": "haskell-prettyprinter-ansi-terminal",
+      "version": "1.1.4-98"
+    },
+    {
+      "archive_filename": "haskell-primitive-0.9.1.0-211-x86_64.pkg.tar.zst",
+      "archive_sha256": "ba6c36bc4af50f92c5ffa868d48a74b8e86e7dac8c610c1480498db3e17abe0e",
+      "installed_metadata_sha256": "e30e8118b5429dba53ca7de850a266180fc7d1cbd7b7fa56430bbd80703c3890",
+      "name": "haskell-primitive",
+      "version": "0.9.1.0-211"
+    },
+    {
+      "archive_filename": "haskell-quickcheck-2.15.0.1-235-x86_64.pkg.tar.zst",
+      "archive_sha256": "f5862bcfa76f764215ca53e577bfe77c13c0246c1dcc82b1a567faaa4d8c3204",
+      "installed_metadata_sha256": "9ac8f78a8534b73c37873d5c02fb47c6e13619c9556b2c5f9f297035e330cd55",
+      "name": "haskell-quickcheck",
+      "version": "2.15.0.1-235"
+    },
+    {
+      "archive_filename": "haskell-random-1.2.1.3-322-x86_64.pkg.tar.zst",
+      "archive_sha256": "525d6067f4b57adc4ed08cad8eed0e1db1510f92521e4a1cab66f22620d2e904",
+      "installed_metadata_sha256": "dea6595236e46f7a95a8deaf1efe5ec191cfd3e85ed2814cdcf05b6e537b28d6",
+      "name": "haskell-random",
+      "version": "1.2.1.3-322"
+    },
+    {
+      "archive_filename": "haskell-regex-base-0.94.0.3-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "63840f50ddcdc443bb2e96faf638bba26292e020afd27f79ca3853903a9cac28",
+      "installed_metadata_sha256": "db1875eda41aee762852d269dcc93deee9ba3b4f411e9f97a2ef740007a35772",
+      "name": "haskell-regex-base",
+      "version": "0.94.0.3-3"
+    },
+    {
+      "archive_filename": "haskell-regex-tdfa-1.3.2.6-10-x86_64.pkg.tar.zst",
+      "archive_sha256": "6383d6e0f4a61a9616c9069674ec804e1f6ddfb8cc1661aca0d795899d1268cc",
+      "installed_metadata_sha256": "29ce2208d0920abc076401b3da5d7c1240ae8f7ef2a58e4584dc0eef576144bf",
+      "name": "haskell-regex-tdfa",
+      "version": "1.3.2.6-10"
+    },
+    {
+      "archive_filename": "haskell-scientific-0.3.8.1-131-x86_64.pkg.tar.zst",
+      "archive_sha256": "6039af0228d1193c0acd1eae3327441235d9a28eee2bfd266cf86dd76e7eea89",
+      "installed_metadata_sha256": "9918c6761cbb239ea95125b506fd386ae479dc6811551c17453ece6f695d9965",
+      "name": "haskell-scientific",
+      "version": "0.3.8.1-131"
+    },
+    {
+      "archive_filename": "haskell-semialign-1.3.1.1-31-x86_64.pkg.tar.zst",
+      "archive_sha256": "1d09c98e2dbc5c2ffc9ebe603729535c6f513bcb43b966bbc82c02166562c4ae",
+      "installed_metadata_sha256": "6a450a6b4f19520090940f341d9046e563635cba607fa6ae59afd7fba74cb990",
+      "name": "haskell-semialign",
+      "version": "1.3.1.1-31"
+    },
+    {
+      "archive_filename": "haskell-semigroupoids-6.0.2-52-x86_64.pkg.tar.zst",
+      "archive_sha256": "3ef48700c02bcaa7cc46463d2b1a14333b32f0244b7cb51427f04b6bc3513c47",
+      "installed_metadata_sha256": "97ca5fc31a51ecc137e106158004cd8643f4943ac7c2404a3b91bb3af000b5d3",
+      "name": "haskell-semigroupoids",
+      "version": "6.0.2-52"
+    },
+    {
+      "archive_filename": "haskell-splitmix-0.1.3.1-28-x86_64.pkg.tar.zst",
+      "archive_sha256": "f5913205a0769c0ae7dc0a954f67681404a24c47d0e225dd26adb1eee9b53452",
+      "installed_metadata_sha256": "10ff7e7e29b6a74dd0eaa0cb8643ad67513e2496852c301121222bb3e63e5043",
+      "name": "haskell-splitmix",
+      "version": "0.1.3.1-28"
+    },
+    {
+      "archive_filename": "haskell-statevar-1.2.2-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "502556ae7aad3d051d1ed2064e1707c2a1d36445b54ff2ecbbc997585b603492",
+      "installed_metadata_sha256": "1d5026fd1af51e9398f1ca8117e58a983e7b6748eb109110c876e1996dddfcfc",
+      "name": "haskell-statevar",
+      "version": "1.2.2-5"
+    },
+    {
+      "archive_filename": "haskell-strict-0.5.1-136-x86_64.pkg.tar.zst",
+      "archive_sha256": "da7c413fd42bb685fcf50b77d56dfa3668775d2f29e429c03cec884b8f9bdc5e",
+      "installed_metadata_sha256": "f71ec899f3f649f1659319f5446abc925e725d168bea683e2d06356b7493b57e",
+      "name": "haskell-strict",
+      "version": "0.5.1-136"
+    },
+    {
+      "archive_filename": "haskell-tagged-0.8.10-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "bf35efcb44829dfef79a3b06fa0898f7df54e9b7f71298b000021bef65ddc47c",
+      "installed_metadata_sha256": "eae7b2c7a9a3740ce01620f36382e7e8d2b05bd0503befc469468a831c3ab108",
+      "name": "haskell-tagged",
+      "version": "0.8.10-1"
+    },
+    {
+      "archive_filename": "haskell-tasty-1.5.4-25-x86_64.pkg.tar.zst",
+      "archive_sha256": "845c835c5e433caff80cf8e2927d7218dd76fcb61172ca3cc50c4c63c8bb1c9b",
+      "installed_metadata_sha256": "20ef32dc067ab6e4de36e3f38a562c22fcb5de4ddfbe3d04dcc7d30815fb862c",
+      "name": "haskell-tasty",
+      "version": "1.5.4-25"
+    },
+    {
+      "archive_filename": "haskell-text-iso8601-0.1.1.2-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "575af06059f0e5a9274cd0f9fb621bc6e8ec8e2c704987b17277b471014ed51a",
+      "installed_metadata_sha256": "9a1e62c730ddf2f43861a1c2700fb8d3c4fc6bc234929fe164c94a3488128b24",
+      "name": "haskell-text-iso8601",
+      "version": "0.1.1.2-5"
+    },
+    {
+      "archive_filename": "haskell-text-short-0.1.6.1-84-x86_64.pkg.tar.zst",
+      "archive_sha256": "58bffdab1628ac567fcae9aaefb9f225cc358f9439cc5847ca49cf9192d0fe66",
+      "installed_metadata_sha256": "a180cbc851cf254b491a28a169ef673da9e87a2b1f4383084ffc11845cb26f1b",
+      "name": "haskell-text-short",
+      "version": "0.1.6.1-84"
+    },
+    {
+      "archive_filename": "haskell-th-abstraction-0.6.0.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "f11c6d7ffc6181962b1913e3e4a8148ad75537ea1524fc2583093d11ed57a9ff",
+      "installed_metadata_sha256": "4d1e4e25de76c427db65145c4400d54f3c659680de264bc333ebcd49432dc09b",
+      "name": "haskell-th-abstraction",
+      "version": "0.6.0.0-1"
+    },
+    {
+      "archive_filename": "haskell-th-compat-0.1.7-46-x86_64.pkg.tar.zst",
+      "archive_sha256": "8b599b0a710460e5630bf2b1f96c32298d8f958d5f8025b4ed6e8a8fb7c01ace",
+      "installed_metadata_sha256": "0544ed7e6caa06a8c7de84d4576ed6b66e03a51c3d4d0661286e36e25dfd73f6",
+      "name": "haskell-th-compat",
+      "version": "0.1.7-46"
+    },
+    {
+      "archive_filename": "haskell-these-1.2.1-346-x86_64.pkg.tar.zst",
+      "archive_sha256": "e415d7bfcbbb725017f966107b6bc5577b60faffbbcc3aead4ee60f95b7c84cd",
+      "installed_metadata_sha256": "15da1f87ab2dbdd9739a272274e27cee9bdf8f209d6eb52bbc40568cc17b4b96",
+      "name": "haskell-these",
+      "version": "1.2.1-346"
+    },
+    {
+      "archive_filename": "haskell-time-compat-1.9.9-116-x86_64.pkg.tar.zst",
+      "archive_sha256": "b755caa3e26b6dd89a217e52de81fbab29a1d6cbe36102ef03ff6edebbd885d8",
+      "installed_metadata_sha256": "be305a536e93d48d96577cef0203d6739a930e32448537f0e002b8f167fb7d78",
+      "name": "haskell-time-compat",
+      "version": "1.9.9-116"
+    },
+    {
+      "archive_filename": "haskell-transformers-compat-0.7.2-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "8bfac77ca6c094ad69bc5b7cbb2112758b02efa83751801a792b8e84052cb68e",
+      "installed_metadata_sha256": "ae74d85c7eac33dea25b2c74e203ca7c82cf50f390987d1390250301776a00b0",
+      "name": "haskell-transformers-compat",
+      "version": "0.7.2-4"
+    },
+    {
+      "archive_filename": "haskell-unordered-containers-0.2.21-28-x86_64.pkg.tar.zst",
+      "archive_sha256": "97c2b3feaff6f8534349daceb545d9fa6f84d05baf6e54c872a63ba39195abf7",
+      "installed_metadata_sha256": "6fee706f338320847fc8c5066bd961b57f76fdf95b2a7ae46c527a0f2a8056ee",
+      "name": "haskell-unordered-containers",
+      "version": "0.2.21-28"
+    },
+    {
+      "archive_filename": "haskell-uuid-types-1.0.6.1-87-x86_64.pkg.tar.zst",
+      "archive_sha256": "3ae62a1e8cb14d303939652f6fbf159e468b6c5b2ceb7ed758eb9c5084b865f1",
+      "installed_metadata_sha256": "477222b5a19549e0096b9bef9a74b3e0a4a6b7c0907ad1c720532ed66fe5a1fc",
+      "name": "haskell-uuid-types",
+      "version": "1.0.6.1-87"
+    },
+    {
+      "archive_filename": "haskell-vector-0.13.2.0-544-x86_64.pkg.tar.zst",
+      "archive_sha256": "de8a7f087fc56180b6d57331973823833636729c8c3af97c88976bef1a88ecfd",
+      "installed_metadata_sha256": "9ad42cd50a6c46a7475f0dd20316c87fa7df7a862e74083b36573cdf4f0c1bcf",
+      "name": "haskell-vector",
+      "version": "0.13.2.0-544"
+    },
+    {
+      "archive_filename": "haskell-vector-stream-0.1.0.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "f5cd7a1213fd97f6abbf2deed10e9ae212f356b849cc89fa0131d1c8dcf37691",
+      "installed_metadata_sha256": "f460aad28304afb486cd4d6464e46d442e3ccc8d5bcd9a1bdbb090a946090cd1",
+      "name": "haskell-vector-stream",
+      "version": "0.1.0.1-4"
+    },
+    {
+      "archive_filename": "haskell-witherable-0.5-8-x86_64.pkg.tar.zst",
+      "archive_sha256": "155fbf39c25fdcc3d9161ee058370acb56c9d71a06651595773350107f0081a8",
+      "installed_metadata_sha256": "89b89cf3d1127d1ae3c17d4d37e77dcc1b027a0d360c405774eb68acfdb7cafa",
+      "name": "haskell-witherable",
+      "version": "0.5-8"
+    },
+    {
+      "archive_filename": "hicolor-icon-theme-0.18-1-any.pkg.tar.zst",
+      "archive_sha256": "22ec69012b9a55e276b5891f916366f692541dce3793bff3e85a28a10b91990a",
+      "installed_metadata_sha256": "aa6bd9b12c5f8a6db804f4699164c6a04d94d4782e5cd0ffd9351719726236c5",
+      "name": "hicolor-icon-theme",
+      "version": "0.18-1"
+    },
+    {
+      "archive_filename": "hidapi-0.15.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "58eee8119ef8ca47a6f10c073ee3a89d9d3958b77b94aa7d05c331e73f50f5b8",
+      "installed_metadata_sha256": "fee495b63152c57cbc4fe9682dead5fcb58b2bc721f52699b2b0178cc4a99046",
+      "name": "hidapi",
+      "version": "0.15.0-1"
+    },
+    {
+      "archive_filename": "highway-1.4.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "1695affe5d6174380504a42b0808b1ca638e95b265fa15bc80e6d6e9875ba993",
+      "installed_metadata_sha256": "d773bbdac5932c7c4f8edbfb8653b824c6d78da376c5c0f56b5e02874b14438e",
+      "name": "highway",
+      "version": "1.4.0-1"
+    },
+    {
+      "archive_filename": "hwdata-0.411-1-any.pkg.tar.zst",
+      "archive_sha256": "b8310305da30918a802d0ee1a06a30a605d933b6be7e2cf27a4c7d8d7fe54a2f",
+      "installed_metadata_sha256": "81989f74c4bee44febf2672a9598ca413166db34aef1e7b30a19aa7cc9aa3063",
+      "name": "hwdata",
+      "version": "0.411-1"
+    },
+    {
+      "archive_filename": "iana-etc-20260617-1-any.pkg.tar.zst",
+      "archive_sha256": "f451da19de46e77177d959239e03b6ee837c93966ac72ca0b80a1e9a32abeb67",
+      "installed_metadata_sha256": "15d87d719685895329b458080a7f70440d5e5986f8fcdd000fdcb40944e8b114",
+      "name": "iana-etc",
+      "version": "20260617-1"
+    },
+    {
+      "archive_filename": "icu-78.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "118fe41efa6c550f3fe67893946dcea2c6cbb5272299a6ddf4160fb17f3e4bb0",
+      "installed_metadata_sha256": "7167b2f1ecc25f0ca77e1cfa3bd3238c4afa41ae169549b2ce00e90dd7dd98ee",
+      "name": "icu",
+      "version": "78.3-1"
+    },
+    {
+      "archive_filename": "iniparser-4.3.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "50296b966021f4dc30f4708e8d6486fa68173a3fcfc0d375a83a25a5730f49c9",
+      "installed_metadata_sha256": "7250c5827bc72037edd6355013fe03ec6aaa181e6d8fb80c5cb3e67a0fcf88b0",
+      "name": "iniparser",
+      "version": "4.3.0-1"
+    },
+    {
+      "archive_filename": "iproute2-7.2.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "cc112560ce18eba5b0b1da01847e1ec10a823ce56cdf897eb00ab12d6f02b083",
+      "installed_metadata_sha256": "80b5ab93de411aef8369c1b78b4383c43d0dde75541e7b1ab5bdb3ab2d407678",
+      "name": "iproute2",
+      "version": "7.2.0-1"
+    },
+    {
+      "archive_filename": "iptables-1:1.8.13-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "c827ed573b29dd488317da6b61be22c5d12154378b6bceda35ced834e8bbbc94",
+      "installed_metadata_sha256": "57b1e3bdec7ad08fcb6203f9f127c6ce382594efd3553466c99422ee54c3cf77",
+      "name": "iptables",
+      "version": "1:1.8.13-1"
+    },
+    {
+      "archive_filename": "iputils-20250605-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7b7ef18785a9fb7767ecf793a9c87b474eec64440a55258f5c127861100d3933",
+      "installed_metadata_sha256": "a551989c4d75016b9b1e28cce6712ba23cc58a4cc569810bc7cbcfd447e807e9",
+      "name": "iputils",
+      "version": "20250605-1"
+    },
+    {
+      "archive_filename": "iso-codes-4.20.1-1-any.pkg.tar.zst",
+      "archive_sha256": "c2dbcb21176ff2a15cea0072ea13f2998bcd435fd494c99d0a8f06e9eb029192",
+      "installed_metadata_sha256": "50109b06b4a585bacc398bb1378d63149d8ebdeecd467f70c55955b68d67847b",
+      "name": "iso-codes",
+      "version": "4.20.1-1"
+    },
+    {
+      "archive_filename": "jack2-1.9.22-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "e400bbd5f48b5f657d7835ef607822d14be1fc66c1807718b13086c53b95c8a7",
+      "installed_metadata_sha256": "54fee0c2d4865bb681ff306cc4845bd24412000a86d92ee79f6938e0da89d459",
+      "name": "jack2",
+      "version": "1.9.22-2"
+    },
+    {
+      "archive_filename": "jansson-2.15.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ff1ff9da9ec0520b30cc4add6160ba5a171d9a478408863a2d99b61f5bb9866b",
+      "installed_metadata_sha256": "a615b4ea8b3a6527174723f532a529f90df8de73332b45d5af9fcb27ffc2d5f1",
+      "name": "jansson",
+      "version": "2.15.1-1"
+    },
+    {
+      "archive_filename": "jbigkit-2.1-8-x86_64.pkg.tar.zst",
+      "archive_sha256": "ca53fa884681273162aadcf99c30514a7010d5e621eb0a5ae491500ae8dc52c9",
+      "installed_metadata_sha256": "e51a08672a5c64f60527aab31594be130f2eedd6b38642c711c412c632229a6d",
+      "name": "jbigkit",
+      "version": "2.1-8"
+    },
+    {
+      "archive_filename": "json-c-0.19-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a2ebb9395bfc18a29abd21b6dd756519114e4e6241d6321588ada285ded4d63f",
+      "installed_metadata_sha256": "2d3350da8078b4df4ed807a1e5b79b0ab4f5e59e2b00d40f83b8305df4a1ad28",
+      "name": "json-c",
+      "version": "0.19-1"
+    },
+    {
+      "archive_filename": "json-glib-1.10.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "3c2ec1b51d45f7c2d0cee7d28520b0772cc6d01fa09b808536e08dca7dd638eb",
+      "installed_metadata_sha256": "877940bbec5e4c8a86453631c2c4386e3f341493ecf730321380a8d3bb0b871e",
+      "name": "json-glib",
+      "version": "1.10.8-1"
+    },
+    {
+      "archive_filename": "kbd-2.10.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "9322a5fb74f43341835d22d3ea0cf1d88d91eb4c98ab9fcb816955e2159b4b41",
+      "installed_metadata_sha256": "6863abd5f79823f535d152d28ae3254a60ccf4dcb789fe0deaa5410b1baea25f",
+      "name": "kbd",
+      "version": "2.10.0-1"
+    },
+    {
+      "archive_filename": "keyutils-1.6.3-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "e3e5d4226bb7d213a6baddb997bf679a2b1106d95b5c2845b79bf8df1c3ef5fe",
+      "installed_metadata_sha256": "1bdf6267b28b7c6d5781d9c57cced49e961ec03832c99f1944e3c8a48ee276c3",
+      "name": "keyutils",
+      "version": "1.6.3-4"
+    },
+    {
+      "archive_filename": "kmod-34.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8cce1b4dfd2a1f354a253bb60a36c83024042eef5d47cb0214ec5d4f47f2007e",
+      "installed_metadata_sha256": "5433f6c50711ab1904a153bbc9657ef733fa7fab2be4ebdf80b53ae97b143e9a",
+      "name": "kmod",
+      "version": "34.2-1"
+    },
+    {
+      "archive_filename": "krb5-1.22.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "38dcaf86512559c47e9b084ce78f417b5e8b0634feb8cb80b5edeab2c40b704f",
+      "installed_metadata_sha256": "91dba2f60c42759d1ce105bca4463506448831ea20c67624f69cd6b936a633ea",
+      "name": "krb5",
+      "version": "1.22.2-1"
+    },
+    {
+      "archive_filename": "lame-4.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "2c7bf7150e41a12b7b2ef62fec6ab5a071e20b537ac734490922fa64c204af77",
+      "installed_metadata_sha256": "a419555120a4b7b5abc1fa945a003b956fdba99487af463aa7fb3f10eb142b40",
+      "name": "lame",
+      "version": "4.0-1"
+    },
+    {
+      "archive_filename": "lcms2-2.19.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8cdbd1ec200fcf41a583d0fd6fbc6f117f9642a3968c73263c5b0ca35a4c4663",
+      "installed_metadata_sha256": "8effc5a81de12cfa30f71af846d69990b86b1e22be58507ef6ba7ed3622392ce",
+      "name": "lcms2",
+      "version": "2.19.1-1"
+    },
+    {
+      "archive_filename": "leancrypto-1.9.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "e87627077ef83a0edeca19b60971c5bd8dba753a7fe8607d20f86cd0ba1965a8",
+      "installed_metadata_sha256": "ff5790a2cc1d3751c9ad2a068d4ea28535825fbb63bfc22e35e2f3a7e7064308",
+      "name": "leancrypto",
+      "version": "1.9.0-1"
+    },
+    {
+      "archive_filename": "libaemu-0.1.2-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "1d23cd1acdeb28f7183c279231fdc80acc424349b26abb4eafa528498d7d07f8",
+      "installed_metadata_sha256": "6a2b2155955b4a866ff7411bb3f6c602620fff088370a315c068dae10a710f7a",
+      "name": "libaemu",
+      "version": "0.1.2-5"
+    },
+    {
+      "archive_filename": "libaio-0.3.113-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "e746fdedefa9987ad06e918af78976917aba780be8ac51d22dcb9ded324a84ab",
+      "installed_metadata_sha256": "3dd4fbf64398bbdec13f61c899376a07d6d006b6c5ec4c9a551cbf7fee7f157a",
+      "name": "libaio",
+      "version": "0.3.113-5"
+    },
+    {
+      "archive_filename": "libarchive-3.8.9-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "07b7aaec008cc4892cb2da0c599a16438d2e70869a01b90c4e20bf153f58c3b3",
+      "installed_metadata_sha256": "32ff7c488f26fbecd3bfc6207f08b68cc6c505a322c8ef3bc591fa77409d3f29",
+      "name": "libarchive",
+      "version": "3.8.9-1"
+    },
+    {
+      "archive_filename": "libasan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7f6c602ea97c01b67cf8261b87afa1a47c1eb383ded769aaef71475e781defdc",
+      "installed_metadata_sha256": "eaee91dd13887ea5f0fc83f6c52cc114529807cdc02e80e0a1e0b7c3328dbc82",
+      "name": "libasan",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libassuan-3.0.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "1843d675b324c9d549f3413dcbe653ec86876ac2898fc94423926ed30eab25a1",
+      "installed_metadata_sha256": "eadf13d8e22a1998518ee487bae21625cb84c61b4ed14c8ea88ec8ec9c259e82",
+      "name": "libassuan",
+      "version": "3.0.0-1"
+    },
+    {
+      "archive_filename": "libasyncns-1:0.8+r3+g68cd5af-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "de65e601391ace5c126e863ad67245b03cfe87f46c12b509668f3da2419bbf15",
+      "installed_metadata_sha256": "cfdefdd5d83b659b8ac9267a9866f154cd2286cdf64fd36333305c98278b8da9",
+      "name": "libasyncns",
+      "version": "1:0.8+r3+g68cd5af-3"
+    },
+    {
+      "archive_filename": "libatomic-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "920cfea3dcac82e3d7c8ebbf64dfe341821c1118277d55b6c1e96035cd943656",
+      "installed_metadata_sha256": "a7895253d068a6702404cc868a193bc45a40de40b97e519139d5e4d7ac4818f2",
+      "name": "libatomic",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libavif-1.4.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "296986d8795009e86279608a311c580154d84b82d53365495d76cf28ef375441",
+      "installed_metadata_sha256": "d032a498faf79b3d1fc09a6253e165b8f0f78254651d69167eb7cd92a117a719",
+      "name": "libavif",
+      "version": "1.4.2-1"
+    },
+    {
+      "archive_filename": "libbpf-1.7.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "07ca39704fd534fcb4f520550cdddad5c113521f87035fb66f66a50a6d843257",
+      "installed_metadata_sha256": "634eb52b58b31027917938b8fa67530c4639e6758663d7da1b6434fdfb6c7ede",
+      "name": "libbpf",
+      "version": "1.7.0-1"
+    },
+    {
+      "archive_filename": "libburn-1.5.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ad1d122cad730d827dbcac09f554556b35d2516a9aebcef01db337dc268cdfa8",
+      "installed_metadata_sha256": "d669a3d8eb9b400f3c7034a9e37b1ef91715d1bbf4f300bc4c534c9b77852a2f",
+      "name": "libburn",
+      "version": "1.5.8-1"
+    },
+    {
+      "archive_filename": "libcacard-2.8.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a9c6d49c62ceabecaf0c11c27515d0a1222186a1b033e9d7c2b03cefd635484d",
+      "installed_metadata_sha256": "10f5396c54bcc458b71f4b8b4a4a998c7f9b95834fa4bf56e7b6e2cd27cec364",
+      "name": "libcacard",
+      "version": "2.8.1-1"
+    },
+    {
+      "archive_filename": "libcap-2.78-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "3e984fe1d323b1c5a5fc60fef005776a4882fbca913d6fe3c41ad11128929ed1",
+      "installed_metadata_sha256": "20fc398443f5342f8431d61a34c16b37dccc325b56b1458689880a81fcfa32a6",
+      "name": "libcap",
+      "version": "2.78-1"
+    },
+    {
+      "archive_filename": "libcap-ng-0.9.6-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "05b0a8356f898e251845b2e5ffa5966be21ca85f3eaaf5aeb8a9e8df4148ba5c",
+      "installed_metadata_sha256": "805c6cc904f2db28541183dac57cf3fd555c69033cdad44d55cc7869a20670f8",
+      "name": "libcap-ng",
+      "version": "0.9.6-1"
+    },
+    {
+      "archive_filename": "libcbor-0.14.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "c6178320776e798dbd9d558cd5891ab2462a10c96c3dbc2dd3624c86ee59cc7e",
+      "installed_metadata_sha256": "9fecbf466a6a4da126b6c30d24564ef022067b3bbc9440b20873df18a556756b",
+      "name": "libcbor",
+      "version": "0.14.0-1"
+    },
+    {
+      "archive_filename": "libcloudproviders-0.4.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4118ca6e1b14202e5d08d8e6013cb47152d7b8433a94a1d67a0c025a9f2f6896",
+      "installed_metadata_sha256": "2612809346bf9355b6e79b0a1cc6956dab86837a3332833501ecb56127362e5a",
+      "name": "libcloudproviders",
+      "version": "0.4.1-1"
+    },
+    {
+      "archive_filename": "libcolord-1.4.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8e440c51060be0f6ea808462a2569f2d9f1dfe454f15723a32bb61f43dc0c286",
+      "installed_metadata_sha256": "09f28c406066834f0e8dfd27907780d4ceb541e6c660ed8323d74a03c2b5f2cf",
+      "name": "libcolord",
+      "version": "1.4.8-1"
+    },
+    {
+      "archive_filename": "libcups-2:2.4.19-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "654ab815fe9cff8efd1e8efbcacd52581d753db3d39ad97cc532d2d3a7cb5982",
+      "installed_metadata_sha256": "20d8afdc22aa0c128498c8ffe22e33be5fc651a80da9f459ddf2357107c93339",
+      "name": "libcups",
+      "version": "2:2.4.19-1"
+    },
+    {
+      "archive_filename": "libdaemon-0.14-6-x86_64.pkg.tar.zst",
+      "archive_sha256": "ece83006a468d5205ea45d1de8e9cdb3a864700f9d904fc4b7d52d69dce1b0b6",
+      "installed_metadata_sha256": "50d8df80b7fcf71b03394bf29581e51d363ef876a38948e6e116c95a6fec51c0",
+      "name": "libdaemon",
+      "version": "0.14-6"
+    },
+    {
+      "archive_filename": "libdatrie-0.2.14-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "f5ad651ed99afa29d44c662da4f2c6e93764e8a1d47487f41837be1c94ddd38e",
+      "installed_metadata_sha256": "7a6497ef65ecfd308c132ee3e6ced33504ee7bee66cfc4b174ff7f22f850d083",
+      "name": "libdatrie",
+      "version": "0.2.14-1"
+    },
+    {
+      "archive_filename": "libdeflate-1.26-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "3bd3b1ca9a333ab97ebb55f760963f64817b6c4c0d54747b37187f36ab60deab",
+      "installed_metadata_sha256": "26131fedee5a66a8e4267a5951f693f2b7c5f8c0da0394cdddeabfdd347a413c",
+      "name": "libdeflate",
+      "version": "1.26-1"
+    },
+    {
+      "archive_filename": "libdrm-2.4.134-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "29d101f13d219d01ee4aae25e8f84026e0740d747d56c37ea5573c4618e7df04",
+      "installed_metadata_sha256": "ffaf54839837f3c19d77e754ddd7bf61da0f9b6abdcdc2193e808ab87dabd40e",
+      "name": "libdrm",
+      "version": "2.4.134-1"
+    },
+    {
+      "archive_filename": "libedit-20260512_3.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "70cb736e4fdee330cd0dfab45875f6ea378ae819958dd15748c300b8d7285b42",
+      "installed_metadata_sha256": "a1da09d960d801c60170fe379397725f6cde4cf1c8d7c4bb06c48bbecbdd6196",
+      "name": "libedit",
+      "version": "20260512_3.1-1"
+    },
+    {
+      "archive_filename": "libelf-0.196-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "0f75f1f363c60d73f563fddc82964acd01cdc5167dbe2309d5d90e833388842b",
+      "installed_metadata_sha256": "1b2cd2f0fae383355af651d8398cb83389b219383f3c8dbcdecdf0d63d525fe9",
+      "name": "libelf",
+      "version": "0.196-1"
+    },
+    {
+      "archive_filename": "libepoxy-1.5.10-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "6e3f4e026b94d45b044f8c15ef0cc04772eafa892dd8b0bf037b1f865f0aaa33",
+      "installed_metadata_sha256": "5c4338372adfa8f3dc5da296e1c7d22ca9523c616e03179136debd5b06a3d524",
+      "name": "libepoxy",
+      "version": "1.5.10-3"
+    },
+    {
+      "archive_filename": "libevent-2.1.13-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "9fd8563e3aa1c64d80257b7b4f60d37cf8589260ba3eb015f8257e2cfd118b04",
+      "installed_metadata_sha256": "2064b2645d75b3eca5b58ddc4611194df3fa7aa48cfa094ff62368b7b2cfe14b",
+      "name": "libevent",
+      "version": "2.1.13-2"
+    },
+    {
+      "archive_filename": "libffi-3.8.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "5d21227f2a1d10db60d0cf5bb02b36a1801ae61dc7dae8c3bc1afa548afd8601",
+      "installed_metadata_sha256": "1ec3fb68511b5df7707fbd36822507c37d05e201d57ff9e54651eec80f1f6db1",
+      "name": "libffi",
+      "version": "3.8.0-1"
+    },
+    {
+      "archive_filename": "libgcc-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7367dad49fc3229bde804816d412ab77306d433b1f92e4126b8b3ba3502c67d6",
+      "installed_metadata_sha256": "13ca985a1a79e6655221cb11116f0457a2c4719599f6b46d09c709c9e41e96a9",
+      "name": "libgcc",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libgcrypt-1.12.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "25ca27f53e0862e706b325d05893e43585be2bb0a0a4a750b8faa6e0e253e136",
+      "installed_metadata_sha256": "e65ef9bfe75381079130feece723f830bd5bb520495f326702e9ce0dd37eaef5",
+      "name": "libgcrypt",
+      "version": "1.12.4-1"
+    },
+    {
+      "archive_filename": "libgfortran-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "0b40387c87793ed7b72fc3138c6877630ed66d8b5f841e436f4372a6405663e6",
+      "installed_metadata_sha256": "2efa96431f22990b9f86775fd3ab8d3501da7a5814c804128b3104c4b75d26f5",
+      "name": "libgfortran",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libglvnd-1.7.0-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "633c2e95d7798d0ce7ee1b7fe970a22325f7f6d35b9f923bb61b223a80934437",
+      "installed_metadata_sha256": "b4399c571549cb8a2bbe5e0411f97b7262a1d3a8d0c742c6061d52e98520405c",
+      "name": "libglvnd",
+      "version": "1.7.0-3"
+    },
+    {
+      "archive_filename": "libgomp-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ffad807ed2ea36a29fe6da70dd77a6c476f1a1d5357cbec0b2481dbc84f303f4",
+      "installed_metadata_sha256": "82de12e4505d19f2ae723d9da6c974bac5db1209dcd4f0892374bb1537d29a3e",
+      "name": "libgomp",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libgpg-error-1.61-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7d5a5b39f588b275558f5e13bd792bff84cf89abb6d48e3e494d6c30e8ea9ca4",
+      "installed_metadata_sha256": "7d68079341e7de0c27fe9e52828ead8c688816337ee98f2b96abe23e13fb0ecf",
+      "name": "libgpg-error",
+      "version": "1.61-1"
+    },
+    {
+      "archive_filename": "libhwasan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "299ad02f954643c8b0fb919b0d545ebba34816f0facc673399f79252b33ec018",
+      "installed_metadata_sha256": "b175c25583f78a1875bb23fe777f28abcd13bee56a5782d96f62510e299a33e4",
+      "name": "libhwasan",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libidn2-2.3.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "1749bdd4c395913df18c57fdd42820d3de88738b7163b7aa254d13e3da7b1d9d",
+      "installed_metadata_sha256": "2dbe40c1dd3c449811560b8d1637f840c0960946d0d211173b529f78e473c3c4",
+      "name": "libidn2",
+      "version": "2.3.8-1"
+    },
+    {
+      "archive_filename": "libisl-0.28-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "e72fd1165d674f440ff9882b514c999423098a5852ea41fa692db65f391c98c1",
+      "installed_metadata_sha256": "7a0862300d31973756bef7113490fcc27581d6d1db91d95562f84498af1ba75f",
+      "name": "libisl",
+      "version": "0.28-1"
+    },
+    {
+      "archive_filename": "libisoburn-1.5.8.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8702472232e805676e46961948ef28980c97c56329cbc00e9861ba2218892beb",
+      "installed_metadata_sha256": "d6aa8d39c37a0bbe871e27eff5767f779e53bb596838b550ed65783145896db9",
+      "name": "libisoburn",
+      "version": "1.5.8.2-1"
+    },
+    {
+      "archive_filename": "libisofs-1.5.8.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "625f9578a1c781c7eb8a94589ec6c2da5cf2543ad31b2723003921f30bd742d0",
+      "installed_metadata_sha256": "165963b0c5805a71f857e0b207a443e5d3ebcda192e08abe78875f14952620e4",
+      "name": "libisofs",
+      "version": "1.5.8.2-1"
+    },
+    {
+      "archive_filename": "libjpeg-turbo-3.2.0-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "14e743e58bbab35665d3e59ea71bd411f81a01d995e0101442f5f4c82c9de0ab",
+      "installed_metadata_sha256": "1c7063a5399739f4fb9de35179705df3940fce5a5b767dac42ef7020c6a13792",
+      "name": "libjpeg-turbo",
+      "version": "3.2.0-2"
+    },
+    {
+      "archive_filename": "libjxl-0.12.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a4e0f65e8ba3a2da1cc348aad4f7f8aee1b504b824a64838fb3d9b2f75cc9449",
+      "installed_metadata_sha256": "afcfae1d15042a0735648b20cc2ab41783a4d3b4eb4ecf6637a36c3b914e437d",
+      "name": "libjxl",
+      "version": "0.12.0-1"
+    },
+    {
+      "archive_filename": "libksba-1.8.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "6aa88da7314b620af39ae619625b6ffac55f347c1a977cec3c4a0e4bc6f6a79d",
+      "installed_metadata_sha256": "00ad4d352547cee0b17ee655f30fb0f264950b02998cd87985b15c0a7dd75615",
+      "name": "libksba",
+      "version": "1.8.1-1"
+    },
+    {
+      "archive_filename": "libldap-2.7.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "bc83324fccf39b11cad9b5d672db02eef9db7fa406d335169f7732c75ac7906f",
+      "installed_metadata_sha256": "55022ba10ec83e12a51c7995fa1895f841c7df1f4efaa7a571afdee204000ce1",
+      "name": "libldap",
+      "version": "2.7.1-1"
+    },
+    {
+      "archive_filename": "liblsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "11b69f544a6f3d1c58d5612ebc336837e76567f2413b96900a6eb33d5de06e21",
+      "installed_metadata_sha256": "8b0fb271f8c1329c6d394f53b50b2a0319fdc1eff0ba39c074eccce0856e3e87",
+      "name": "liblsan",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libmakepkg-dropins-20-2-any.pkg.tar.zst",
+      "archive_sha256": "78c4e32d3140d11d2fd7d1bac6bcfdbdd34d3b59b56620f987fd28fd4334648e",
+      "installed_metadata_sha256": "b35c3f25d22fb70c0f9d2ff2b0d8d7ad19a2b4c06a1565d8c0eb61a17268df3c",
+      "name": "libmakepkg-dropins",
+      "version": "20-2"
+    },
+    {
+      "archive_filename": "libmnl-1.0.5-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "1ee554fe2637bbee1da61f0bdbd3f9d1dd89ddbb9809cd5ef012540a748ff4a0",
+      "installed_metadata_sha256": "8aa0e12fb1efd7f3c69c7a22cadd1f3c3a631cc8daadd63df7f9718ce7c855ea",
+      "name": "libmnl",
+      "version": "1.0.5-2"
+    },
+    {
+      "archive_filename": "libmpc-1.4.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "880bdba957ebe5136449c7b61821e92628d7bdd43f370e5a0818d229372d3851",
+      "installed_metadata_sha256": "ec691256ae0f4ffd190ff3f61376c90c16db2064da1986cee3468584a9697093",
+      "name": "libmpc",
+      "version": "1.4.1-1"
+    },
+    {
+      "archive_filename": "libnetfilter_conntrack-1.1.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "9315ab4571be5d9764367f2e3d56004a127a7dfe6fbbfb1850c05efb674a8bdb",
+      "installed_metadata_sha256": "3d55b2e73c2f5d31744ce9db57303c6c9d3dc987a23dd64a70dffa7630a4a63b",
+      "name": "libnetfilter_conntrack",
+      "version": "1.1.1-1"
+    },
+    {
+      "archive_filename": "libnfnetlink-1.0.2-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "b06f0d8f2723ac33155bf4f584d88906c5be68d3c3c8b4f3f0694a5874672727",
+      "installed_metadata_sha256": "4eb008c7eb9c411211a3d911d2217b4982d91a05d4bf1d2f911fa770f9b4f5e8",
+      "name": "libnfnetlink",
+      "version": "1.0.2-2"
+    },
+    {
+      "archive_filename": "libnfs-7.0.2-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "cc004b56b4e7e5cf8e8fc880cef45ff699d3ee79e9ce284e98e8fcfe183f8ad0",
+      "installed_metadata_sha256": "db027d32830d3c3bbce5a02945d5e18214c31cfc691fb4c58acda45c1ca7a0ac",
+      "name": "libnfs",
+      "version": "7.0.2-2"
+    },
+    {
+      "archive_filename": "libnftnl-1.3.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "99114ae2579be7e4cdd553209394572c75751e3af9a3581d742f59a558f08620",
+      "installed_metadata_sha256": "72440a2b26b8ccbf51451d54aaa1c6b3018cf02377bb50733f55c64378947481",
+      "name": "libnftnl",
+      "version": "1.3.2-1"
+    },
+    {
+      "archive_filename": "libnghttp2-1.70.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "332e2cb2d953dab326f97a3257594f8031ec0fce6305e2bcd5d64d9832c84778",
+      "installed_metadata_sha256": "aed7c8d154b2172aa5a525f1b01bcc25c994bb56af5ab79277c89852bbfab25e",
+      "name": "libnghttp2",
+      "version": "1.70.0-1"
+    },
+    {
+      "archive_filename": "libnghttp3-1.18.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4a474a6c8c2970bead13cbdf4ab47662039d43dcc48aa811ee58becd778cf890",
+      "installed_metadata_sha256": "bd98fbe316ea2cddf96cf36c2d978dfc2b93d9d57b0872bb900daf7f0ab9d65b",
+      "name": "libnghttp3",
+      "version": "1.18.0-1"
+    },
+    {
+      "archive_filename": "libngtcp2-1.25.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "e4a728d9f647f3c52a3aedd67c589be5f43e7dd31ebde6867ad535ba29ec9511",
+      "installed_metadata_sha256": "6f58b5f4d382755709e121c0ffc6586015b6f4b613a15f62a6928c17d42e4d45",
+      "name": "libngtcp2",
+      "version": "1.25.0-1"
+    },
+    {
+      "archive_filename": "libnl-3.12.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "531827dac4f6d3de9a7e4c8c31f3243bf484b39c41648178c18dc027566b1bb4",
+      "installed_metadata_sha256": "54b8796cf19867ac68d5efe3c7b3b8b5c703e757596c1e13acac83bf8f2f672f",
+      "name": "libnl",
+      "version": "3.12.0-1"
+    },
+    {
+      "archive_filename": "libnsl-2.0.1-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "4ba7b85b42fbda5a1f07e15b8f91c60faa4c5f9168cc27d49fcd20e3a3be8bd8",
+      "installed_metadata_sha256": "1ec2f1eb406adb7b8d8962285047e22b9977cb4539c7c20b178183a1877dec43",
+      "name": "libnsl",
+      "version": "2.0.1-2"
+    },
+    {
+      "archive_filename": "libobjc-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "b56770fbd0167ed14159744e3f18e220684f5acf65241b5110808ec49bdbffd6",
+      "installed_metadata_sha256": "45def7f993fcb8652bebd2c9b68c242432d1935054297f1a6eaacd1ab5c7a64a",
+      "name": "libobjc",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libogg-1.3.6-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "b6d4724c1ed16b4806fa596cd823a2930efeeddeb95f7d8a869644b665a9ba37",
+      "installed_metadata_sha256": "d3ac6ea15f9da1abce3cf54c04026ca8c29f14523490f6a541b8bffdf193884f",
+      "name": "libogg",
+      "version": "1.3.6-1"
+    },
+    {
+      "archive_filename": "libp11-kit-0.26.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8ddc055b304a98c2434fa5d25550c94c0bbcdb22388f752e05e619b2ee98027c",
+      "installed_metadata_sha256": "89b584d0c5094b60f0f5e80187f8e064e44f248c2c23fb07661b136e1e929496",
+      "name": "libp11-kit",
+      "version": "0.26.5-1"
+    },
+    {
+      "archive_filename": "libpcap-1.11.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ed40e51f84882865d254571015a8ad403bf9c0ec743cf454e8223199de34580d",
+      "installed_metadata_sha256": "a5b2fb6d4b03a29b995b451b96c6dc6825ee5d017e00e9ce9b888ec00ba6a26a",
+      "name": "libpcap",
+      "version": "1.11.0-1"
+    },
+    {
+      "archive_filename": "libpciaccess-0.19-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ef533895e7688da61749bee185103435dbe635d9773d092fb0516e132817e39f",
+      "installed_metadata_sha256": "6f5b94e7e47e3930f45f0cdaec4a1d36232fbc1cba9be1941a8b4d30b8aea7f6",
+      "name": "libpciaccess",
+      "version": "0.19-1"
+    },
+    {
+      "archive_filename": "libpipewire-1:1.6.9-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "f2bf96acd15f145a4a2ae37f73f9426cc67a3f215a4e74a1414b4f797f233cb3",
+      "installed_metadata_sha256": "bd3c7e39dad47a7e22de26fd4fda6aaa74dffd145b433723e46fdae4be458ab0",
+      "name": "libpipewire",
+      "version": "1:1.6.9-1"
+    },
+    {
+      "archive_filename": "libpng-1.6.58-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "54d7a4647f7289e2c5dc44f87e325d3c84af82b6277fcc292f9a80cdf31e2a69",
+      "installed_metadata_sha256": "0423e17035cdd602b7f64bd83dcb72dab7e1c0f12678fef09f536fcdfc07bbfb",
+      "name": "libpng",
+      "version": "1.6.58-2"
+    },
+    {
+      "archive_filename": "libproxy-0.5.12-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "d8c945f0acc851077b4dc68a653478100a6e50133dc927ec9a86796c6916abea",
+      "installed_metadata_sha256": "69d242cfd7fa007ef5dbc4fa212dbe46c020386ad80f03ac7e0e38e61fecaec7",
+      "name": "libproxy",
+      "version": "0.5.12-1"
+    },
+    {
+      "archive_filename": "libpsl-0.21.5-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "e07925c2487bd7deffdd57808b19561e80a4cb25a33e51dbd94efb673bc81944",
+      "installed_metadata_sha256": "b53a4d0325beebec8b45c1ea9728ae861bedb08de221af0b0f5d5fac282cc631",
+      "name": "libpsl",
+      "version": "0.21.5-2"
+    },
+    {
+      "archive_filename": "libpulse-17.0+r98+gb096704c0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "79e91509611c537755a264673e6101975ef1aaf047f381be0be2e4d348ca48c6",
+      "installed_metadata_sha256": "26aeb009653d5e8e5802af58f7a6cd929b638be25e8fc9ee868fb71e10e2b66c",
+      "name": "libpulse",
+      "version": "17.0+r98+gb096704c0-1"
+    },
+    {
+      "archive_filename": "libquadmath-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "c6db8f6c787601f17fa812f2270f4e53fad1426fa9e372ab2e1a881c1368cee3",
+      "installed_metadata_sha256": "9cedf39abc1ae2b665f7ce3908faf60b1a7113e669c0065254e46097b530fd55",
+      "name": "libquadmath",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "librsvg-2:2.62.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "025fd21a783e3bbd5bbcbcb7f627a56f54c9cb8f53459bf381a2f1e2d5c57f65",
+      "installed_metadata_sha256": "6f991c8058a65b3e0fb2fc8578d3c265e9315586d067ac8b61b21a72958e25da",
+      "name": "librsvg",
+      "version": "2:2.62.3-1"
+    },
+    {
+      "archive_filename": "libsamplerate-0.2.2-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "6641b016f15c73f90ee0741f0d14db1ea7ec988a2b8c74c5fce0182239bbbf00",
+      "installed_metadata_sha256": "8d1ce642cdbdf3deddab19bd556bf2e99d3f055c4165373445bd8683f3f78ed7",
+      "name": "libsamplerate",
+      "version": "0.2.2-3"
+    },
+    {
+      "archive_filename": "libsasl-2.1.28-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "113e1676371544e5142a46ee046a6179ace201c4f0a0d56b618a984b5c764463",
+      "installed_metadata_sha256": "03763a6f879a87bf715d8aa0de9d2483de4bda1db3790a00cc60d960fe008f74",
+      "name": "libsasl",
+      "version": "2.1.28-5"
+    },
+    {
+      "archive_filename": "libseccomp-2.6.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "3d3effb23898177d0faece196ac664859d29027b64cdeee3a09a2c3967b8401d",
+      "installed_metadata_sha256": "5a180b9ce39ebf04731ce3ca14ae778e491e91aec04395fdf03c262e0b4dd019",
+      "name": "libseccomp",
+      "version": "2.6.0-1"
+    },
+    {
+      "archive_filename": "libsecret-0.21.8.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "311a982a109a3814ebc8f467215f9c92660b85833e1c65b6da16ba21d6f406ad",
+      "installed_metadata_sha256": "25911b36b39207356fdcc94594dfabb1280f2de69994e6ad8a6c06bc2ee3d903",
+      "name": "libsecret",
+      "version": "0.21.8.2-1"
+    },
+    {
+      "archive_filename": "libslirp-4.9.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "d9584c21e1556ae02650ccbd769e838d7aec286b0b092e6b43aac10e3bade240",
+      "installed_metadata_sha256": "86d9e17f715b0baa63862237d619b97b8fb5cfa6c345eb5d6e8df545d76fd8a8",
+      "name": "libslirp",
+      "version": "4.9.5-1"
+    },
+    {
+      "archive_filename": "libsndfile-1.2.2-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "9b580a25a4d38f688c3561bacdd1d8c2d3451eee657f317220a38cffe41fa512",
+      "installed_metadata_sha256": "9a84df3af13853538ff97b870a63b41037a76369e0a8585a25a6c2644c4161e8",
+      "name": "libsndfile",
+      "version": "1.2.2-4"
+    },
+    {
+      "archive_filename": "libsoup3-3.6.6-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "0acbc7244a82d92fb9a143452f60c7d988106d3abed37e7fa770aa3dbb29f3e3",
+      "installed_metadata_sha256": "84fd128b1321eb5e460303028555edce6982996e5957f7731893ff22197b1633",
+      "name": "libsoup3",
+      "version": "3.6.6-2"
+    },
+    {
+      "archive_filename": "libssh-0.12.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "f7d543fa557482e52c0eac1d5cb348b0385fbf44bb1244d5b656d87010056a2b",
+      "installed_metadata_sha256": "94876b816e94ab728a667c7f75b4f6e68673ff38bbaac9215c9fefbea67c8613",
+      "name": "libssh",
+      "version": "0.12.2-1"
+    },
+    {
+      "archive_filename": "libssh2-1.11.1-7-x86_64.pkg.tar.zst",
+      "archive_sha256": "462cca91bff394c2719b7e8d1951f0c0a2db979d71521ac93dba6b6b6974f6b9",
+      "installed_metadata_sha256": "bfd2f876b461a953ba46e79256f50e33d8589e18acbeb2d347b3f134b965cb11",
+      "name": "libssh2",
+      "version": "1.11.1-7"
+    },
+    {
+      "archive_filename": "libstdc++-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "15dc6bd2f3a2ee17fcd79a14325e9e0037722a592b2bdc55e1665d92112eaa51",
+      "installed_metadata_sha256": "9d9c48f5b44a9125ec41d0fc516aba7e066be02414fd2a145db284f2ee2bc473",
+      "name": "libstdc++",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libstemmer-3.1.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "d5f9947642735e4f026cf0e382fbec7bb45f3eed3b00b8ba29562cd455746ee8",
+      "installed_metadata_sha256": "2bbddebae4f2b41b8398f83dd0163be8aa13f74813ab0c61d013a94842601b15",
+      "name": "libstemmer",
+      "version": "3.1.1-1"
+    },
+    {
+      "archive_filename": "libsysprof-capture-50.0-6-x86_64.pkg.tar.zst",
+      "archive_sha256": "4467ddc2c476f9a6249737ff1ef5714f4b376e55719968c168f3b8a86c098bbb",
+      "installed_metadata_sha256": "cfe716bbefc3a5bb93b1812c5045586b9881a0cbc92ebd65cc6bb20c288a66b5",
+      "name": "libsysprof-capture",
+      "version": "50.0-6"
+    },
+    {
+      "archive_filename": "libtasn1-4.21.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "00e50489d3c00951380d578cf89ebd7d7a38d97269e7ca9ccc9cde146f1e21da",
+      "installed_metadata_sha256": "9b4724f883e078e00f967e2e9dc8ddf97a8528f7e5e6d10e4a4453f66e17c200",
+      "name": "libtasn1",
+      "version": "4.21.0-1"
+    },
+    {
+      "archive_filename": "libthai-0.1.30-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "890798f30ac72d0ca3b59dc5fe8eebe8f923bf09bdb1bc2ec75bc200d7aa70a2",
+      "installed_metadata_sha256": "7e4760e50ca55588e44926efce199aa6eb6d61fb968d3f0105da2bfb625ddee7",
+      "name": "libthai",
+      "version": "0.1.30-1"
+    },
+    {
+      "archive_filename": "libtiff-4.7.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "0627d404a16663e5c2fb11b6698daa69ae93ae8747ee279aecaf3f86bd547a61",
+      "installed_metadata_sha256": "50da5f8e3966d9cfb47583d87de06bef494cd8ce3d43661c04d938b5e48d8c6b",
+      "name": "libtiff",
+      "version": "4.7.2-1"
+    },
+    {
+      "archive_filename": "libtirpc-1.3.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4861eac60e6daffdf02366a09fc559ffe456e987410362793cd7faf91be22b30",
+      "installed_metadata_sha256": "1d282f525e21aaf46cea7fe66ce180e3606f840da95350e1f1c674aca59c6467",
+      "name": "libtirpc",
+      "version": "1.3.8-1"
+    },
+    {
+      "archive_filename": "libtool-2.6.2-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "75da3b1ff54182ba18061714996943cb04d59b5206adfc76241ebb33934984cc",
+      "installed_metadata_sha256": "85ac4736a7e77c4b8d15d58a8e3e0edcc2cd20af82632c75687e1f63842a5646",
+      "name": "libtool",
+      "version": "2.6.2-5"
+    },
+    {
+      "archive_filename": "libtraceevent-1:1.9.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "40bd5d4fd4c3d4a0c8be3cd2af9cbc570ec3dfe8b5047cf4854d742c22cfcd2e",
+      "installed_metadata_sha256": "41e112303b60bac61a4f2a27e068eeda3a875e6b080adb984af14c16797d9f2c",
+      "name": "libtraceevent",
+      "version": "1:1.9.0-1"
+    },
+    {
+      "archive_filename": "libtracefs-1.8.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4d3b87f44ad41104aea3db7a15d30381097cb7f95ecc516244a0a33a1e01515b",
+      "installed_metadata_sha256": "aac94704014d01bb709c7a7be1fcc31d2cd1059b6de5c1f65d56a8439f6d70cb",
+      "name": "libtracefs",
+      "version": "1.8.3-1"
+    },
+    {
+      "archive_filename": "libtsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8dd48336bb11dd0d15b9f5d0560166838802b21e3d279db25d6da96df19e0437",
+      "installed_metadata_sha256": "eb16a6363309bc5c518ff619f992b94b116592cff72ce909ac331122c1865e3a",
+      "name": "libtsan",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libubsan-16.2.1+r23+gd564253eb6c8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "eba85316fdf63265285624baa22724fbb93e15901696f99d2c2cbde2162ad71d",
+      "installed_metadata_sha256": "fc5818e9cf57d519004a2b945e880527a935065f4137f648eb9d0cadf1cb352a",
+      "name": "libubsan",
+      "version": "16.2.1+r23+gd564253eb6c8-1"
+    },
+    {
+      "archive_filename": "libunistring-1.4.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "582625bc02e710b587f4ed319e5c7ad29fd5d4d424b6384f125fc094f07ce590",
+      "installed_metadata_sha256": "5358f065bb47702dced325ad322cffd790d455fc01a5d8ec9608c54bae1085dd",
+      "name": "libunistring",
+      "version": "1.4.2-1"
+    },
+    {
+      "archive_filename": "libunwind-1.8.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7a3106a1ec551d3047bfad524b3a7078058234047292a8fdf8cb5cb481bda5af",
+      "installed_metadata_sha256": "07c4a12dbf39c89082aa7da9cc7e9b4183940c67305da6b5523d90bbf4ae6076",
+      "name": "libunwind",
+      "version": "1.8.3-1"
+    },
+    {
+      "archive_filename": "liburing-2.15-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ceaf9e41bcd5cb06efcffbc90a39628b7a5cae5490c5e6db810a792450070ad2",
+      "installed_metadata_sha256": "3150bebab5e4d908f9fe4a1db97bfc578747f637835a0785989883a5a798004e",
+      "name": "liburing",
+      "version": "2.15-1"
+    },
+    {
+      "archive_filename": "libusb-1.0.30-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8b75816afbb316dc92110d9ac542df3e20d9550fe949a1a1402b25366c0a2c6d",
+      "installed_metadata_sha256": "ca63d3ae3165a108ec0b6a8c35eaf8205709e264aa8380dd6fbcf450822ec80d",
+      "name": "libusb",
+      "version": "1.0.30-1"
+    },
+    {
+      "archive_filename": "libva-2.24.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "59b0a85c6edb8953b7cbb077a3078c0e589e4e4b06cbf871417e40d0c0357747",
+      "installed_metadata_sha256": "815b6bc38e3069838e873bf9b670120d6516ea616149a3e0c4a4627ed5eabd3e",
+      "name": "libva",
+      "version": "2.24.1-1"
+    },
+    {
+      "archive_filename": "libverto-0.3.2-6-x86_64.pkg.tar.zst",
+      "archive_sha256": "d0965b1b256e330e300c2bc3c699afa24f2d800dc476541039d452b606309496",
+      "installed_metadata_sha256": "982a91a29f263ee72376a5f017a8e2ea6b47e45714464089f9871b15529bac94",
+      "name": "libverto",
+      "version": "0.3.2-6"
+    },
+    {
+      "archive_filename": "libvorbis-1.3.7-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "3aea2a31212fe7aa9f3d8922e8f71c2608d6260e8af0b7c1b5da790786763089",
+      "installed_metadata_sha256": "241c848a4d7f1c966f12663a7e0439f6d0892bf547cb44c0a0a1e8a3ae9df6bc",
+      "name": "libvorbis",
+      "version": "1.3.7-4"
+    },
+    {
+      "archive_filename": "libwebp-1.6.0-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "a80e7edd3ddd27c6fd8cd83d0bd98d46b3f0279b7ee01f5baeded0d6f26f8975",
+      "installed_metadata_sha256": "bc6cfdefd6b289f29ada8d112ce076f5c9c88941de990a63b31ac92e267b9e53",
+      "name": "libwebp",
+      "version": "1.6.0-2"
+    },
+    {
+      "archive_filename": "libx11-1.8.13-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "251f58e0a9bc2cd69b8e708f239914e48e3a91cd1822220806d273be873d026f",
+      "installed_metadata_sha256": "62ecbf7c2506b1aa47134c233eaa721541c82aa902c7dd5cbacd2a2629b5fed0",
+      "name": "libx11",
+      "version": "1.8.13-1"
+    },
+    {
+      "archive_filename": "libxau-1.0.12-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "605c8b059c36792f4e0cc235acadf39d0762df6c7878825a1be01a00ae7ea21e",
+      "installed_metadata_sha256": "312b8c4863e7de87b21461a7125108e7ed56aa5b183a5399b868b02ac3902d93",
+      "name": "libxau",
+      "version": "1.0.12-1"
+    },
+    {
+      "archive_filename": "libxcb-1.17.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "2b2e7ac64b1d56c08a227c10bcab179605f2773f31db0a8c89f49f4e5b2f1292",
+      "installed_metadata_sha256": "f1c42a79a9aac1231355f0cd0954531b58bdea03d57a5a0a84d341d972946117",
+      "name": "libxcb",
+      "version": "1.17.0-1"
+    },
+    {
+      "archive_filename": "libxcomposite-0.4.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "5d11e648ccccbd7cf19884a677441528d8546eb89a4fda57febb08446e619917",
+      "installed_metadata_sha256": "27c33e700c64bcfdf60b75d54d76ccad3daebfb62adfd3b90d121482efa1d212",
+      "name": "libxcomposite",
+      "version": "0.4.7-1"
+    },
+    {
+      "archive_filename": "libxcrypt-4.5.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7d324b88963786491391468203701efd2c812798a9c3fbcc4ff8a4ddb2d9f276",
+      "installed_metadata_sha256": "2331f2e82ff9cb619d50ce836a581f7e4902aca717eb0497e66b4543a8ce9631",
+      "name": "libxcrypt",
+      "version": "4.5.2-1"
+    },
+    {
+      "archive_filename": "libxcursor-1.2.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "2a90267877c2f5ffe6c41a8ef91e6def3b7720de7b4b2628b329373ce20c1b99",
+      "installed_metadata_sha256": "598f120ba65fb4f837539995ae1e17170a2ea2cef89dccc872f63a9ffa76d38f",
+      "name": "libxcursor",
+      "version": "1.2.3-1"
+    },
+    {
+      "archive_filename": "libxdamage-1.1.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "36be52372da7f2f49f949fc8a0f3c6e4eaee6fb03761d67e17355bd15ea6cee6",
+      "installed_metadata_sha256": "84389b6f6ea3fa1a0c1aae47131cee04dc65ae4c283caaf8c3bac408135eee5b",
+      "name": "libxdamage",
+      "version": "1.1.7-1"
+    },
+    {
+      "archive_filename": "libxdmcp-1.1.5-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "623c957c2fd4b427a0f5a531da44931f9f66521391ee0bd0e635479947036b65",
+      "installed_metadata_sha256": "3bec44d841fe6291ca5f4ab6ae0eb63ae906f748d54578ad29464e076417cda0",
+      "name": "libxdmcp",
+      "version": "1.1.5-2"
+    },
+    {
+      "archive_filename": "libxdp-1.6.3-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "4146de33b9b12531064de40cb671537407c2267e4304159f407be92f2c8758a4",
+      "installed_metadata_sha256": "dc25722604da01d04e42a168bc25fac8d3de8d21767aa55520daabac023ec63e",
+      "name": "libxdp",
+      "version": "1.6.3-2"
+    },
+    {
+      "archive_filename": "libxext-1.3.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ac56905dc51bb652eca5f706fd7e7bb7ea81d4e057a236139fc769ce5ea10cf1",
+      "installed_metadata_sha256": "af16588af096db02059a9516d110befc1f4f85151449cca2dd8a0fd309bfc7a5",
+      "name": "libxext",
+      "version": "1.3.7-1"
+    },
+    {
+      "archive_filename": "libxfixes-6.0.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "d58ab2dbf326e36cf84792fe0dc12c34239ea04ac34159006a566103203db272",
+      "installed_metadata_sha256": "b6e1e68eaf58b73abdb03f829f516e4f2ce46b340e523dcedbc5267bff4eb7a6",
+      "name": "libxfixes",
+      "version": "6.0.2-1"
+    },
+    {
+      "archive_filename": "libxft-2.3.9-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a7841ed8e67dc3f94eca4672c8961329dfdd6b67836f8ac720a246d3aab02ecb",
+      "installed_metadata_sha256": "ff9e22a65ded03d96c83418e48411b48da30488e615d5d3586716afa87199f4f",
+      "name": "libxft",
+      "version": "2.3.9-1"
+    },
+    {
+      "archive_filename": "libxi-1.8.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "5ac5541f58978a3a5fab08c24f03da43200a7e9b25098e3e6da7bad7a0892cf0",
+      "installed_metadata_sha256": "d1ad001c9629e113351738959d09b436618ff318cf693435c064ec8f7466f141",
+      "name": "libxi",
+      "version": "1.8.3-1"
+    },
+    {
+      "archive_filename": "libxinerama-1.1.6-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7a91e2e649d9b24946b2b8088c3d7f70fa0673a96d3bae80497f403e57fb7654",
+      "installed_metadata_sha256": "5e72719c3003b5dc69eeea0583f800ebff6f8945cd811cbc99f23292665fbca6",
+      "name": "libxinerama",
+      "version": "1.1.6-1"
+    },
+    {
+      "archive_filename": "libxkbcommon-1.13.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "18d8dc90958eda2edaab9b671ee96c2c1f2b1a322618eca97c7c04605d738581",
+      "installed_metadata_sha256": "3417ce46da0f9d560e1970ae9c56e539f109eb2a27b8a013d2ca55f082c4af38",
+      "name": "libxkbcommon",
+      "version": "1.13.2-1"
+    },
+    {
+      "archive_filename": "libxml2-2.15.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a6b5c30f51a7ca7c85348de8e83280e6825a8f3e193cc6916ecd8e695d4a24bb",
+      "installed_metadata_sha256": "5b213803f851ca56849f36849d24973dc63c013a87b93344f5e6b5aa9a16a773",
+      "name": "libxml2",
+      "version": "2.15.4-1"
+    },
+    {
+      "archive_filename": "libxrandr-1.5.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "49d3a3596311477f8ad2e1735dae612013118802822f21ce22886f65103dd899",
+      "installed_metadata_sha256": "86c983a1f199917b07d221415fda004ce07c59f44d1fd6123375414c590a9311",
+      "name": "libxrandr",
+      "version": "1.5.5-1"
+    },
+    {
+      "archive_filename": "libxrender-0.9.12-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "fed0389073d5b107074eaab48cefcc2716e607865142cde5b579c8ceeefea142",
+      "installed_metadata_sha256": "b60be7a768173c080908f16ad5f052d76f0a32ba5dc0b5a80b65c88e3d267264",
+      "name": "libxrender",
+      "version": "0.9.12-1"
+    },
+    {
+      "archive_filename": "libxshmfence-1.3.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "39d0f128e4efc393fcd3b42f20046ec0e854341b601f14b457d67add86036d13",
+      "installed_metadata_sha256": "616087fe0f010719c829c5755483e714dbc389ad1bda6ab15e936afb71e729ec",
+      "name": "libxshmfence",
+      "version": "1.3.3-1"
+    },
+    {
+      "archive_filename": "libxtst-1.2.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7e036fc4ae02ec16d09efed08b111e33d4753aa959d12148461d653659a9f529",
+      "installed_metadata_sha256": "76c5cc58958669d657da41025f538ed2bb943813fa4c67b912dba7109ab802d5",
+      "name": "libxtst",
+      "version": "1.2.5-1"
+    },
+    {
+      "archive_filename": "libxxf86vm-1.1.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "b9215b44734a0149f6e9b3c9bfcbb5abef2b6f32b2767ed628bafc3f0cc38934",
+      "installed_metadata_sha256": "659318561f1abb1ac1769b2f7be26be40180636993477eca48d2de14af6d06e2",
+      "name": "libxxf86vm",
+      "version": "1.1.7-1"
+    },
+    {
+      "archive_filename": "libyaml-0.2.5-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "cd2385982a050dfce2ef0ac435b36e9574ece347bdf4ad016ee5ea78e30b4940",
+      "installed_metadata_sha256": "f4255e01245cf2c6b5b76dfa9708b649b317d0803ffc96830c0d76a0f143fb5b",
+      "name": "libyaml",
+      "version": "0.2.5-3"
+    },
+    {
+      "archive_filename": "libyuv-r2921+644251f25-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "953c7ee536b35be829a3cc8c614f9a0b553830f5d4d030f35fc452d0199612ce",
+      "installed_metadata_sha256": "b2e38efc49641cdc89f88cba49cdb37d096f8ba442c9d55e58b54286c9cf3337",
+      "name": "libyuv",
+      "version": "r2921+644251f25-1"
+    },
+    {
+      "archive_filename": "licenses-20240728-1-any.pkg.tar.zst",
+      "archive_sha256": "47e9f4ad914da21f6326cc4eb84a788043523191f80d8e661b936b25d7fa1879",
+      "installed_metadata_sha256": "a843537599d9bfb2c332daede77813caa49d228f59bf1ded897802ec98f9f4ee",
+      "name": "licenses",
+      "version": "20240728-1"
+    },
+    {
+      "archive_filename": "linux-api-headers-7.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "d8d3483363e70b353ae31bbf8773df77780724eaeaa140faf4e4111bdb87588f",
+      "installed_metadata_sha256": "5331668d75729d15faaa54380dbca033c153e021046d9a583e49c241d8787fc0",
+      "name": "linux-api-headers",
+      "version": "7.2-1"
+    },
+    {
+      "archive_filename": "llvm-libs-22.1.8-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "ad4454d1b969192e7a878066400a583b984210322d67c6fa8958ad1175342658",
+      "installed_metadata_sha256": "e97f754ec8d993c54b46a0ea589f3d73aa87f3a31a29c8f6150d16f090a37700",
+      "name": "llvm-libs",
+      "version": "22.1.8-2"
+    },
+    {
+      "archive_filename": "lm_sensors-1:3.6.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "5363304255a506cf71e1ed4f0464166e5f2aad6f0ae444fe08cafd8c83bf11ff",
+      "installed_metadata_sha256": "0a1cdcc77d19a36fa0d69838572bb2a29484eae2ca7a15137acd749f5695506b",
+      "name": "lm_sensors",
+      "version": "1:3.6.2-1"
+    },
+    {
+      "archive_filename": "lmdb-0.9.35-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "50ae8083860e1ffadf4fab3c173a043fd97be41f5ceda7d2e77c528cd84d2386",
+      "installed_metadata_sha256": "c4008175844a345b27281306cb3fd9176d24264d5ef7bf17913c24a2cc6d3a6f",
+      "name": "lmdb",
+      "version": "0.9.35-1"
+    },
+    {
+      "archive_filename": "lz4-1:1.10.0-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "c6200c776440678fe8c26adae6c104194b425d9393a9e3fc09f934363f0c39a6",
+      "installed_metadata_sha256": "3322280c21c1fadabe82a24d4583754b70b058f8970b8e7bfc680803fc3ba6e7",
+      "name": "lz4",
+      "version": "1:1.10.0-2"
+    },
+    {
+      "archive_filename": "lzo-2.10-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "dd5ec871aea5ddfd38d4a25539e966dc05e75d6969ebc31917c8d25b97ccd69e",
+      "installed_metadata_sha256": "4ecbd9987c480f80eccc14213e028ef7235c3de2501f703eac060c2d56c66469",
+      "name": "lzo",
+      "version": "2.10-5"
+    },
+    {
+      "archive_filename": "m4-1.4.21-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "d33224f8f2aad6a4f38cf997f88c23b2a4e4dffba20348a80a50805f98455934",
+      "installed_metadata_sha256": "c9537b8b61d5afdc8febb39d63b0850d037e9f6ca51b3a3ecaa191effb906a11",
+      "name": "m4",
+      "version": "1.4.21-2"
+    },
+    {
+      "archive_filename": "make-4.4.1-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "b03efac9175b986a5f29302336fb1271874464644de3191e6a40079eb8cc5276",
+      "installed_metadata_sha256": "ed91cab7b268239fe2f318990ab12082c32f12482eb44a9badefd376ead58d5d",
+      "name": "make",
+      "version": "4.4.1-3"
+    },
+    {
+      "archive_filename": "mesa-1:26.2.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8365cf2f7f8b55619b3deb52112f402e1db6204a48b60447795631955d832e6c",
+      "installed_metadata_sha256": "1377dd72d2609c1c05c1c1be65ee084bc4bd1622d0be2a89b71689de77e6c0ab",
+      "name": "mesa",
+      "version": "1:26.2.3-1"
+    },
+    {
+      "archive_filename": "mpdecimal-4.0.1-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "8679f71ed9a982c91883adfaaf0f87a1b74d92d4060283180c4a105a6c7afb19",
+      "installed_metadata_sha256": "07b6a04719e70f8168597a51788f4c3d02386829f0580ba9691fb20a1eb538a0",
+      "name": "mpdecimal",
+      "version": "4.0.1-3"
+    },
+    {
+      "archive_filename": "mpfr-4.2.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "e765082b2c3260550887ccf34f6f0d24289fc5ca8c0949eb5c2e9937272ea80f",
+      "installed_metadata_sha256": "dc5c816ebef91e044fbe88e97317adfecad8a145e6d1499253286199d5b1b087",
+      "name": "mpfr",
+      "version": "4.2.2-1"
+    },
+    {
+      "archive_filename": "mpg123-1.33.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "af9bbea4f7c003f2c4b604430582d58b7b232c5adcda673d15401c3faf1943f2",
+      "installed_metadata_sha256": "f05263b3486d3ca840bca0f4869e16516e0513e3af46866f8cc2f099a4b9ff43",
+      "name": "mpg123",
+      "version": "1.33.7-1"
+    },
+    {
+      "archive_filename": "mtools-1:4.0.49-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "d5098ea3b7d1795905aa30e83cdaac9b53e081c9c08d7b02fdc2f21a7a36f449",
+      "installed_metadata_sha256": "e5435158c0757de4ef4bff4928c25adb54e08a65f264197a6c22dc6e295c95ec",
+      "name": "mtools",
+      "version": "1:4.0.49-1"
+    },
+    {
+      "archive_filename": "ncurses-6.6-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "9b80390fd681121443a45a51b74e2e2ade245ce22af8769915d63165b727e27c",
+      "installed_metadata_sha256": "4d48a35c2b6267c4021147d201cd47618d7a4293de9408d0aace05f808d9a23b",
+      "name": "ncurses",
+      "version": "6.6-2"
+    },
+    {
+      "archive_filename": "ndctl-85-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8473584f486f93fecefd62240ef1e83194e562c9ff899c1491036edae9e41443",
+      "installed_metadata_sha256": "32543ef8ed23b287f63375c2f3a942a318ceeb63d612d2ad1a44b8e3075ea7ae",
+      "name": "ndctl",
+      "version": "85-1"
+    },
+    {
+      "archive_filename": "nettle-4.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "679138a8405ca383aba7836d54fdc282db9394b7dc23c097b8965f70119adf13",
+      "installed_metadata_sha256": "e9a07b41e553f23e3f2074670694752487f10319b365156b4e9f39301660be24",
+      "name": "nettle",
+      "version": "4.0-1"
+    },
+    {
+      "archive_filename": "nftables-1:1.1.7-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "5a25cfdb19c370d01cfe81ce8c1e2e1fa9a2e05d51d1417578e8c425893a5b29",
+      "installed_metadata_sha256": "9711eb9f3d578bfdffff4c4843211a453763f5f32730a3438db376c790eb0f1a",
+      "name": "nftables",
+      "version": "1:1.1.7-3"
+    },
+    {
+      "archive_filename": "npth-1.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "2f045edab9f7fd2c04667c5ba7f70c47da7b6fcfe87a99a857ab7ef5a12f39b4",
+      "installed_metadata_sha256": "f07a575ce95aadf7a69811e699078bf1e220d0553f712a8e956bcf280758bc37",
+      "name": "npth",
+      "version": "1.8-1"
+    },
+    {
+      "archive_filename": "nspr-4.40-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "00c276c71d748e5220757f26776f4ad340b1cb477eb835de0d088f9b36277ad7",
+      "installed_metadata_sha256": "dd11c929c347b0e2b72252b855e6661f64e6be9013cbcbc1aabeace0e5f40d1d",
+      "name": "nspr",
+      "version": "4.40-1"
+    },
+    {
+      "archive_filename": "nss-3.129-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "b94369cf529a3a2c8461bf00cb438367711317f7e60786386b43867e84d5b517",
+      "installed_metadata_sha256": "9508ab98b8b5001ec8a8bb9b289c69c69d6485ca2d08763b3a34c1197806d1e9",
+      "name": "nss",
+      "version": "3.129-1"
+    },
+    {
+      "archive_filename": "numactl-2.0.19-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "699bce74daee11fa49de93999ba4e023f132bc51a7768dec845b2979d54f367d",
+      "installed_metadata_sha256": "c5d5413708b27525b7bb6a2b5c8c3b567d45570bef47a5443b7f266f042e29c0",
+      "name": "numactl",
+      "version": "2.0.19-1"
+    },
+    {
+      "archive_filename": "openssh-10.5p1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7095495592ec579541478fb82dc0c0038f3b9da8adc774ffe1a1589004432992",
+      "installed_metadata_sha256": "41c10383227528bdb8b9c52e23f5675fda2e1b644980231b0f87bc1d17ac06d3",
+      "name": "openssh",
+      "version": "10.5p1-1"
+    },
+    {
+      "archive_filename": "openssl-3.6.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "2a3744b5ea31fcb0ac50ca89a2d6a9886eadfb51b63d76bcbd7952794b03631c",
+      "installed_metadata_sha256": "ae4d9f56290934f9de6b1ad472d8b24c9509c680e29b824fd514e9b82be14e37",
+      "name": "openssl",
+      "version": "3.6.4-1"
+    },
+    {
+      "archive_filename": "opus-1.6.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "191b1f303950e184bdbe12105d8cb06e69e727e8f9160cfdcf33105f70d05b46",
+      "installed_metadata_sha256": "9ee037e2c179f2345ed7c41dddf49d2bfb18194636f1d382a59b7a6ee270f25d",
+      "name": "opus",
+      "version": "1.6.1-1"
+    },
+    {
+      "archive_filename": "p11-kit-0.26.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "94ad53e76eaeacac1584ace5da7751d8e7fb7aefbfd3bd99d9c34d3461d630ad",
+      "installed_metadata_sha256": "c3c5c941fee45beb0e9f5fac2cb1f6dd81f2211fe55d4ef3cf636b053ae123c1",
+      "name": "p11-kit",
+      "version": "0.26.5-1"
+    },
+    {
+      "archive_filename": "pacman-7.1.0.r9.g54d9411-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "2092ec7a0391416e4a1757c455bc071d7b58a124cedc83f582cb7d37d52f211b",
+      "installed_metadata_sha256": "eab409d86ecb35ecd5a35ef9b9a56e6bef4b06951cf67e6524116d9e6ae5b47a",
+      "name": "pacman",
+      "version": "7.1.0.r9.g54d9411-2"
+    },
+    {
+      "archive_filename": "pacman-mirrorlist-20260610-1-any.pkg.tar.zst",
+      "archive_sha256": "f6008b33d950a4e4eb5930fe3852cceb0fe1fa5fdaff36125583201531fe4ae9",
+      "installed_metadata_sha256": "346d66a0e45a4f96ebae2490e767ee951152f45190d18d20e9b1f96a70c47b77",
+      "name": "pacman-mirrorlist",
+      "version": "20260610-1"
+    },
+    {
+      "archive_filename": "pam-1.7.2-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "49f54d6b632d0e83cde032eb01f903b71ac09e7dc9bbafbd64fea70227337d48",
+      "installed_metadata_sha256": "e7a61fbe5981783c0094c086a702bbd9405e66ac0b0da1bb0453e40d9bbec0be",
+      "name": "pam",
+      "version": "1.7.2-2"
+    },
+    {
+      "archive_filename": "pambase-20260616-1-any.pkg.tar.zst",
+      "archive_sha256": "306265b486e3f7d2854d583202409cdd90f131368c92aa56f845822a5d2bbf65",
+      "installed_metadata_sha256": "8df780eccb2e05d3d4764c4e058937186ec81929089caa244ec470fc0c2e74a3",
+      "name": "pambase",
+      "version": "20260616-1"
+    },
+    {
+      "archive_filename": "pango-1:1.58.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "9b74c73056ce6b2aca83bf1647f79f0a6bf53f204c5273b03530e034472db13c",
+      "installed_metadata_sha256": "5836b2a1d4e9666e23190cf9a748332d158c89c92c57c0ef74bfa72ff5900839",
+      "name": "pango",
+      "version": "1:1.58.2-1"
+    },
+    {
+      "archive_filename": "parted-3.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "082e294123c4b993fa367c32fd5807e0ec9366b2420d17286d64654326a880f3",
+      "installed_metadata_sha256": "6f71be6df7b89c802254dbeec0704c644a91fdf4eb4d73abdd6f4381969610c7",
+      "name": "parted",
+      "version": "3.8-1"
+    },
+    {
+      "archive_filename": "patch-2.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "b4685fc56dfc18afb754f64099b82396885fefe43e82f20b37477650f642303c",
+      "installed_metadata_sha256": "dddb30fd2bece0b8abc32d30093ac89398b7ba321ddc986d4314e5dfc1f2e46e",
+      "name": "patch",
+      "version": "2.8-1"
+    },
+    {
+      "archive_filename": "pciutils-3.15.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "994429cef5db515b020bc5125faab04a441677837ebc16f03da53aecca213915",
+      "installed_metadata_sha256": "ea095ce3e2596ae53af61d36ca049477ab0a28d191e7294cd3a1895e66969c24",
+      "name": "pciutils",
+      "version": "3.15.0-1"
+    },
+    {
+      "archive_filename": "pcre2-10.48-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4afe36f5bcaefe7b6b45c863ec1afa6300a6ef72a99f53f55ebcd1f1824d0604",
+      "installed_metadata_sha256": "d8cd38329e1f80aa66d9490260df2c5a4294327d6f16bc82863579aa12c3e88b",
+      "name": "pcre2",
+      "version": "10.48-1"
+    },
+    {
+      "archive_filename": "pcsclite-2.5.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "67bdafe3eb3caa02329a1ef0f664d6b51777927a9d3725caffadfc7bc746da18",
+      "installed_metadata_sha256": "c0f37a44ec9bef603a92f57bf286147e6c1fad7f6a20db82136422e57d1af5fd",
+      "name": "pcsclite",
+      "version": "2.5.2-1"
+    },
+    {
+      "archive_filename": "perl-5.42.2-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "1f2f64d0c4c6c117ea814a2144cb9b22a93e2462e9a7773db2e982a68e378816",
+      "installed_metadata_sha256": "f845436746b2ca5993eb41c796f04857367e764dc1ff6b1a33a3d570736fe925",
+      "name": "perl",
+      "version": "5.42.2-2"
+    },
+    {
+      "archive_filename": "perl-error-0.17030-3-any.pkg.tar.zst",
+      "archive_sha256": "2a6df48b14b3ea0cd6154b46825b4d056b9525a9a3e9afe761decda1d115d196",
+      "installed_metadata_sha256": "27b34d3ba2d8c70bf906d24099cfa25129c789081ffe98ca84a2a98a8caab95c",
+      "name": "perl-error",
+      "version": "0.17030-3"
+    },
+    {
+      "archive_filename": "perl-mailtools-2.22-3-any.pkg.tar.zst",
+      "archive_sha256": "d93f6c122fa2301c2bd02095b8aaf9c225b5f26f64bb25d2199bfa9a1d3f47ba",
+      "installed_metadata_sha256": "8987cb7bc1055d8d0995b22ad72218d610ff2d07e6d45abffdfa8888b602a2b7",
+      "name": "perl-mailtools",
+      "version": "2.22-3"
+    },
+    {
+      "archive_filename": "perl-timedate-2.35-1-any.pkg.tar.zst",
+      "archive_sha256": "225b05f5d301b7e168299240b9369cece8d0bddee8627117ce23a57880679715",
+      "installed_metadata_sha256": "083af0033c6121de4cf806441d70bb53ae2983dc7492bb63261eb6dc48818597",
+      "name": "perl-timedate",
+      "version": "2.35-1"
+    },
+    {
+      "archive_filename": "pinentry-1.3.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "16dfcc18fc60f8c654687970a9b7253ce17a987c44119fe2ee37c760460fc557",
+      "installed_metadata_sha256": "547788f608e1355c7ef851994c8da9902a9236b21e24e79f222cabcc256db019",
+      "name": "pinentry",
+      "version": "1.3.3-1"
+    },
+    {
+      "archive_filename": "pixman-0.46.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "e87e665d25a2230a178d8490202e1d677fde5908f68ebedf7d987308fc26fcb6",
+      "installed_metadata_sha256": "e0aa256c2b84584c815f83cfb6fcbd82e2ad9bd42e2f9069f8b68475a0ebb5e4",
+      "name": "pixman",
+      "version": "0.46.4-1"
+    },
+    {
+      "archive_filename": "pkgconf-3.0.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "12035a6c30576a5ebdbb2fc24706f3643bbb82108223dff8700ab1a0042a7313",
+      "installed_metadata_sha256": "05c9efa238b356843a679b7fb10d58e7657da6982479d0fc244af9243b0e616b",
+      "name": "pkgconf",
+      "version": "3.0.7-1"
+    },
+    {
+      "archive_filename": "polkit-127-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "96a5189e985738bdb895febd532db5cb3799b8fbb867b7ad8ec68c6e3b85c308",
+      "installed_metadata_sha256": "dffd4a89734aa3175633b0327e95dc4d8bf9126da06e5aefedef76ced13a4800",
+      "name": "polkit",
+      "version": "127-3"
+    },
+    {
+      "archive_filename": "popt-1.19-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "877635962b604efa79409c3d423f4fdffc4868776af3e0e804cc94a0b57ca151",
+      "installed_metadata_sha256": "dd26e9b0852985deb1b546965b2fd341e56259ffeb9a5254434eb68ba766c2db",
+      "name": "popt",
+      "version": "1.19-2"
+    },
+    {
+      "archive_filename": "procps-ng-4.0.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "7a0b17ee89ad1a04f7c6c86be69c9c816ac2c14da9648dfdefb7ccf4b22c14d3",
+      "installed_metadata_sha256": "a375bdea07e0373173d4493e264ce473cb0502b8e47be87ab1c8fe20b976aed7",
+      "name": "procps-ng",
+      "version": "4.0.7-1"
+    },
+    {
+      "archive_filename": "psmisc-23.7-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "b6722605ae0f2912d7498e87839c702275bfd9280b076e92e80474a847561bd4",
+      "installed_metadata_sha256": "2eca1754073b66e54fb2c2d07c289fdba4f47799c7b99df0f680625c75edc9e8",
+      "name": "psmisc",
+      "version": "23.7-2"
+    },
+    {
+      "archive_filename": "python-3.14.7-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8a350ce53aae01ae687f043b301931e411bf06333ba480b42b3b5432a0e6c79b",
+      "installed_metadata_sha256": "5461f612221f7c5d817fa00c7384d6dc69e299e1314c538a4cbf9ade3e3399f3",
+      "name": "python",
+      "version": "3.14.7-1"
+    },
+    {
+      "archive_filename": "qemu-audio-alsa-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "64831cab873c84d0d051ed7dae07a284872e33aedc665613fa0a0f15b736a051",
+      "installed_metadata_sha256": "c9cf98bfcaa751e75a6776aa84f0a0b73170c2c43fed2c8a693ad0336b594887",
+      "name": "qemu-audio-alsa",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-audio-dbus-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "c94cbd64c57a1e39c1b7a3485a923eddd9fbbf18fc21317ed613a19b4b757915",
+      "installed_metadata_sha256": "9dac09c27996599524ae750367566d12fb76e6eea7667c5c3cc3ac90c3b04448",
+      "name": "qemu-audio-dbus",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-audio-jack-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "9051edb4279aec5414d979625402087f5ae36da33724d43dae7f630213ecdb3e",
+      "installed_metadata_sha256": "77fdcf2055225889d4b777fbfe4c4aadd0cb33457e661f9ed26e1d20e849f800",
+      "name": "qemu-audio-jack",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-audio-oss-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "56afcf4e304ee223d5dd7428acae4a8ed7ae13e741217d62ebc8a91b5d9c405c",
+      "installed_metadata_sha256": "fa3dc2f9ed66aeb13a29a02f0e419af2cc27c5667ac72331f7611c43cc5a5314",
+      "name": "qemu-audio-oss",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-audio-pa-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "db59c67149398cca5177bb9b7e45c8048cf5b943fe2106768e7ded0e5fde2c7b",
+      "installed_metadata_sha256": "cc02a4168616ebd9107c0fd65ba0fa15a52bd7aaa49aa8aa085ba26cf3c4c855",
+      "name": "qemu-audio-pa",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-audio-pipewire-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "eecc5d3fd5baf3360d6979b28d0d0dbaaf34c754d0c4e59e01d3974f29e16f03",
+      "installed_metadata_sha256": "14bb1ef00f6213c7475a62e55fe012b29519fb9d48396b4481f1880316e06d5d",
+      "name": "qemu-audio-pipewire",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-audio-sdl-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "4c4ff6b862fde5e0c034517e6003944b4157f2667ad396fd45c1e91e10ff5cd4",
+      "installed_metadata_sha256": "33ec6c395ba51694e966001e22933edc596f2b7eac86f45bc4414bb9892c9703",
+      "name": "qemu-audio-sdl",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-audio-spice-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "bbcff1da5d20edc8bedc7ea88cf80ff37e0509fc3e3054721c2685e6b33a4ec5",
+      "installed_metadata_sha256": "101da3123e2ce35f1115bbd50af1335d89356e607a8ee270c80181da54c40743",
+      "name": "qemu-audio-spice",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-base-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "fff61dc1de7a157ab921ac7a066dd1f699c91bd3717c9b869a0424277b29fd59",
+      "installed_metadata_sha256": "57ecdc136ba0450bc2570cb9423ee820ae9143fe3247ac7f3aa28c94da631e7e",
+      "name": "qemu-base",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-block-curl-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "7856842c1f86d78031bed2cec7dd03010870b8a9e05caf75b99b0612af7bd302",
+      "installed_metadata_sha256": "5353dece0750821556b992c9ada22744ce585a7200fd405628ea5a50da64725a",
+      "name": "qemu-block-curl",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-block-dmg-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "95945ee80837e0d2cb9b07aee1967eb1a7f36c769abb5cc04e5c8b3528f203ff",
+      "installed_metadata_sha256": "f327352a43b730349dde6a7060456699e80b2a8f2a5f766eed86e9b738b77048",
+      "name": "qemu-block-dmg",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-block-nfs-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "10fc8ef0b02f19e1c9ba422342cdc22daed2f7afe01bee03751d21f59d102bcc",
+      "installed_metadata_sha256": "aa2e4601a69a2242c98d00e4c270de59b062284a88b22f0c4a2a1c3ba49e772e",
+      "name": "qemu-block-nfs",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-block-ssh-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "6da30a21037f0decbf3bf6d8aec36e7ee2bcd5fef198cd2d159ad9973819b48d",
+      "installed_metadata_sha256": "58f191deac6541c6ebc90c1db9336cc8e2d60e65edef4a90206e3dceb74956ed",
+      "name": "qemu-block-ssh",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-chardev-spice-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "179773bbd2265c9642a60281daccbe47a241ab3fdde2a2cbf4fca522d0489d8c",
+      "installed_metadata_sha256": "066be20acbcae2f9c1c11849f93123503a797c77ed5953282e3058031f3f1a87",
+      "name": "qemu-chardev-spice",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-common-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "7669d682410ee76c6d84c55306e2b5d57a623e90566586b52ff48e05ac8c86ed",
+      "installed_metadata_sha256": "2235655fd6f8d38d02aeb3f72a87b7429b29d48d274f2b07a49b6cb5ecfde2be",
+      "name": "qemu-common",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-desktop-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "93d26384886e87766855f7b7448b66b38c0fbbe48a5605d2b912005c05bc9fcf",
+      "installed_metadata_sha256": "de5157181c6da37fc7b29d3ca13274dd2edf3af30ae56973ae24a9664fadd505",
+      "name": "qemu-desktop",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-qxl-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "25530e0808bd09364a468ce963bf7e847ebd44338451f77462c165aad10f4e09",
+      "installed_metadata_sha256": "0b337f7be7135e05550a9d26d047921128ead2b4f92bd246054371aa2b3c4e5d",
+      "name": "qemu-hw-display-qxl",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-gpu-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "173c47d336727dbb8b9993ab1c950062b1643b00c858d2c4d929c16e6d1b6455",
+      "installed_metadata_sha256": "dd0527acc27427984e6ce491421348ae10b3d8b124608c3a083b1d4b1abb145c",
+      "name": "qemu-hw-display-virtio-gpu",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-gpu-gl-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "272c9b96ccfcc40cebc8c97e39d07019f9c912b30ac4c74ce973c1c82e045805",
+      "installed_metadata_sha256": "61df92449765519ee69c51e2ba1d865a5251f5d5785e05e2b06144170a4ea0aa",
+      "name": "qemu-hw-display-virtio-gpu-gl",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-gpu-pci-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "a01255c0fd821e3903ef61380abebf50c131979d589e2c833d2e288d6cc17008",
+      "installed_metadata_sha256": "7d1c2374784a2b7a22c0f97d138dd94875f86009a5020ff04d9d00da50d6751c",
+      "name": "qemu-hw-display-virtio-gpu-pci",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-gpu-pci-gl-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "c584f83cbcd023d776423306c7edc7622d5decd84556dd1d58069b14d117bd14",
+      "installed_metadata_sha256": "4ea86128222069b0ffc021e63dc9db039f47ac883db7853dc573780734cc13d5",
+      "name": "qemu-hw-display-virtio-gpu-pci-gl",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-gpu-pci-rutabaga-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "4b8ec64f3027d987b7c70f634f19f772b47d5fb2ffcdb5af7f411917ea208aae",
+      "installed_metadata_sha256": "fc1430e2386b77e7f9788f1a6d95938dfb6bc249b67d5bbf27fb20abadb5c13d",
+      "name": "qemu-hw-display-virtio-gpu-pci-rutabaga",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-gpu-rutabaga-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "55c47eae8b79f3f041e5521c4eda236c2481308718471f63d4e74c214560b194",
+      "installed_metadata_sha256": "cfc31769c6387a5398868bc6ef6a3b512ab97aa2e313af4de597dc65149c77bc",
+      "name": "qemu-hw-display-virtio-gpu-rutabaga",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-vga-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "b2bac9e9682f30a97867125d84dfd8b9fd622624e2ff6a0460e1a51db1290094",
+      "installed_metadata_sha256": "dd9a9c0480003503d862e8212f74b54468d49a4168d443905b5e02beda83c05c",
+      "name": "qemu-hw-display-virtio-vga",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-vga-gl-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "b9aacc6c0816df50253c99977782f82e3032e48ebd6d65ff8ccf101832677161",
+      "installed_metadata_sha256": "1cba73e4929d1a43f6676e61a4f44f2ee5fa9adf3fdf619733aad460365f7a9b",
+      "name": "qemu-hw-display-virtio-vga-gl",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-display-virtio-vga-rutabaga-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "c45d28346c8a9ba9863ba4e34daab1819d72a1b4a669ec2d1cc8839e8432a484",
+      "installed_metadata_sha256": "d1f472427483ff8e571b2ca770785f2719589f41f36caab1aaa7b75e2c8d2f92",
+      "name": "qemu-hw-display-virtio-vga-rutabaga",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-uefi-vars-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "f8a6afbb819b91c177df1081e002ff4b4c62949c0c740d16d3f190af68a64df4",
+      "installed_metadata_sha256": "05f1445c64e7c0d682ffbb6d57870c1bcfc9278f1e67b6e8532dede47b5d80a3",
+      "name": "qemu-hw-uefi-vars",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-usb-host-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "411028f876ee3a947961508ad3d3463b49b63b86704b053230e7c7e4d1c027d5",
+      "installed_metadata_sha256": "8a6e376df00cb3147f7a3fb6e832d132dc869bca0325fdfb0864173cd77a4ae3",
+      "name": "qemu-hw-usb-host",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-usb-redirect-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "d2980d5b966a2baa85feaaef86525509f2fca479847e221c676f436c98a22a0e",
+      "installed_metadata_sha256": "c4ed941437ba722586c685679369d95237f592e69b0750b9b2e6b07858503306",
+      "name": "qemu-hw-usb-redirect",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-hw-usb-smartcard-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "f452235359bd7cd01c853f3f490832e4d057e566a8659db9d0c83962fa2c545e",
+      "installed_metadata_sha256": "0124a0690f3b23e2dbdc2ae5dae0820ca7e884edbb83781619a74353c4fdbe88",
+      "name": "qemu-hw-usb-smartcard",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-img-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "9d7d79307a2ac29b7ab3c3e47b8cb6ef526cd989736712c7adfa3c0ce2da715c",
+      "installed_metadata_sha256": "c29688e9e3654d58ad1597160cb028dd36292c76b8a7d96eb3f5391028930b26",
+      "name": "qemu-img",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-system-x86-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "07a42011877832eb3f0e31c663efaf0041848ca675e4a52976e207d9f16416a6",
+      "installed_metadata_sha256": "9959ffbafbfd53259967887fac0a49fc5a9f7f04a860a4b4cc8f806e988da6e1",
+      "name": "qemu-system-x86",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-system-x86-firmware-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "d96ba5b34dd5787b1fa4501f48e78382524c814619e907e385a9be9acbd378ed",
+      "installed_metadata_sha256": "4f31b8656603e5f4315050cbaa3750eed900d7a0e366bbf0fe32910f70a80b38",
+      "name": "qemu-system-x86-firmware",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-ui-curses-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "c4f6ed788828378ddef0807bc53385310a6b71415ee21b71262a9608b367d0be",
+      "installed_metadata_sha256": "8bb1a0ede33522e6aaca3dc3430eec10ca421b737e7f7855083b2e7cace891a8",
+      "name": "qemu-ui-curses",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-ui-dbus-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "0bb02482b3e8f023aab131fcc41e138403ddef8e3e608532dd10fc22c0c4e2f7",
+      "installed_metadata_sha256": "97d7cea36bbc4e902d59d50e9c17f7e3b45c2e9a920f4ecbcfe2a7428ba66f94",
+      "name": "qemu-ui-dbus",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-ui-egl-headless-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "b4936f0e9b51af9d173198145a0b2bc4904b2634793d9ba83e734d9db9b3c185",
+      "installed_metadata_sha256": "19b223b67d4bd3a9712895caabd7bd8ebe8e3849c06c46d7f374b17487dfc4ca",
+      "name": "qemu-ui-egl-headless",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-ui-gtk-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "4c2a0fa23b5adc847c20d5b117d1bd2fdee8a61770bc86b10c8140bb48a32873",
+      "installed_metadata_sha256": "bdb05cde5d699a377cb5d12f499f6a43cd0af25f99e01dddfd6d46cd4577b5d9",
+      "name": "qemu-ui-gtk",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-ui-opengl-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "3ad933d1c5bb231ee1a2813249c84a14f42ba671a6b24025c93ff1d8c85414f9",
+      "installed_metadata_sha256": "73077ea309211e4e1f0eae28f6c86081056dd14f0fbfe1d3ea89ec14f7f28bb1",
+      "name": "qemu-ui-opengl",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-ui-sdl-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "27d6e0d6156f79f7180f0c5d12d739a8336fadf529269c2dd01fc08735d6764e",
+      "installed_metadata_sha256": "d01ca697aed8be4700248f236a8565e39f79dceac7868c52c44cf982b6a997ec",
+      "name": "qemu-ui-sdl",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-ui-spice-app-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "ee8e7e72e78a963f7648f170522fd1a6b4cb112a0ab0cb5c257587412aabd3d9",
+      "installed_metadata_sha256": "a6c5e713e3348e977dc368d2fb71531b4f7d8b45fa41b7333889fffd8bfe6faf",
+      "name": "qemu-ui-spice-app",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-ui-spice-core-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "b4b5f6266f384cb83b3db8b26c170aee7c9c133b15d56a48fc4da62202ae70e7",
+      "installed_metadata_sha256": "c491d8aa8446d6ee6a575cb19241aa97be50ebdf80b8aaefcdeda6abf0f19be7",
+      "name": "qemu-ui-spice-core",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "qemu-vhost-user-gpu-11.1.1-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "4bebcef4d4a59f873d927963d270b5db23fa0cee0991c1f9d289d8e82b781191",
+      "installed_metadata_sha256": "d9d61cf0e2c870681acb18b7366d528513f17e7c72f0ff01bbaee5215c53c996",
+      "name": "qemu-vhost-user-gpu",
+      "version": "11.1.1-4"
+    },
+    {
+      "archive_filename": "rav1e-0.8.1-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "17812c6c332ad56fbbce4b758ce8cf9b8d311b2474a574619643aedd681119c3",
+      "installed_metadata_sha256": "9cd958b797d6f2f781404b7f9c6681ec11a4ff01629a49377138638d6c13b985",
+      "name": "rav1e",
+      "version": "0.8.1-3"
+    },
+    {
+      "archive_filename": "rdma-core-65.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a7a0648650811fd753ded1003acd83871bc31a4eb998bc4d04cf050ed02a238b",
+      "installed_metadata_sha256": "8ea2cf32ed6cef87d8175354a7b90e7774c126d7afe628f38d2aec222e3ed01d",
+      "name": "rdma-core",
+      "version": "65.0-1"
+    },
+    {
+      "archive_filename": "readline-8.3.6-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "016b2aeebfbe9dfb89283c52bb49487d95ea23a875d477da42d000a793613020",
+      "installed_metadata_sha256": "835fb6a88526f377786a1b9141a1f2d4cce75262dc6b909b3ba9a073e2714b61",
+      "name": "readline",
+      "version": "8.3.6-1"
+    },
+    {
+      "archive_filename": "rutabaga-ffi-0.1.85-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "dbb58d33ae720d578f24194a24c42857fc66c8348dd63e76ca54d78b56bd45ee",
+      "installed_metadata_sha256": "005e2785084d6835799b966cee2216604044f1a6f79052f51a68954b3e122da3",
+      "name": "rutabaga-ffi",
+      "version": "0.1.85-1"
+    },
+    {
+      "archive_filename": "sdl2-compat-2.32.72-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "fceceb87225290769682b52685579011b9b1b31b562e63a09bf5310f69138f19",
+      "installed_metadata_sha256": "6e5977b69975b3bba92b42828e8f4c2ee71bf75d01905491426e19b20d969a4d",
+      "name": "sdl2-compat",
+      "version": "2.32.72-1"
+    },
+    {
+      "archive_filename": "sdl2_image-2.8.12-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "bf2075e2576539118eadb014265065e4b570ce8c93dd5cb12f27643dba07cf89",
+      "installed_metadata_sha256": "14e53bc35093b7188f543c7a2b3ff1ec0c1a518014f7eb42a71d5519361209eb",
+      "name": "sdl2_image",
+      "version": "2.8.12-2"
+    },
+    {
+      "archive_filename": "sdl3-3.4.16-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a532e514a558b49893fb88eb7a4f41b85d374c0f71bf772b650173a9ed18db0f",
+      "installed_metadata_sha256": "c83eb097faec107c2f202500e2d1a25e5c218cbbe8437c9ab0aa74a511349505",
+      "name": "sdl3",
+      "version": "3.4.16-1"
+    },
+    {
+      "archive_filename": "seabios-1.17.0-2-any.pkg.tar.zst",
+      "archive_sha256": "edf543abcff088f94779fa1ec81096867fe5bff06b835da8e45c9c5b0e4d5269",
+      "installed_metadata_sha256": "8a6eefec67cd250c1de2cc2afdd23698721f23d364e0c85e5736462a33ea791c",
+      "name": "seabios",
+      "version": "1.17.0-2"
+    },
+    {
+      "archive_filename": "sed-4.10-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "90733f34fe5791b554b935998df858350bcea53061257dba06829ce3533f8e01",
+      "installed_metadata_sha256": "8fb383686fa8e262bdc25b8edd35ebb5e7efc6f9bdde47bc7bbdd41b022b59ee",
+      "name": "sed",
+      "version": "4.10-2"
+    },
+    {
+      "archive_filename": "shadow-4.20.0.arch1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "615c819eb2d3e22158289f3cc2447f81ae981a6d11b3418da30b6085306b3e77",
+      "installed_metadata_sha256": "19827d6b5b5ca5a61035a6d1fb5bfc6e675e26a1673e13410235e55c22ecb7ec",
+      "name": "shadow",
+      "version": "4.20.0.arch1-1"
+    },
+    {
+      "archive_filename": "shared-mime-info-2.5.1-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "e71f0788fbb52679b9a75f3558ef8a2b5c3c9f691f136b7574caefc0240461c1",
+      "installed_metadata_sha256": "cf7361f5ff6272809bc6bedde494ba75f0b21303dea4a9c7c226e010f61bc787",
+      "name": "shared-mime-info",
+      "version": "2.5.1-2"
+    },
+    {
+      "archive_filename": "shellcheck-0.11.0-139-x86_64.pkg.tar.zst",
+      "archive_sha256": "65bf927cd3f97ed05c4ad5d55296a76e2641c538bf66d04fe78ccdcfc65be20b",
+      "installed_metadata_sha256": "96ecab41c06beabf275305ec7bed210a3452cdfba4d9d6cbf818a7b9b2773aad",
+      "name": "shellcheck",
+      "version": "0.11.0-139"
+    },
+    {
+      "archive_filename": "snappy-1.2.2-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "7aad7fd4c96a392d5af1d6c03d635ac0c391e2e3856d20adaa88c19ca7848715",
+      "installed_metadata_sha256": "b4813d737e5aeb65b9e0c51a62ddf207fd47ceacb6e80bdcc1871a507d922eb2",
+      "name": "snappy",
+      "version": "1.2.2-3"
+    },
+    {
+      "archive_filename": "source-highlight-3.1.9-19-x86_64.pkg.tar.zst",
+      "archive_sha256": "2f6665e8277797f557e9d69bc4f0677e1c3486c16fbcb07010bb06b27f5ff26e",
+      "installed_metadata_sha256": "3c705f0a5fe2279a9b5485342e49a200459127b8a538072976d8a7edfb24b7d8",
+      "name": "source-highlight",
+      "version": "3.1.9-19"
+    },
+    {
+      "archive_filename": "spice-0.16.0-4-x86_64.pkg.tar.zst",
+      "archive_sha256": "14d4e6a852f87b5dfee37f6a4f0b78dfbbdf8039f7d171511b00d9641e1323d3",
+      "installed_metadata_sha256": "7c6ca60e95850302a30c761d56b4b5e8bd3bb2e14e14a1455598133d4cf03675",
+      "name": "spice",
+      "version": "0.16.0-4"
+    },
+    {
+      "archive_filename": "spice-protocol-0.14.5-1-any.pkg.tar.zst",
+      "archive_sha256": "aa9df517c035390c648a98156f48831535534b0ce28d4714050f8a253cd6a5d4",
+      "installed_metadata_sha256": "3394ee4e65be31a8166f133d68b830e3859baf819ecafa9159bacb070910da0d",
+      "name": "spice-protocol",
+      "version": "0.14.5-1"
+    },
+    {
+      "archive_filename": "spirv-tools-1:1.4.357.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "aee9b717cfd61aa74ca85d7e5608d7f8914e57e965a2cda982a922728b4772bb",
+      "installed_metadata_sha256": "2fb51b04addcdbe2d01e3d696ee9c3c9907007fdc5238ddcff228a969ff5df1a",
+      "name": "spirv-tools",
+      "version": "1:1.4.357.0-1"
+    },
+    {
+      "archive_filename": "sqlite-3.53.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "910e7e59acc3a51c7e3468bb45c7ca20d5e987eaf2c26e4e8ad9f0624bef76d2",
+      "installed_metadata_sha256": "e9745eb0c0aba8d6e112f15038d2fcb51412794215ac135ac8e9ba3a34c9c346",
+      "name": "sqlite",
+      "version": "3.53.4-1"
+    },
+    {
+      "archive_filename": "squashfs-tools-4.7.5-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ebb145471e5a1c47b5bc49bbc21f83c6ab6ee61940ab5aeb5fea51d936407c9b",
+      "installed_metadata_sha256": "59b2b38d9a54ecda1b8c735a34dc989c798128ec852f2702fb5e32df8f077621",
+      "name": "squashfs-tools",
+      "version": "4.7.5-1"
+    },
+    {
+      "archive_filename": "sudo-1.9.17.p2-6-x86_64.pkg.tar.zst",
+      "archive_sha256": "20c0467521c96e6ebdd14e23d4b9388252834adb8dcf4c4763092a117c4932ea",
+      "installed_metadata_sha256": "e5a7abc42c9117a7fece798993f466fece13c5b0dfd3e9933fe6c09901253cd1",
+      "name": "sudo",
+      "version": "1.9.17.p2-6"
+    },
+    {
+      "archive_filename": "svt-av1-4.2.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "3d807071e467a022eeab287ff117c73ec4abb085a0374b54d9ff33b4479f515a",
+      "installed_metadata_sha256": "6291ad501c81ee9a3eb1608831461350910d6b177dffce31810e8824339f8522",
+      "name": "svt-av1",
+      "version": "4.2.0-1"
+    },
+    {
+      "archive_filename": "systemd-261.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "8bb07794de615af02d07c672ac38bbb4833793a3c5a9c9af5b4e7667da4b2a4d",
+      "installed_metadata_sha256": "e5b160a7af47f1b159271a138e9c256603e5e236b7103150e73e0d8dcbd65197",
+      "name": "systemd",
+      "version": "261.3-1"
+    },
+    {
+      "archive_filename": "systemd-libs-261.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "e817f4be82f7b2dfe924426b3e70291ea34f8fdec27bf6641e863f45eb784c36",
+      "installed_metadata_sha256": "1172e783db5ee212bcd2df3dd2883fa4bf6520030ed52a125b8298867be7aecf",
+      "name": "systemd-libs",
+      "version": "261.3-1"
+    },
+    {
+      "archive_filename": "systemd-sysvcompat-261.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "abe351a741c1384ed256e32b61817b32d7f8a0b25687d19447d4dca99bee511b",
+      "installed_metadata_sha256": "6e63d4c882924c427fad77581a12f712dc63d5cc549de689536f3a21a2370c02",
+      "name": "systemd-sysvcompat",
+      "version": "261.3-1"
+    },
+    {
+      "archive_filename": "tar-1.35-5-x86_64.pkg.tar.zst",
+      "archive_sha256": "e8a3baa1b4bd754442f92c1c25794b9225700f931e1d2c175bb2e7d9a28725e7",
+      "installed_metadata_sha256": "b67f08b285e7f8640588e8b3e781ce3be0460873eea943cd72feac32aa3fffd2",
+      "name": "tar",
+      "version": "1.35-5"
+    },
+    {
+      "archive_filename": "texinfo-7.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "9abef101e4e04d5f9e3fd943631ceb47102898cce909382b17ccff22d71486aa",
+      "installed_metadata_sha256": "4b4c64c3e5676bdeb1897fde7e425be2ffb6074c4a5b7b81c5a984c85f0990a6",
+      "name": "texinfo",
+      "version": "7.3-1"
+    },
+    {
+      "archive_filename": "tinysparql-3.11.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "4b6714456212dbc4942abc5bc6be533f2e75547e21783e78278bd1256bac4dce",
+      "installed_metadata_sha256": "c8e718a5bc4f9eddf28b48b9a90bb094eeb709f0cc6f67ac7e2012319028ad4d",
+      "name": "tinysparql",
+      "version": "3.11.1-1"
+    },
+    {
+      "archive_filename": "tpm2-tss-4.2.0-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "7aa2a963f99bcd51e4f3b2587fa8f374a7cfa09ec65749cc9a72fa6f3ad34fdc",
+      "installed_metadata_sha256": "b4251c05c14ae75f6117ad2147897880224bfca00cc543813c1bd402866ef1b6",
+      "name": "tpm2-tss",
+      "version": "4.2.0-2"
+    },
+    {
+      "archive_filename": "tzdata-2026d-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "79e5fa331ef9a22746b2f8592ebc3c73d494b57c8d5718e17565ce3fdd6ce127",
+      "installed_metadata_sha256": "507e84558f8dde9a8f0ff00998eb3372f332b1f862b17c9e728b32f7306bdeda",
+      "name": "tzdata",
+      "version": "2026d-1"
+    },
+    {
+      "archive_filename": "usbredir-0.15.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "a2771405dc6fe2ca7f631ba35aefd788b22ba59f1c232613948cf628e7ba238a",
+      "installed_metadata_sha256": "4d17a9ec9569fb24e4f3ad5bc4275535669eb0bd0b9b22e366bc49bcf75857ec",
+      "name": "usbredir",
+      "version": "0.15.0-1"
+    },
+    {
+      "archive_filename": "util-linux-2.42.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "95b7096bf4b45274645f6bb96f5b5508af6ea80e5fccba29244abaa53a341962",
+      "installed_metadata_sha256": "374213f864d7d3cd2f6b66748cb46b7cfeacf9f0a9a927247f1955a35026b094",
+      "name": "util-linux",
+      "version": "2.42.4-1"
+    },
+    {
+      "archive_filename": "util-linux-libs-2.42.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "56075bc7da9be4470da36a040195f98aac0afbc1edcc7e4f27e6d267dcaf9f37",
+      "installed_metadata_sha256": "75c40e175c508aa9aacbc1b076cf549becaea130214642d569a518c9f92f074e",
+      "name": "util-linux-libs",
+      "version": "2.42.4-1"
+    },
+    {
+      "archive_filename": "vde2-2.3.3-9-x86_64.pkg.tar.zst",
+      "archive_sha256": "dd57b512c5ea4d76a405b99ffa63e37f1256cdd267f6fe34fff8f2813ad9c439",
+      "installed_metadata_sha256": "b413676915be63082dadfb30521789838951e1f13f8c8b95cf749f63fce7f40a",
+      "name": "vde2",
+      "version": "2.3.3-9"
+    },
+    {
+      "archive_filename": "virglrenderer-1.3.0-2-x86_64.pkg.tar.zst",
+      "archive_sha256": "905b43dfbd0c09c88d2ce0b4a3e265fededbe27c62b6f1f06de53035df31d061",
+      "installed_metadata_sha256": "f78e946bc33ebdfcdca433aebd69e62465ba56ff90fb18b7700e6ee70eb05c9a",
+      "name": "virglrenderer",
+      "version": "1.3.0-2"
+    },
+    {
+      "archive_filename": "virtiofsd-1.14.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "9cc28d0c87a27fa52ad96eb2cbe7856f24025e2b236cef5e55bb27fc4bffff94",
+      "installed_metadata_sha256": "878bf4286a68f48c3c6c8b4a4c7749dddf1a79f02e91af0c3b6202a622a093df",
+      "name": "virtiofsd",
+      "version": "1.14.0-1"
+    },
+    {
+      "archive_filename": "vte-common-0.84.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "006cda5b69d887ddca9e347355b2a25ff3a59cb804cec6442c1dbc9c1a681daf",
+      "installed_metadata_sha256": "3c8cb385baca256400d1c993b82760dfccbe73f065c50130355f6d51e7d11ba0",
+      "name": "vte-common",
+      "version": "0.84.1-1"
+    },
+    {
+      "archive_filename": "vte3-0.84.1-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "9c86d48de0ec384709dc897aeb710717b2d53c6ad3d6eb3ad75ea729e63ce0de",
+      "installed_metadata_sha256": "82dbd82aeca68ed2aa3b8ba1970ac18a704f63b86571392b20a2ea8cb383af22",
+      "name": "vte3",
+      "version": "0.84.1-1"
+    },
+    {
+      "archive_filename": "wayland-1.26.0-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "0bf83ec9dd5b9e4037e7fd7d5ded70838bb50f82aa43e8280c8c0025c92804a9",
+      "installed_metadata_sha256": "320b305cbe77a14481c3d91c87a4cf51cfd843f2f487fc9dff24ca9b96536e5d",
+      "name": "wayland",
+      "version": "1.26.0-1"
+    },
+    {
+      "archive_filename": "which-2.25-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "f9a30aca3eba69a4ad5e9b0117f8fcc60a33770e4ed435634b8d4c167363fe4f",
+      "installed_metadata_sha256": "65228b95a9ee071374453172c532abba4de9145cad3408380e7f42413b6cdc73",
+      "name": "which",
+      "version": "2.25-1"
+    },
+    {
+      "archive_filename": "wolfssl-5.9.2-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "f6507248293392baacec248c5e978800a027c01ef69ab338939875f8fe42f1ae",
+      "installed_metadata_sha256": "5945da2d1e77ba010e634ba5575f31bb1f9881701e1eae44f2f919108e63f3d6",
+      "name": "wolfssl",
+      "version": "5.9.2-1"
+    },
+    {
+      "archive_filename": "xcb-proto-1.17.0-4-any.pkg.tar.zst",
+      "archive_sha256": "98f661ef7c7e05eb7a687e859cf123a92806ceed8f55c0d70ddbac799988239a",
+      "installed_metadata_sha256": "7647fbd99cbb099abd03bb122bf8b43801bdad816be66ddc28a8624bc13170a6",
+      "name": "xcb-proto",
+      "version": "1.17.0-4"
+    },
+    {
+      "archive_filename": "xkeyboard-config-2.48-1-any.pkg.tar.zst",
+      "archive_sha256": "7f7f8656dbd0b37e36d3a97f6e188fc5c6cbccc4c1e5d34ff35f1d7a79b1cc73",
+      "installed_metadata_sha256": "83d11b7c497aede6c6b7293bd81392f7653d8d5aaeb79a889721df44d6044c79",
+      "name": "xkeyboard-config",
+      "version": "2.48-1"
+    },
+    {
+      "archive_filename": "xorg-xprop-1.2.8-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "05dcc5b1d6616fd7566f6616bc0868b72c1028c011b95732f445db76217f8510",
+      "installed_metadata_sha256": "46036aeb64f000f2c2cabdb94d9304648a23d112593546b6842832b3206d551f",
+      "name": "xorg-xprop",
+      "version": "1.2.8-1"
+    },
+    {
+      "archive_filename": "xorgproto-2025.1-1-any.pkg.tar.zst",
+      "archive_sha256": "f7bf3eed570618511fb53cc1bd32c2f1ee82e02662075436a59e6e50436f30de",
+      "installed_metadata_sha256": "01743a7b5a71fc8c01d79cde8a988a3b77a7e913a61b9bac8b0247f0fbfbbaba",
+      "name": "xorgproto",
+      "version": "2025.1-1"
+    },
+    {
+      "archive_filename": "xxhash-0.8.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "ef60bad0552de3eb8a0e1e2a07eb1bcaceaa771a5f36401a2cf0de135ffcc72b",
+      "installed_metadata_sha256": "78698903d6a9ed96c074162cda1ea15ea7df0796d84ffcea1ca3c8a8807795df",
+      "name": "xxhash",
+      "version": "0.8.4-1"
+    },
+    {
+      "archive_filename": "xz-5.8.4-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "89b8e777c8f7a39413e1b223d4c212caec6ddd9470b3d1ea1d5161bcc6215c04",
+      "installed_metadata_sha256": "f96a6ed670e0db8a3821c0693dc528d6c6107b94805daf33bcdc62cfc5c2b077",
+      "name": "xz",
+      "version": "5.8.4-1"
+    },
+    {
+      "archive_filename": "zlib-1:1.3.2-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "41cf0bb5df14e18f7fb868a97da3feb7c4127fba99bb332ad54b14322faac1b1",
+      "installed_metadata_sha256": "1bfaf4ade026904110881e6ed6d15dedc29962880141a44ade80adfc0b3aef8f",
+      "name": "zlib",
+      "version": "1:1.3.2-3"
+    },
+    {
+      "archive_filename": "zlib-ng-2.3.3-1-x86_64.pkg.tar.zst",
+      "archive_sha256": "52971dcf5ca5e763a070518da9d615be52ea8f645fd44ee323211b6251d1cc67",
+      "installed_metadata_sha256": "ad9d36fc03ff72124085d4127367ddc5891fb02893037d0f5a6f6c263b25bab9",
+      "name": "zlib-ng",
+      "version": "2.3.3-1"
+    },
+    {
+      "archive_filename": "zstd-1.5.7-3-x86_64.pkg.tar.zst",
+      "archive_sha256": "d4cf0049137124c8a025eedfad267a3e8a02310c9efb9d1ae4a61aa1d02789fc",
+      "installed_metadata_sha256": "1d4ca322536d4bfd228701029745dac9368bb12b8dc0b4bf64ad818098b4d289",
+      "name": "zstd",
+      "version": "1.5.7-3"
+    }
+  ],
+  "pacman_databases": [
+    {
+      "filename": "core.db",
+      "sha256": "a58889d20cfcd1c8aa0c794379376e9fa346ff018e20a9b26b88dde8c0b83e16"
+    },
+    {
+      "filename": "extra.db",
+      "sha256": "230b3e0ad8293ce5e75af47aea697ac6a33b0e62d4a0551e2ac84e3a41dd0639"
+    }
+  ],
+  "requirements": {
+    "kvm": "optional-for-portable-build-required-for-kvm-qualification",
+    "minimum_free_storage_bytes": 85899345920,
+    "minimum_memory_bytes": 8589934592,
+    "mount_namespace": true,
+    "privilege": "root-in-disposable-container"
+  },
+  "schema_version": 1,
+  "tools": {
+    "archiso": "90-1",
+    "dosfstools": "4.2-5",
+    "git": "2.55.0-1",
+    "gnupg": "2.4.9-3",
+    "libisoburn": "1.5.8.2-1",
+    "mtools": "1:4.0.49-1",
+    "ovmf": "202608-1",
+    "pacman": "7.1.0.r9.g54d9411-2",
+    "python": "3.14.7",
+    "qemu": "11.1.1-4",
+    "squashfs_tools": "4.7.5-1",
+    "systemd": "261.3-1",
+    "xorriso": "xorriso 1.5.8.pl02 : RockRidge filesystem manipulator, libburnia project."
+  }
+}

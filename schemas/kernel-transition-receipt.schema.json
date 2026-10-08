@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.us/schemas/kernel-transition-receipt.schema.json",
+  "title": "KITPro Linux kernel transition receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "kind", "operation_id", "old_current_version",
+    "new_candidate_version", "retained_previous_version",
+    "source_repository_generation", "current_kernel_sha256",
+    "current_initramfs_sha256", "previous_kernel_sha256",
+    "previous_initramfs_sha256", "current_module_tree", "previous_module_tree",
+    "current_boot_entry_sha256", "previous_boot_entry_sha256", "started_at",
+    "completed_at", "reboot_required", "candidate_health_result", "result",
+    "final_state", "receipt_sha256"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "kind": {"const": "kitpro-kernel-transition-receipt"},
+    "operation_id": {"type": "string"},
+    "old_current_version": {"type": "string"},
+    "new_candidate_version": {"type": "string"},
+    "retained_previous_version": {"type": "string"},
+    "source_repository_generation": {"type": "string"},
+    "current_kernel_sha256": {"$ref": "#/$defs/sha256"},
+    "current_initramfs_sha256": {"$ref": "#/$defs/sha256"},
+    "previous_kernel_sha256": {"$ref": "#/$defs/sha256"},
+    "previous_initramfs_sha256": {"$ref": "#/$defs/sha256"},
+    "current_module_tree": {"type": "string"},
+    "previous_module_tree": {"type": "string"},
+    "current_boot_entry_sha256": {"$ref": "#/$defs/sha256"},
+    "previous_boot_entry_sha256": {"$ref": "#/$defs/sha256"},
+    "started_at": {"type": "string"},
+    "completed_at": {"type": ["string", "null"]},
+    "reboot_required": {"const": true},
+    "candidate_health_result": {"enum": ["not-run", "passed", "failed"]},
+    "result": {"enum": ["pending", "passed", "failed"]},
+    "final_state": {"enum": ["candidate", "known-good", "failed"]},
+    "receipt_sha256": {"$ref": "#/$defs/sha256"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

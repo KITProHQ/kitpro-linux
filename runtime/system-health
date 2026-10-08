@@ -1,0 +1,618 @@
+#!/usr/bin/bash
+# Read-only KITPro Linux system diagnostics for live and mounted systems.
+set -uo pipefail
+
+ROOT=/
+MODE=auto
+OUTPUT=
+FORMAT=human
+WARNINGS=()
+ERRORS=()
+POLICY_FILE=$(dirname "${BASH_SOURCE[0]}")/repository-policy.conf
+[[ -f $POLICY_FILE ]] || { printf 'kitpro-health: repository policy is unavailable: %s\n' "$POLICY_FILE" >&2; exit 3; }
+# The fixed policy is package-managed beside this trusted runtime.
+# shellcheck disable=SC1090
+source "$POLICY_FILE"
+read -r -a ARCH_REPOSITORY_NAMES <<<"$ARCH_REPOSITORIES"
+
+usage() {
+    cat <<'EOF'
+usage: kitpro-health [--json] [--output FILE]
+
+Internal rescue interface:
+  system-health --root PATH --mode offline --json
+
+Exit codes: 0 healthy, 1 warning, 2 error, 3 command/internal failure.
+EOF
+}
+
+fail() { printf 'kitpro-health: %s\n' "$*" >&2; exit 3; }
+warning() { WARNINGS+=("$1"); }
+error() { ERRORS+=("$1"); }
+
+json_escape() {
+    local value=${1-}
+    value=${value//\\/\\\\}; value=${value//\"/\\\"}
+    value=${value//$'\n'/\\n}; value=${value//$'\r'/\\r}; value=${value//$'\t'/\\t}
+    printf '%s' "$value"
+}
+json_string() { printf '"%s"' "$(json_escape "${1-}")"; }
+json_nullable() { if [[ -n ${1-} ]]; then json_string "$1"; else printf 'null'; fi; }
+json_bool() { [[ ${1:-false} == true ]] && printf true || printf false; }
+json_nullable_bool() {
+    if [[ -z ${1-} || $1 == unavailable || $1 == null ]]; then printf null; else json_bool "$1"; fi
+}
+json_array() {
+    local array_name=$1 item first=true
+    local -n values=$array_name
+    printf '['
+    for item in "${values[@]}"; do
+        [[ $first == true ]] || printf ', '
+        json_string "$item"
+        first=false
+    done
+    printf ']'
+}
+
+root_path() {
+    local path=$1
+    if [[ $ROOT == / ]]; then printf '%s' "$path"; else printf '%s%s' "$ROOT" "$path"; fi
+}
+
+text_value() {
+    local file=$1 key=$2
+    [[ -f $file ]] || return 0
+    sed -n "s/^[[:space:]]*${key}[[:space:]]*=[[:space:]]*//p" "$file" 2>/dev/null \
+        | head -n1 | sed 's/^"//;s/"$//'
+}
+
+json_text_value() {
+    local file=$1 key=$2
+    [[ -f $file ]] || return 0
+    sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$file" 2>/dev/null | head -n1
+}
+
+json_number_value() {
+    local file=$1 key=$2
+    [[ -f $file ]] || return 0
+    sed -n "s/.*\"$key\"[[:space:]]*:[[:space:]]*\([0-9][0-9]*\).*/\1/p" "$file" 2>/dev/null | head -n1
+}
+
+basic_json_object() {
+    local file=$1 first last
+    [[ -s $file && ! -L $file ]] || return 1
+    first=$(sed -n '/[^[:space:]]/{s/^[[:space:]]*//;p;q}' "$file" 2>/dev/null)
+    # The single-quoted dollar is a sed end-of-input expression.
+    # shellcheck disable=SC2016
+    last=$(sed -n '/[^[:space:]]/{h};${g;s/[[:space:]]*$//;p}' "$file" 2>/dev/null)
+    [[ ${first:0:1} == '{' && ${last: -1} == '}' ]]
+}
+
+json_top_scalar() {
+    local document=$1 key=$2
+    sed -n "s/^[[:space:]]*\"$key\"[[:space:]]*:[[:space:]]*\([^,]*\),\{0,1\}[[:space:]]*$/\1/p" <<<"$document" | head -n1 | sed 's/^"//;s/"$//'
+}
+
+json_section_scalar() {
+    local document=$1 section=$2 key=$3
+    awk -v section="\"$section\": {" -v key="\"$key\"" '
+        index($0, section) { inside=1; next }
+        inside && $0 ~ /^[[:space:]]*}[,]?[[:space:]]*$/ { exit }
+        inside && index($0, key) {
+            line=$0
+            sub(/^[^:]*:[[:space:]]*/, "", line)
+            sub(/,[[:space:]]*$/, "", line)
+            gsub(/^"|"$/, "", line)
+            print line
+            exit
+        }
+    ' <<<"$document"
+}
+
+service_state() {
+    local unit=$1 value
+    if [[ $MODE == offline ]]; then printf unavailable; return; fi
+    value=$(systemctl is-active "$unit" 2>/dev/null || true)
+    [[ -n $value ]] && printf '%s' "$value" || printf unknown
+}
+
+service_enabled() {
+    local unit=$1 value wants link target
+    if [[ $MODE == live ]]; then
+        value=$(systemctl is-enabled "$unit" 2>/dev/null || true)
+        [[ -n $value ]] && printf '%s' "$value" || printf unknown
+        return
+    fi
+    for wants in multi-user.target.wants network-online.target.wants; do
+        link=$(root_path "/etc/systemd/system/$wants/$unit")
+        if [[ -L $link ]]; then
+            target=$(readlink "$link" 2>/dev/null || true)
+            case $target in
+                "/usr/lib/systemd/system/$unit"|"../../../usr/lib/systemd/system/$unit") printf enabled; return ;;
+            esac
+        elif [[ -f $link ]]; then
+            printf enabled; return
+        fi
+    done
+    printf disabled
+}
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --json) FORMAT=json; shift ;;
+        --output) [[ $# -ge 2 ]] || fail '--output requires a path'; OUTPUT=$2; shift 2 ;;
+        --root) [[ $# -ge 2 ]] || fail '--root requires a path'; ROOT=${2%/}; [[ -n $ROOT ]] || ROOT=/; shift 2 ;;
+        --mode) [[ $# -ge 2 ]] || fail '--mode requires live or offline'; MODE=$2; shift 2 ;;
+        -h|--help) usage; exit 0 ;;
+        *) fail "unknown argument: $1" ;;
+    esac
+done
+[[ -d $ROOT ]] || fail "root does not exist: $ROOT"
+[[ $MODE == auto ]] && { [[ $ROOT == / ]] && MODE=live || MODE=offline; }
+[[ $MODE == live || $MODE == offline ]] || fail "unsupported mode: $MODE"
+[[ $MODE != live || $ROOT == / || ${KITPRO_HEALTH_TEST_ALLOW_LIVE_ROOT:-false} == true ]] || fail 'live mode requires --root /'
+[[ -z $OUTPUT || $FORMAT == json ]] || fail '--output requires --json'
+
+TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ) || fail 'cannot read system time'
+OS_RELEASE=$(root_path /etc/os-release)
+RELEASE_METADATA=$(root_path /etc/kitpro-linux-release.json)
+PRODUCT=$(text_value "$OS_RELEASE" NAME)
+OS_ID=$(text_value "$OS_RELEASE" ID)
+RELEASE=$(json_text_value "$RELEASE_METADATA" release)
+GENERATION=$(json_text_value "$RELEASE_METADATA" generation)
+[[ -n $RELEASE ]] || RELEASE=$(text_value "$OS_RELEASE" VERSION_ID)
+[[ -n $GENERATION ]] || GENERATION=$(text_value "$OS_RELEASE" BUILD_ID)
+HOSTNAME_VALUE=$(tr -d '\n\r' <"$(root_path /etc/hostname)" 2>/dev/null || true)
+ARCHITECTURE=$(uname -m 2>/dev/null || true)
+UPTIME_SECONDS=null
+if [[ $MODE == live && -r /proc/uptime ]]; then UPTIME_SECONDS=$(cut -d. -f1 </proc/uptime); fi
+if [[ $OS_ID != kitpro-linux || -z $RELEASE || -z $GENERATION ]]; then
+    error 'KITPro release identity is missing or inconsistent.'
+fi
+
+KERNEL_RUNTIME=${KITPRO_KERNEL_LIFECYCLE:-$(root_path /usr/lib/kitpro-linux/kernel-lifecycle)}
+[[ -f $KERNEL_RUNTIME ]] || fail 'kernel lifecycle runtime is unavailable'
+KERNEL_COMMAND=(/usr/bin/bash "$KERNEL_RUNTIME")
+[[ $ROOT == / ]] || KERNEL_COMMAND+=(--root "$ROOT")
+KERNEL_COMMAND+=(status --json)
+[[ $MODE == live ]] || KERNEL_COMMAND+=(--running-kernel unavailable)
+KERNEL_JSON=$("${KERNEL_COMMAND[@]}" 2>/dev/null)
+KERNEL_EXIT=$?
+if [[ $KERNEL_EXIT -gt 2 || $(json_top_scalar "$KERNEL_JSON" schema_version) != 1 ||
+      $(json_top_scalar "$KERNEL_JSON" kind) != kitpro-kernel-status ]]; then
+    fail 'kernel lifecycle returned an invalid status document'
+fi
+KERNEL_RUNNING=$(json_top_scalar "$KERNEL_JSON" running_kernel)
+KERNEL_CURRENT=$(json_section_scalar "$KERNEL_JSON" current kernel_release)
+KERNEL_PREVIOUS=$(json_section_scalar "$KERNEL_JSON" previous_known_good kernel_release)
+KERNEL_FALLBACK=$(json_section_scalar "$KERNEL_JSON" fallback availability)
+KERNEL_REBOOT=$(json_top_scalar "$KERNEL_JSON" reboot_required)
+KERNEL_CURRENT_ENTRY=$(json_section_scalar "$KERNEL_JSON" current boot_entry_valid)
+KERNEL_CURRENT_IMAGE=$(json_section_scalar "$KERNEL_JSON" current kernel_valid)
+KERNEL_CURRENT_INITRAMFS=$(json_section_scalar "$KERNEL_JSON" current initramfs_valid)
+KERNEL_PREVIOUS_ENTRY=$(json_section_scalar "$KERNEL_JSON" previous_known_good boot_entry_valid)
+KERNEL_RETENTION=$(json_section_scalar "$KERNEL_JSON" retention_preflight result)
+KERNEL_TRANSITION_RECEIPT=$(json_top_scalar "$KERNEL_JSON" latest_transition_receipt)
+case $KERNEL_EXIT in 1) warning 'Kernel lifecycle requires operator attention.' ;; 2) error 'Kernel lifecycle is inconsistent or unsafe.' ;; esac
+
+# Boot structure: lifecycle owns artifact validity; this collector adds firmware and ESP context.
+ESP=$(root_path /efi)
+LOADER_CONF=$ESP/loader/loader.conf
+BOOT_FIRMWARE=unavailable
+ESP_PRESENT=false
+ESP_MOUNTED=unavailable
+SYSTEMD_BOOT_VALID=false
+DEFAULT_ENTRY=
+[[ -d $ESP ]] && ESP_PRESENT=true
+if [[ $MODE == live ]]; then
+    [[ -d /sys/firmware/efi ]] && BOOT_FIRMWARE=uefi || BOOT_FIRMWARE=unsupported
+    mountpoint -q /efi 2>/dev/null && ESP_MOUNTED=true || ESP_MOUNTED=false
+    [[ -n ${KITPRO_HEALTH_TEST_FIRMWARE:-} ]] && BOOT_FIRMWARE=$KITPRO_HEALTH_TEST_FIRMWARE
+    [[ -n ${KITPRO_HEALTH_TEST_ESP_MOUNTED:-} ]] && ESP_MOUNTED=$KITPRO_HEALTH_TEST_ESP_MOUNTED
+else
+    BOOT_FIRMWARE=offline
+fi
+if [[ -f $LOADER_CONF && -d $ESP/EFI/systemd && $KERNEL_CURRENT_ENTRY == true ]]; then SYSTEMD_BOOT_VALID=true; fi
+DEFAULT_ENTRY=$(sed -n 's/^[[:space:]]*default[[:space:]]\+//p' "$LOADER_CONF" 2>/dev/null | head -n1)
+if [[ $ESP_PRESENT != true || $SYSTEMD_BOOT_VALID != true ]]; then error 'Boot structure is incomplete or invalid.'; fi
+if [[ $MODE == live && $BOOT_FIRMWARE != uefi ]]; then error 'The running system was not booted with UEFI firmware.'; fi
+if [[ $MODE == live && $ESP_MOUNTED != true ]]; then error 'The EFI system partition is not mounted at /efi.'; fi
+
+# systemd and baseline services. Offline state is explicitly unavailable, not failed.
+FAILED_UNITS=()
+CRITICAL_FAILED_UNITS=()
+if [[ $MODE == live ]]; then
+    while IFS= read -r unit; do [[ -n $unit ]] && FAILED_UNITS+=("$unit"); done < <(
+        systemctl --failed --no-legend --plain 2>/dev/null | awk '{print $1}' || true
+    )
+fi
+FAILED_UNIT_COUNT=${#FAILED_UNITS[@]}
+for unit in "${FAILED_UNITS[@]}"; do
+    case $unit in systemd-networkd.service|systemd-resolved.service|systemd-timesyncd.service|nftables.service|sshd.service) CRITICAL_FAILED_UNITS+=("$unit") ;; esac
+done
+[[ $FAILED_UNIT_COUNT -eq 0 || $MODE == offline ]] || warning "$FAILED_UNIT_COUNT systemd unit(s) are failed."
+[[ ${#CRITICAL_FAILED_UNITS[@]} -eq 0 ]] || error 'A critical KITPro baseline service is failed.'
+NETWORKD_STATE=$(service_state systemd-networkd.service)
+RESOLVED_STATE=$(service_state systemd-resolved.service)
+TIMESYNCD_STATE=$(service_state systemd-timesyncd.service)
+NFTABLES_STATE=$(service_state nftables.service)
+SSHD_STATE=$(service_state sshd.service)
+if [[ $MODE == live ]]; then
+    for pair in "systemd-networkd:$NETWORKD_STATE" "systemd-resolved:$RESOLVED_STATE" "systemd-timesyncd:$TIMESYNCD_STATE"; do
+        [[ ${pair#*:} == active ]] || error "${pair%%:*} is not active."
+    done
+    NFTABLES_RESULT=$(systemctl show nftables.service -p Result --value 2>/dev/null || true)
+    if [[ $NFTABLES_STATE == inactive && $NFTABLES_RESULT == success ]]; then
+        NFTABLES_STATE=inactive-success
+    fi
+fi
+
+# Local networking and resolver state. No public network probe is performed.
+NETWORK_FILES=()
+while IFS= read -r file; do [[ -n $file ]] && NETWORK_FILES+=("${file#"$ROOT"}"); done < <(
+    find "$(root_path /etc/systemd/network)" -maxdepth 1 -type f -name '*.network' -print 2>/dev/null | sort
+)
+NETWORK_CONFIGURED=false
+[[ ${#NETWORK_FILES[@]} -gt 0 ]] && NETWORK_CONFIGURED=true
+ACTIVE_INTERFACES=()
+ADDRESS_PRESENT=unavailable
+DEFAULT_ROUTE=unavailable
+DNS_CONFIGURED=false
+DNS_VALIDATION=unavailable
+RESOLV_LINK=$(readlink "$(root_path /etc/resolv.conf)" 2>/dev/null || true)
+[[ $RESOLV_LINK == ../run/systemd/resolve/stub-resolv.conf ]] && DNS_CONFIGURED=true
+if [[ $MODE == live ]]; then
+    while IFS= read -r interface; do [[ -n $interface && $interface != lo ]] && ACTIVE_INTERFACES+=("$interface"); done < <(
+        ip -o link show up 2>/dev/null | awk -F': ' '{sub(/@.*/, "", $2); print $2}' || true
+    )
+    ip -o address show scope global 2>/dev/null | grep -q . && ADDRESS_PRESENT=true || ADDRESS_PRESENT=false
+    ip route show default 2>/dev/null | grep -q '^default ' && DEFAULT_ROUTE=true || DEFAULT_ROUTE=false
+    if [[ $DNS_CONFIGURED == true && $RESOLVED_STATE == active ]] && resolvectl status --no-pager >/dev/null 2>&1; then
+        DNS_VALIDATION=healthy
+    else
+        DNS_VALIDATION=degraded
+    fi
+    [[ ${#ACTIVE_INTERFACES[@]} -gt 0 && $ADDRESS_PRESENT == true ]] || warning 'No active non-loopback interface with a global address was found.'
+    [[ $DEFAULT_ROUTE == true ]] || warning 'No default route is present.'
+    [[ $DNS_VALIDATION == healthy ]] || warning 'systemd-resolved configuration is degraded.'
+else
+    [[ $NETWORK_CONFIGURED == true ]] || warning 'No systemd-networkd configuration was found.'
+    [[ $DNS_CONFIGURED == true ]] || warning 'The systemd-resolved resolv.conf link is invalid.'
+fi
+
+# Firewall is checked structurally offline and against the loaded ruleset live.
+NFT_CONFIG=$(root_path /etc/nftables.conf)
+NFT_CONFIG_VALID=false
+NFT_RULESET_AVAILABLE=unavailable
+NFT_BASELINE=false
+if [[ -f $NFT_CONFIG ]] && grep -Fq 'policy drop' "$NFT_CONFIG" &&
+   grep -Fq 'iifname "lo" accept' "$NFT_CONFIG" && grep -Fq 'established,related' "$NFT_CONFIG"; then
+    NFT_CONFIG_VALID=true
+fi
+if [[ $MODE == live ]]; then
+    NFT_RULESET=$(nft list ruleset 2>/dev/null || true)
+    if [[ -n $NFT_RULESET ]]; then
+        NFT_RULESET_AVAILABLE=true
+        if grep -Fq 'policy drop' <<<"$NFT_RULESET" && grep -Fq 'established,related' <<<"$NFT_RULESET"; then NFT_BASELINE=true; fi
+    else
+        NFT_RULESET_AVAILABLE=false
+    fi
+else
+    NFT_BASELINE=$NFT_CONFIG_VALID
+fi
+if [[ $NFT_CONFIG_VALID != true || $NFT_BASELINE != true ||
+      ( $MODE == live && $NFT_RULESET_AVAILABLE != true ) ||
+      ( $MODE == live && $NFTABLES_STATE != active && $NFTABLES_STATE != inactive-success ) ]]; then
+    error 'nftables policy is missing, unavailable, or does not match the KITPro baseline.'
+fi
+
+# SSH disabled is a normal state. Policy values are never expanded to keys or credentials.
+SSH_CONFIG=$(root_path /etc/ssh/sshd_config.d/10-kitpro-server.conf)
+SSHD_ENABLED=$(service_enabled sshd.service)
+SSH_ENABLED_BOOL=false
+[[ $SSHD_ENABLED == enabled ]] && SSH_ENABLED_BOOL=true
+SSH_CONFIG_VALID=false
+SSH_ROOT_LOGIN=unknown
+SSH_PASSWORD_AUTH=unknown
+SSH_LISTENING=unavailable
+if [[ -f $SSH_CONFIG ]]; then
+    grep -Eq '^[[:space:]]*PermitRootLogin[[:space:]]+no([[:space:]]|$)' "$SSH_CONFIG" && SSH_ROOT_LOGIN=disabled
+    grep -Eq '^[[:space:]]*PasswordAuthentication[[:space:]]+no([[:space:]]|$)' "$SSH_CONFIG" && SSH_PASSWORD_AUTH=disabled
+    if [[ $SSH_ROOT_LOGIN == disabled && $SSH_PASSWORD_AUTH == disabled ]] &&
+       grep -Eq '^[[:space:]]*AuthenticationMethods[[:space:]]+publickey([[:space:]]|$)' "$SSH_CONFIG"; then SSH_CONFIG_VALID=true; fi
+fi
+SSHD_SYNTAX=unavailable
+if [[ $MODE == live ]]; then
+    sshd -t >/dev/null 2>&1 && SSHD_SYNTAX=valid || SSHD_SYNTAX=invalid
+    ss -ltnH 2>/dev/null | awk '{print $4}' | grep -Eq '(^|:)22$' && SSH_LISTENING=true || SSH_LISTENING=false
+    if [[ $SSHD_ENABLED == enabled ]]; then
+        [[ $SSHD_STATE == active && $SSH_LISTENING == true && $SSHD_SYNTAX == valid && $SSH_CONFIG_VALID == true ]] || error 'SSH is enabled but its daemon, listener, syntax, or policy is unhealthy.'
+    elif [[ $SSH_LISTENING == true ]]; then
+        error 'SSH is disabled but a port 22 listener is present.'
+    fi
+else
+    SSHD_SYNTAX=not-run-offline
+    [[ $SSH_CONFIG_VALID == true ]] || error 'SSH policy configuration is invalid.'
+fi
+
+# Repository isolation and package database checks use only local configuration/state.
+PACMAN_CONFIG=$(root_path /etc/pacman.conf)
+REPOSITORIES=()
+ENABLED_ARCH_REPOSITORIES=()
+SIGNATURE_ENFORCED=false
+KITPRO_ONLY=true
+REPO_GENERATION_MATCH=false
+if [[ -f $PACMAN_CONFIG ]]; then
+    while IFS= read -r repository; do
+        [[ $repository == options ]] && continue
+        REPOSITORIES+=("$repository")
+        [[ $repository == "$KITPRO_REPOSITORY_PREFIX"* ]] || KITPRO_ONLY=false
+        for upstream_name in "${ARCH_REPOSITORY_NAMES[@]}"; do
+            [[ $repository == "$upstream_name" ]] && ENABLED_ARCH_REPOSITORIES+=("$repository")
+        done
+    done < <(sed -n 's/^[[:space:]]*\[\([^]]*\)\][[:space:]]*$/\1/p' "$PACMAN_CONFIG")
+    if grep -Fq "$REQUIRED_SIGLEVEL" "$PACMAN_CONFIG" &&
+       grep -Fq "$REQUIRED_LOCAL_FILE_SIGLEVEL" "$PACMAN_CONFIG"; then SIGNATURE_ENFORCED=true; fi
+    for forbidden_term in $FORBIDDEN_REPOSITORY_TERMS; do
+        grep -Fiq "$forbidden_term" "$PACMAN_CONFIG" && KITPRO_ONLY=false
+    done
+    if [[ -n $GENERATION ]] && grep -Fq "/$GENERATION/" "$PACMAN_CONFIG" && ! grep -Fq '/current/' "$PACMAN_CONFIG"; then REPO_GENERATION_MATCH=true; fi
+    # pacman's $arch token must remain literal.
+    # shellcheck disable=SC2016
+    if [[ $RELEASE == 1.0 && $GENERATION =~ ^1\.0-g[0-9]{4}$ && ${#REPOSITORIES[@]} == 1 && ${REPOSITORIES[0]} == kitpro-1.0-core ]] &&
+       [[ $(grep -c '^Server = ' "$PACMAN_CONFIG") == 1 ]] &&
+       grep -Fxq 'Server = https://repo.kitpro.us/kitpro-linux/stable/1.0/current/core/os/$arch' "$PACMAN_CONFIG"; then REPO_GENERATION_MATCH=true; fi
+else
+    KITPRO_ONLY=false
+fi
+[[ ${#REPOSITORIES[@]} -gt 0 ]] || KITPRO_ONLY=false
+if [[ $KITPRO_ONLY != true || ${#ENABLED_ARCH_REPOSITORIES[@]} -gt 0 ]]; then error 'Non-KITPro or upstream Arch repositories are enabled.'; fi
+[[ $SIGNATURE_ENFORCED == true ]] || error 'pacman package/database signature enforcement is incomplete.'
+[[ $REPO_GENERATION_MATCH == true ]] || error 'pacman repository does not match the installed release policy.'
+PACKAGE_DB=$(root_path /var/lib/pacman/local)
+PACKAGE_DB_READABLE=false
+PACKAGE_COUNT=0
+RELEASE_PACKAGE_PRESENT=false
+KERNEL_PACKAGE_PRESENT=false
+if [[ -d $PACKAGE_DB && -r $PACKAGE_DB ]]; then
+    PACKAGE_DB_READABLE=true
+    PACKAGE_COUNT=$(find "$PACKAGE_DB" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)
+    find "$PACKAGE_DB" -mindepth 1 -maxdepth 1 -type d -name 'kitpro-linux-release-*' -print -quit 2>/dev/null | grep -q . && RELEASE_PACKAGE_PRESENT=true
+    find "$PACKAGE_DB" -mindepth 1 -maxdepth 1 -type d -name 'linux-lts-*' -print -quit 2>/dev/null | grep -q . && KERNEL_PACKAGE_PRESENT=true
+fi
+if [[ $PACKAGE_DB_READABLE != true || $PACKAGE_COUNT -eq 0 ]]; then error 'The local pacman package database is missing or unreadable.'; fi
+[[ $RELEASE_PACKAGE_PRESENT == true ]] || warning 'The KITPro release package is not visible in the local package database.'
+[[ $KERNEL_PACKAGE_PRESENT == true ]] || warning 'The linux-lts package is not visible in the local package database.'
+
+# Storage thresholds are conservative warnings; kernel retention remains authoritative.
+storage_values() {
+    local target=$1 prefix=$2 values total available fs
+    values=$(df -B1 --output=size,avail "$target" 2>/dev/null | tail -n1 | xargs || true)
+    total=${values%% *}; available=${values##* }
+    fs=$(findmnt -n -o FSTYPE --target "$target" 2>/dev/null || true)
+    printf -v "${prefix}_TOTAL" '%s' "${total:-0}"
+    printf -v "${prefix}_FREE" '%s' "${available:-0}"
+    printf -v "${prefix}_FS" '%s' "${fs:-unknown}"
+}
+storage_values "$ROOT" ROOT_STORAGE
+storage_values "$ESP" ESP_STORAGE
+[[ -n ${KITPRO_HEALTH_TEST_ROOT_TOTAL_BYTES:-} ]] && ROOT_STORAGE_TOTAL=$KITPRO_HEALTH_TEST_ROOT_TOTAL_BYTES
+[[ -n ${KITPRO_HEALTH_TEST_ROOT_FREE_BYTES:-} ]] && ROOT_STORAGE_FREE=$KITPRO_HEALTH_TEST_ROOT_FREE_BYTES
+[[ -n ${KITPRO_HEALTH_TEST_ESP_TOTAL_BYTES:-} ]] && ESP_STORAGE_TOTAL=$KITPRO_HEALTH_TEST_ESP_TOTAL_BYTES
+[[ -n ${KITPRO_HEALTH_TEST_ESP_FREE_BYTES:-} ]] && ESP_STORAGE_FREE=$KITPRO_HEALTH_TEST_ESP_FREE_BYTES
+ROOT_LOW=false ESP_LOW=false
+if (( ROOT_STORAGE_TOTAL > 0 )) && (( ROOT_STORAGE_FREE < 2147483648 || ROOT_STORAGE_FREE * 100 < ROOT_STORAGE_TOTAL * 10 )); then ROOT_LOW=true; warning 'Root filesystem free space is below the maintenance threshold.'; fi
+if (( ESP_STORAGE_TOTAL > 0 )) && (( ESP_STORAGE_FREE < 67108864 || ESP_STORAGE_FREE * 100 < ESP_STORAGE_TOTAL * 10 )); then ESP_LOW=true; warning 'ESP free space is below the maintenance threshold.'; fi
+
+# Receipt summaries expose only schema, time, operation, result, and opaque IDs.
+INSTALL_RECEIPT=$(root_path /var/lib/kitpro-linux/install-receipt.json)
+INSTALL_PRESENT=false INSTALL_VALID=false INSTALL_VERSION=null INSTALL_TIME='' INSTALLER_VERSION=''
+if [[ -f $INSTALL_RECEIPT ]]; then
+    INSTALL_PRESENT=true
+    INSTALL_VERSION=$(json_number_value "$INSTALL_RECEIPT" schema_version); [[ -n $INSTALL_VERSION ]] || INSTALL_VERSION=null
+    INSTALL_TIME=$(json_text_value "$INSTALL_RECEIPT" installed_at)
+    INSTALLER_VERSION=$(json_text_value "$INSTALL_RECEIPT" installer_version)
+    if basic_json_object "$INSTALL_RECEIPT" && [[ $INSTALL_VERSION == 1 ]] &&
+       grep -Eq '"install_spec_sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' "$INSTALL_RECEIPT" &&
+       grep -Eq '"install_plan_sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' "$INSTALL_RECEIPT" &&
+       grep -Eq '"generation_manifest_sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' "$INSTALL_RECEIPT"; then INSTALL_VALID=true; fi
+fi
+if [[ $INSTALL_PRESENT != true ]]; then warning 'Installation receipt is missing.'; elif [[ $INSTALL_VALID != true ]]; then error 'Installation receipt is malformed.'; fi
+
+TRANSITION_PRESENT=false TRANSITION_VALID=false TRANSITION_OPERATION='' TRANSITION_RESULT='' TRANSITION_TIME=''
+if [[ -n $KERNEL_TRANSITION_RECEIPT && $KERNEL_TRANSITION_RECEIPT != null ]]; then
+    TRANSITION_FILE=$(root_path "$KERNEL_TRANSITION_RECEIPT")
+    if [[ -f $TRANSITION_FILE ]]; then
+        TRANSITION_PRESENT=true
+        TRANSITION_OPERATION=$(json_text_value "$TRANSITION_FILE" operation_id)
+        TRANSITION_RESULT=$(json_text_value "$TRANSITION_FILE" result)
+        TRANSITION_TIME=$(json_text_value "$TRANSITION_FILE" completed_at)
+        if basic_json_object "$TRANSITION_FILE" && grep -Fq '"kind": "kitpro-kernel-transition-receipt"' "$TRANSITION_FILE"; then TRANSITION_VALID=true; fi
+    fi
+fi
+[[ $TRANSITION_PRESENT != true || $TRANSITION_VALID == true ]] || warning 'The latest kernel transition receipt is malformed.'
+
+RECOVERY_DIR=$(root_path /var/lib/kitpro-linux/recovery)
+RECOVERY_COUNT=0 RECOVERY_LATEST='' RECOVERY_OPERATION='' RECOVERY_RESULT='' RECOVERY_TIME='' RECOVERY_VALID=null
+if [[ -d $RECOVERY_DIR ]]; then
+    RECOVERY_COUNT=$(find "$RECOVERY_DIR" -maxdepth 1 -type f -name '*.json' 2>/dev/null | wc -l)
+    RECOVERY_LATEST=$(find "$RECOVERY_DIR" -maxdepth 1 -type f -name '*.json' -printf '%f\n' 2>/dev/null | sort | tail -n1)
+fi
+if [[ -n $RECOVERY_LATEST ]]; then
+    RECOVERY_FILE=$RECOVERY_DIR/$RECOVERY_LATEST
+    RECOVERY_OPERATION=$(json_text_value "$RECOVERY_FILE" operation)
+    RECOVERY_RESULT=$(json_text_value "$RECOVERY_FILE" result)
+    RECOVERY_TIME=$(json_text_value "$RECOVERY_FILE" completed_at)
+    RECOVERY_VALID=false
+    if basic_json_object "$RECOVERY_FILE" && grep -Fq '"kind": "kitpro-recovery-receipt"' "$RECOVERY_FILE"; then RECOVERY_VALID=true; fi
+    [[ $RECOVERY_VALID == true ]] || warning 'The latest recovery receipt is malformed.'
+    [[ $RECOVERY_RESULT != failed ]] || warning 'The latest recovery operation failed.'
+fi
+
+if (( ${#ERRORS[@]} > 0 )); then OVERALL=error; EXIT_CODE=2
+elif (( ${#WARNINGS[@]} > 0 )); then OVERALL=warning; EXIT_CODE=1
+else OVERALL=healthy; EXIT_CODE=0
+fi
+
+emit_json() {
+    cat <<EOF
+{
+  "schema_version": 1,
+  "kind": "kitpro-system-health",
+  "timestamp": $(json_string "$TIMESTAMP"),
+  "mode": $(json_string "$MODE"),
+  "system": {
+    "product": $(json_nullable "$PRODUCT"),
+    "release": $(json_nullable "$RELEASE"),
+    "generation": $(json_nullable "$GENERATION"),
+    "hostname": $(json_nullable "$HOSTNAME_VALUE"),
+    "architecture": $(json_nullable "$ARCHITECTURE"),
+    "uptime_seconds": $UPTIME_SECONDS
+  },
+  "kernel": $KERNEL_JSON,
+  "boot": {
+    "firmware": $(json_string "$BOOT_FIRMWARE"),
+    "esp_present": $(json_bool "$ESP_PRESENT"),
+    "esp_mounted": $(json_nullable_bool "$ESP_MOUNTED"),
+    "systemd_boot_valid": $(json_bool "$SYSTEMD_BOOT_VALID"),
+    "default_entry": $(json_nullable "$DEFAULT_ENTRY"),
+    "current_entry_valid": $(json_bool "$KERNEL_CURRENT_ENTRY"),
+    "fallback_entry_valid": $(json_nullable_bool "$KERNEL_PREVIOUS_ENTRY"),
+    "kernel_image_valid": $(json_bool "$KERNEL_CURRENT_IMAGE"),
+    "initramfs_valid": $(json_bool "$KERNEL_CURRENT_INITRAMFS")
+  },
+  "systemd": {
+    "failed_unit_count": $FAILED_UNIT_COUNT,
+    "failed_units": $(json_array FAILED_UNITS),
+    "critical_failed_units": $(json_array CRITICAL_FAILED_UNITS),
+    "services": {
+      "systemd_networkd": {"state": $(json_string "$NETWORKD_STATE"), "enabled": $(json_string "$(service_enabled systemd-networkd.service)")},
+      "systemd_resolved": {"state": $(json_string "$RESOLVED_STATE"), "enabled": $(json_string "$(service_enabled systemd-resolved.service)")},
+      "systemd_timesyncd": {"state": $(json_string "$TIMESYNCD_STATE"), "enabled": $(json_string "$(service_enabled systemd-timesyncd.service)")},
+      "nftables": {"state": $(json_string "$NFTABLES_STATE"), "enabled": $(json_string "$(service_enabled nftables.service)")},
+      "sshd": {"state": $(json_string "$SSHD_STATE"), "enabled": $(json_string "$SSHD_ENABLED")}
+    }
+  },
+  "networking": {
+    "configuration_present": $(json_bool "$NETWORK_CONFIGURED"),
+    "configuration_files": $(json_array NETWORK_FILES),
+    "active_interfaces": $(json_array ACTIVE_INTERFACES),
+    "global_address_present": $(json_nullable_bool "$ADDRESS_PRESENT"),
+    "default_route_present": $(json_nullable_bool "$DEFAULT_ROUTE"),
+    "networkd_state": $(json_string "$NETWORKD_STATE")
+  },
+  "dns": {
+    "resolved_state": $(json_string "$RESOLVED_STATE"),
+    "resolv_conf_valid": $(json_bool "$DNS_CONFIGURED"),
+    "validation": $(json_string "$DNS_VALIDATION")
+  },
+  "firewall": {
+    "service_state": $(json_string "$NFTABLES_STATE"),
+    "configuration_valid": $(json_bool "$NFT_CONFIG_VALID"),
+    "ruleset_available": $(json_nullable_bool "$NFT_RULESET_AVAILABLE"),
+    "baseline_policy_valid": $(json_bool "$NFT_BASELINE")
+  },
+  "ssh": {
+    "enabled": $(json_bool "$SSH_ENABLED_BOOL"),
+    "service_state": $(json_string "$SSHD_STATE"),
+    "configuration_valid": $(json_bool "$SSH_CONFIG_VALID"),
+    "syntax": $(json_string "$SSHD_SYNTAX"),
+    "listening": $(json_nullable_bool "$SSH_LISTENING"),
+    "root_login": $(json_string "$SSH_ROOT_LOGIN"),
+    "password_authentication": $(json_string "$SSH_PASSWORD_AUTH")
+  },
+  "repository": {
+    "enabled_repositories": $(json_array REPOSITORIES),
+    "generation": $(json_nullable "$GENERATION"),
+    "kitpro_only": $(json_bool "$KITPRO_ONLY"),
+    "signature_enforcement": $(json_bool "$SIGNATURE_ENFORCED"),
+    "arch_repositories_present": $([[ ${#ENABLED_ARCH_REPOSITORIES[@]} -gt 0 ]] && printf true || printf false),
+    "package_database_readable": $(json_bool "$PACKAGE_DB_READABLE"),
+    "installed_package_count": $PACKAGE_COUNT,
+    "release_package_present": $(json_bool "$RELEASE_PACKAGE_PRESENT"),
+    "kernel_package_present": $(json_bool "$KERNEL_PACKAGE_PRESENT")
+  },
+  "storage": {
+    "root": {"filesystem": $(json_string "$ROOT_STORAGE_FS"), "total_bytes": $ROOT_STORAGE_TOTAL, "free_bytes": $ROOT_STORAGE_FREE, "low_space": $(json_bool "$ROOT_LOW")},
+    "esp": {"filesystem": $(json_string "$ESP_STORAGE_FS"), "total_bytes": $ESP_STORAGE_TOTAL, "free_bytes": $ESP_STORAGE_FREE, "low_space": $(json_bool "$ESP_LOW")},
+    "kernel_retention": $(json_string "$KERNEL_RETENTION")
+  },
+  "history": {
+    "install_receipt": {"present": $(json_bool "$INSTALL_PRESENT"), "valid": $(json_bool "$INSTALL_VALID"), "schema_version": $INSTALL_VERSION, "installed_at": $(json_nullable "$INSTALL_TIME"), "installer_version": $(json_nullable "$INSTALLER_VERSION")},
+    "kernel_transition": {"present": $(json_bool "$TRANSITION_PRESENT"), "valid": $(json_bool "$TRANSITION_VALID"), "operation_id": $(json_nullable "$TRANSITION_OPERATION"), "result": $(json_nullable "$TRANSITION_RESULT"), "completed_at": $(json_nullable "$TRANSITION_TIME")},
+    "recovery": {"count": $RECOVERY_COUNT, "latest": $(json_nullable "$RECOVERY_LATEST"), "latest_valid": $RECOVERY_VALID, "operation": $(json_nullable "$RECOVERY_OPERATION"), "result": $(json_nullable "$RECOVERY_RESULT"), "completed_at": $(json_nullable "$RECOVERY_TIME")}
+  },
+  "redaction": {"profile": "support-safe-v1", "sensitive_values_included": false},
+  "overall_status": $(json_string "$OVERALL"),
+  "warnings": $(json_array WARNINGS),
+  "errors": $(json_array ERRORS)
+}
+EOF
+}
+
+mib() { [[ ${1:-0} =~ ^[0-9]+$ ]] && printf '%s MiB' "$(( ($1 + 1048575) / 1048576 ))" || printf unavailable; }
+emit_human() {
+    local install_display
+    if [[ $INSTALL_VALID == true ]]; then install_display=valid
+    elif [[ $INSTALL_PRESENT == true ]]; then install_display=invalid
+    else install_display=missing
+    fi
+    printf 'KITPro Linux System Health\n\n'
+    printf 'System\n  %-22s %s\n' 'Release:' "${RELEASE:-unavailable}"
+    printf '  %-22s %s\n' 'Generation:' "${GENERATION:-unavailable}"
+    printf '  %-22s %s\n' 'Hostname:' "${HOSTNAME_VALUE:-unavailable}"
+    printf '  %-22s %s\n\n' 'Overall status:' "$OVERALL"
+    printf 'Kernel\n  %-22s %s\n' 'Running:' "${KERNEL_RUNNING:-unavailable}"
+    printf '  %-22s %s\n' 'Current:' "${KERNEL_CURRENT:-unavailable}"
+    printf '  %-22s %s\n' 'Previous:' "${KERNEL_PREVIOUS:-none}"
+    printf '  %-22s %s\n' 'Fallback:' "$KERNEL_FALLBACK"
+    printf '  %-22s %s\n\n' 'Reboot required:' "$KERNEL_REBOOT"
+    printf 'Boot\n  %-22s %s\n' 'Firmware:' "$BOOT_FIRMWARE"
+    printf '  %-22s %s\n' 'systemd-boot:' "$([[ $SYSTEMD_BOOT_VALID == true ]] && printf valid || printf invalid)"
+    printf '  %-22s %s\n\n' 'Initramfs:' "$([[ $KERNEL_CURRENT_INITRAMFS == true ]] && printf valid || printf invalid)"
+    printf 'Services\n  %-22s %s\n' 'Failed units:' "$FAILED_UNIT_COUNT"
+    printf '  %-22s %s\n' 'SSH:' "$SSHD_STATE"
+    printf '  %-22s %s\n' 'nftables:' "$NFTABLES_STATE"
+    printf '  %-22s %s\n' 'systemd-networkd:' "$NETWORKD_STATE"
+    printf '  %-22s %s\n\n' 'systemd-resolved:' "$RESOLVED_STATE"
+    printf 'Networking\n  %-22s %s\n' 'Interfaces:' "$([[ $MODE == offline ]] && printf unavailable || printf '%s active' "${#ACTIVE_INTERFACES[@]}")"
+    printf '  %-22s %s\n' 'Default route:' "$DEFAULT_ROUTE"
+    printf '  %-22s %s\n\n' 'DNS:' "$DNS_VALIDATION"
+    printf 'Repository\n  %-22s %s\n' 'KITPro repos only:' "$KITPRO_ONLY"
+    printf '  %-22s %s\n' 'Signatures enforced:' "$SIGNATURE_ENFORCED"
+    printf '  %-22s %s\n\n' 'Generation:' "${GENERATION:-unavailable}"
+    printf 'Storage\n  %-22s %s\n' 'Root free:' "$(mib "$ROOT_STORAGE_FREE")"
+    printf '  %-22s %s\n' 'ESP free:' "$(mib "$ESP_STORAGE_FREE")"
+    printf '  %-22s %s\n\n' 'Kernel retention:' "$KERNEL_RETENTION"
+    printf 'History\n  %-22s %s\n' 'Install receipt:' "$install_display"
+    printf '  %-22s %s\n' 'Kernel transition:' "$([[ $TRANSITION_PRESENT == true ]] && printf '%s' "${TRANSITION_RESULT:-present}" || printf none)"
+    printf '  %-22s %s\n\n' 'Recovery receipts:' "$RECOVERY_COUNT"
+    printf 'Operator attention\n'
+    if [[ ${#WARNINGS[@]} -eq 0 && ${#ERRORS[@]} -eq 0 ]]; then
+        printf '  None\n'
+    else
+        local message
+        for message in "${WARNINGS[@]}"; do printf '  WARNING: %s\n' "$message"; done
+        for message in "${ERRORS[@]}"; do printf '  ERROR: %s\n' "$message"; done
+    fi
+}
+
+if [[ $FORMAT == json ]]; then
+    if [[ -n $OUTPUT ]]; then
+        [[ ! -L $OUTPUT ]] || fail 'refusing to write through an output symlink'
+        output_directory=$(dirname "$OUTPUT")
+        [[ -d $output_directory ]] || fail "output directory does not exist: $output_directory"
+        umask 077
+        temporary=$(mktemp "$output_directory/.kitpro-health.XXXXXX") || fail 'cannot create output file'
+        trap 'rm -f "$temporary"' EXIT
+        emit_json >"$temporary" || fail 'cannot write output report'
+        chmod 600 "$temporary"
+        mv -f "$temporary" "$OUTPUT" || fail 'cannot install output report'
+        trap - EXIT
+    else
+        emit_json
+    fi
+else
+    emit_human
+fi
+exit "$EXIT_CODE"

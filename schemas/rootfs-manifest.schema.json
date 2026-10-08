@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kitpro.example/schemas/rootfs-manifest.schema.json",
+  "title": "KITPro Linux Phase 2 root filesystem manifest",
+  "type": "object",
+  "required": [
+    "schema_version", "kitpro_release", "stable_generation", "architecture",
+    "explicit_packages", "resolved_package_count", "packages", "kernel",
+    "initramfs", "bootloader", "filesystem", "root_filesystem_uuid",
+    "network", "ssh", "nftables", "enabled_systemd_units",
+    "build_timestamp", "build_tools", "rootfs_size_bytes", "disk_image",
+    "test_results"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "kitpro_release": { "type": "string" },
+    "stable_generation": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+-dev-g[0-9]{4}$" },
+    "architecture": { "const": "x86_64" },
+    "explicit_packages": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "resolved_package_count": { "type": "integer", "minimum": 1 },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "version", "sha256"],
+        "properties": {
+          "name": { "type": "string" },
+          "version": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        }
+      }
+    },
+    "kernel": {
+      "type": "object",
+      "required": ["package", "version", "image_sha256"],
+      "properties": { "image_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" } }
+    },
+    "initramfs": {
+      "type": "object",
+      "required": ["tool", "sha256", "configuration_sha256"],
+      "properties": {
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "configuration_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "bootloader": { "const": "systemd-boot" },
+    "filesystem": { "const": "ext4" },
+    "root_filesystem_uuid": { "type": ["string", "null"] },
+    "network": { "type": "object" },
+    "ssh": { "type": "object" },
+    "nftables": { "type": "object" },
+    "enabled_systemd_units": { "type": "array", "items": { "type": "string" } },
+    "build_timestamp": { "type": "string", "format": "date-time" },
+    "build_tools": { "type": "object" },
+    "rootfs_size_bytes": { "type": "integer", "minimum": 1 },
+    "disk_image": {
+      "type": "object",
+      "required": ["path", "size_bytes", "sha256"],
+      "properties": {
+        "path": { "type": ["string", "null"] },
+        "size_bytes": { "type": ["integer", "null"] },
+        "sha256": { "type": ["string", "null"] }
+      }
+    },
+    "test_results": { "type": "object" }
+  }
+}
