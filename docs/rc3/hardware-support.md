@@ -1,9 +1,5 @@
 # KITPro Linux Server 1.0 hardware requirements
 
-RAM requirements are frozen by installation-memory qualification. Prior RC2
-TCG and KVM installations passed at 2 GiB; RC3 requalification is pending. Physical hardware qualification
-remains pending:
-
 | Requirement | Minimum | Recommended |
 | --- | --- | --- |
 | Architecture | x86_64 | Modern Intel/AMD x86_64 |
@@ -14,13 +10,12 @@ remains pending:
 | USB installation media | 4 GiB | 4 GiB or larger |
 | Network | Supported network adapter | Wired Ethernet |
 
-The [installation-memory qualification](../installation-memory-qualification.md)
-proves the RAM values using clean native production-intent media under TCG and
-KVM, including repeated 2 GiB installations and separate 2 GiB runtime validation.
-Native installation trials used 16 GiB disks. RC3 fresh-install checks remain pending. Physical qualification and offline
-signatures are still required before complete RC3 acceptance.
+RC3 passed repeated virtual installation and runtime validation at 2 GiB RAM.
+It also passed physical installation, update, fallback, rescue, power-cycle, and
+14-day burn-in checks on a compact x86_64 system with NVMe storage and wired
+Ethernet.
 
 KITPro targets standard x86_64 UEFI server and homelab hardware supported by the
-upstream Linux kernel. Qualification does not imply universal support for RAID
-controllers, SAS HBAs, NICs, firmware, or enterprise platforms. Beelink NVMe and
-Intel I226-V/igc qualification remains a specific RC3 gate.
+upstream Linux kernel. Qualification does not imply support for every RAID
+controller, SAS HBA, NIC, firmware implementation, wireless adapter, or
+enterprise platform.

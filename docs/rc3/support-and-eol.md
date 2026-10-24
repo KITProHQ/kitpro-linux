@@ -1,17 +1,15 @@
-# KITPro Linux Server 1.0 support planning
+# Support period
 
-Standard support is planned for 12 months from final 1.0 publication.
-RC3 does not start the support clock. Final publication has not occurred;
-there is no support-start or EOL timestamp to announce yet.
+Standard support is planned for 12 months from final 1.0 publication. The
+qualified release candidate does not start that clock, so no support-start or
+end-of-life timestamp exists yet.
 
-RC users should retain backups, report reproducible defects, and include a
-locally inspected, sanitized support bundle when useful. Review a bundle before
-sharing it. No automatic upload is required.
+Administrators should retain backups and include a locally inspected, sanitized
+support bundle when reporting a reproducible defect. Review the bundle before
+sharing it. KITPro does not upload support bundles automatically.
 
-A 14-day Beelink burn-in begins only after RC3 qualification passes. Daily review
-covers health, failed units, storage, and journal errors. The period includes at
-least three warm reboots, two clean shutdown/cold-boot cycles, SSH, password-backed
-sudo, a live support bundle, a rescue boot, and a qualified generation update if
-one is available. Do not fabricate a kernel update to satisfy this requirement.
-
-Final release requires completed burn-in and explicit publication authorization.
+The 14-day physical burn-in completed after healthy daily checks, three warm
+reboots, two clean shutdown and cold-boot cycles, SSH and password-backed sudo
+checks, live and offline support-bundle checks, a rescue boot, and production
+update/fallback coverage. It found zero defects. Raw burn-in and host evidence
+remain private.

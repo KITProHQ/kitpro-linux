@@ -1,29 +1,23 @@
-# RC3 known limitations and qualification gates
+# Known limitations
 
-These limits apply to RC3. RC3 qualification is pending; physical qualification
-and offline release signatures remain pending.
+These limits apply to the qualified KITPro Linux Server 1.0 release candidate.
 
-- UEFI x86_64 only; Secure Boot and legacy BIOS are not supported.
-- Whole-disk installation only. No dual boot, custom partition layout, or
-  preservation of existing data on the selected target is promised.
-- Wired networking is the supported qualification path. DHCP and static IPv4
-  are supported; arbitrary wireless hardware is not qualified.
-- The installer uses ext4. RAID, LVM, encryption, and ZFS installation workflows
-  are not supported.
-- Physical lifecycle qualification covers one platform, subject to the recorded
-  Beelink RC3 result; this is not a general hardware certification.
+- Only x86_64 UEFI systems are supported. Secure Boot and legacy BIOS are not.
+- The installer replaces the selected disk. Dual boot, custom partitioning, and
+  preservation of existing data on that disk are not supported.
+- The installer creates an ext4 root filesystem. RAID, LVM, disk encryption,
+  and ZFS installation workflows are not provided.
+- Wired networking is the qualified path. DHCP and static IPv4 are supported.
+  Arbitrary wireless hardware is not qualified.
 - Previous-kernel selection is manual in the boot menu.
+- A fresh installation has no previous kernel. Fallback becomes available after
+  a genuine update retains a known-good kernel.
 - SSH is optional, key-only, and denies root login.
-- Previous-kernel fallback requires a prior known-good kernel retained through
-  a genuine update. Fresh installation alone does not create one.
-- Offline rescue inspection mounts root and ESP read-only by default. Repairs
-  require explicit authorization and are distinct from inspection.
-- RC qualification does not establish support for every RAID/HBA/NIC platform.
-
-Block release on installation, boot, trust, update, fallback, rescue,
-reproducibility, identity, security, secret-exposure, or data-loss defects.
-Do not treat successful repository qualification as successful media qualification.
-
-The optional virtualization collector previously warned on bare-metal detection.
-Its accepted exit status now includes the documented no-virtualization result.
-The focused collector test passes; live Beelink bundle validation is still required.
+- Offline rescue inspection mounts the root filesystem and EFI System Partition
+  read-only by default. Repairs require a separate explicit action.
+- Physical qualification covers one hardware class. It is not universal hardware
+  certification.
+- Standard support is planned for 12 months from final 1.0 publication. The
+  support clock has not started.
+- Final 1.0 publication, the public repository, and the `v1.0.0` tag do not yet
+  exist.
