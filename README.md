@@ -71,12 +71,10 @@ private worker registry, signing key, or private qualification record is needed.
 
 ## Licensing status
 
-Upstream packages retain their own licenses. The release SBOMs record their
-declared license metadata. See [NOTICE.md](NOTICE.md).
-
-This publication candidate does not yet contain a repository-wide license for
-KITPro-authored source. Public open-source publication remains blocked until the
-copyright holder selects and adds that license.
+KITPro-authored source and documentation are licensed under
+[Apache License 2.0](LICENSE) unless otherwise noted. Third-party and upstream
+materials retain their respective licenses and notice requirements. The release
+SBOMs record declared package license metadata. See [NOTICE.md](NOTICE.md).
 
 KITPro is independent of Arch Linux. Arch Linux does not sponsor, endorse, or
 support KITPro Linux Server.
