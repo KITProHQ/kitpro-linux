@@ -1,8 +1,10 @@
-# Proposed 1.0 release artifact inventory
+# KITPro Linux Server 1.0 release artifact inventory
 
-No artifact in this inventory has been published. The proposed release title is
-`KITPro Linux Server 1.0`. The proposed source tag is `v1.0.0`, targeting the
-final sanitized public-history candidate after every publication gate passes.
+These artifacts were published in the
+[KITPro Linux Server 1.0 GitHub Release](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.0.0)
+on October 24, 2026. The source tag is `v1.0.0`, at commit
+`0e7720fe17a029b8af9a724ad24b2dc28fbbc895`. The final ISO retains `rc3`
+in its filename because the qualified artifact was published unchanged.
 
 | Artifact | Purpose | SHA-256 |
 | --- | --- | --- |
@@ -21,8 +23,8 @@ Its boot inventory SHA-256 is
 `be524eaaec2b4e301fd1a0a0ca8fd7642c2790619fb67b6332f6f552a48992ba`.
 
 The detached signatures verify with Production ISO fingerprint
-`607D71E399E645164471C8EBA998AA6B6095B621`. Do not regenerate them during
-publication preparation.
+`607D71E399E645164471C8EBA998AA6B6095B621`. These release artifacts are
+frozen; do not regenerate them.
 
 The repository key artifact is finalized. An independent mirror is planned at
 `https://kitpro.us/keys/kitpro-linux-production-iso.asc`; it is pending deployment

@@ -1,7 +1,8 @@
-# KITPro Linux Server 1.0 release-candidate notes
+# KITPro Linux Server 1.0 release notes
 
-This is a qualified 1.0 release candidate pending publication authorization. It
-must not be described as a released 1.0 product.
+KITPro Linux Server 1.0 was officially released on October 24, 2026. The
+[final release](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.0.0)
+uses the qualified RC3 ISO unchanged, so its filename retains `rc3`.
 
 The frozen RC3 target uses production generation `1.0-g0002`, kernel
 `6.18.55-1`, and 199 packages, 36 of them explicit. Its two independently

@@ -1,4 +1,9 @@
-# Verify release-candidate artifacts
+# Verify KITPro Linux Server 1.0 release artifacts
+
+Download the frozen artifacts from the
+[official 1.0 release](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.0.0).
+The ISO filename retains `rc3` because the qualified media was published
+unchanged.
 
 The Production ISO signing fingerprint is:
 
@@ -37,4 +42,4 @@ and qualification references with the release notes.
 Package and Repository keys authenticate packages and repository databases.
 They do not replace the offline ISO release signature.
 
-See [artifacts.md](artifacts.md) for the proposed publication inventory.
+See [artifacts.md](artifacts.md) for the published release inventory.

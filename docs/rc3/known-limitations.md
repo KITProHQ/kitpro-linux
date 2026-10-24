@@ -1,6 +1,6 @@
 # Known limitations
 
-These limits apply to the qualified KITPro Linux Server 1.0 release candidate.
+These limits apply to the released KITPro Linux Server 1.0.
 
 - Only x86_64 UEFI systems are supported. Secure Boot and legacy BIOS are not.
 - The installer replaces the selected disk. Dual boot, custom partitioning, and
@@ -17,7 +17,5 @@ These limits apply to the qualified KITPro Linux Server 1.0 release candidate.
   read-only by default. Repairs require a separate explicit action.
 - Physical qualification covers one hardware class. It is not universal hardware
   certification.
-- Standard support is planned for 12 months from final 1.0 publication. The
-  support clock has not started.
-- Final 1.0 publication, the public repository, and the `v1.0.0` tag do not yet
-  exist.
+
+Standard support runs from October 24, 2026 through October 24, 2027.

@@ -1,8 +1,10 @@
-# Install KITPro Linux Server 1.0 RC3
+# Install KITPro Linux Server 1.0
 
-For end-user installation, use signed and verified RC3 media. Controlled
-engineering qualification requires the recorded artifact identity and explicit
-authorization for the identified target disk.
+Use the signed ISO from the
+[official 1.0 release](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.0.0).
+The final release uses the qualified RC3 media unchanged, so its filename and
+installer screens retain `rc3`. Verify the artifact and identify the target
+disk before installation.
 
 1. Verify SHA256SUMS and the release manifest as described in the verification guide.
 2. Write the exact verified ISO to a USB drive of at least 4 GiB. Identify the
@@ -20,8 +22,8 @@ authorization for the identified target disk.
    only for the identified disk. Do not reuse an authorization from an earlier boot.
 8. Follow the completion instructions, shut down, remove the USB, and boot the
    installed system. Log in locally and verify password-backed sudo.
-9. Run `kitpro-health`, `kitpro-kernel-status`, and `uname -r`. The fresh RC3
-   target must report production 1.0-g0002 and 6.18.55-1-lts.
+9. Run `kitpro-health`, `kitpro-kernel-status`, and `uname -r`. The fresh 1.0
+   installation must report production 1.0-g0002 and 6.18.55-1-lts.
 10. Confirm the sole configured repository is kitpro-1.0-core at
     `https://repo.kitpro.us/kitpro-linux/stable/1.0/current/core/os/$arch`.
 

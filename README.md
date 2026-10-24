@@ -1,15 +1,21 @@
 # KITPro Linux Server
 
-KITPro Linux Server is an Arch Linux-derived, x86_64 server distribution with
-controlled package promotion, a guided whole-disk installer, manual
-previous-kernel fallback, an offline rescue environment, and local sanitized
-support bundles.
+KITPro Linux Server is an Arch-derived, x86_64 server distribution with a
+curated, signed KITPro production repository. It uses UEFI, systemd-boot, and
+linux-lts, with guided whole-disk installation, recovery, manually selected
+previous-kernel fallback, health and support-bundle tooling, and no telemetry.
+Installed systems do not use direct Arch Linux repositories.
 
-This repository is the unpublished source candidate for KITPro Linux Server
-1.0. The RC3 product passed virtual qualification, physical lifecycle checks,
-offline signature verification, and a 14-day physical burn-in with all required
-boot events and no defects. It is a qualified 1.0 release candidate pending
-publication authorization. It is not a released 1.0 product.
+**KITPro Linux Server 1.0 is officially released.** It was published on
+October 24, 2026. Standard support runs from October 24, 2026 through
+October 24, 2027. See the [official 1.0 release](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.0.0)
+and the [KITPro Linux Server website](https://kitpro.us/linux-server).
+
+The final release uses the exact ISO qualified during the RC3 cycle. Its
+filename retains `rc3` because the artifact was promoted without rebuilding or
+renaming it. Qualification included virtual and physical checks, offline
+signature verification, and a 14-day physical burn-in with all required boot
+events and zero recorded defects.
 
 ## Requirements
 
@@ -25,11 +31,18 @@ See [hardware requirements](docs/rc3/hardware-support.md) and
 
 ## Install and verify
 
+- [Download the official 1.0 ISO](https://github.com/KITProHQ/kitpro-linux/releases/download/v1.0.0/kitpro-linux-server-1.0-rc3-x86_64.iso)
+- [Official 1.0 release](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.0.0)
 - [Installation guide](docs/rc3/installation-guide.md)
+- [Hardware requirements](docs/rc3/hardware-support.md)
+- [Known limitations](docs/rc3/known-limitations.md)
 - [Artifact verification](docs/rc3/verification-guide.md)
 - [Release notes](docs/rc3/release-notes.md)
 - [Support period](docs/rc3/support-and-eol.md)
 - [Release artifact inventory](docs/rc3/artifacts.md)
+
+The guided installer erases the selected target disk. Back up required data
+and verify the disk before confirming installation.
 
 ## Build and test
 

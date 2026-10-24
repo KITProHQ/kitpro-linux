@@ -1,8 +1,7 @@
 # Support period
 
-Standard support is planned for 12 months from final 1.0 publication. The
-qualified release candidate does not start that clock, so no support-start or
-end-of-life timestamp exists yet.
+Standard support for KITPro Linux Server 1.0 runs from October 24, 2026
+through October 24, 2027.
 
 Administrators should retain backups and include a locally inspected, sanitized
 support bundle when reporting a reproducible defect. Review the bundle before
