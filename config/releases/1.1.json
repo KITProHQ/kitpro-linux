@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "product": "KITPro Linux Server",
+  "canonical_version": "1.1.0",
+  "display_version": "1.1",
+  "codename": null,
+  "release": "1.1",
+  "generation": "1.1-g0001",
+  "kernel": "6.18.59-1-lts",
+  "installer": "1.2.0",
+  "planner": "1.8.0",
+  "adapter": "0.5.0",
+  "core_package_count": 199,
+  "explicit_package_count": 36,
+  "console_installed_by_default": false,
+  "publication_date": null,
+  "support_end_date": null,
+  "support_months": 12,
+  "publication_status": "not-published"
+}

@@ -19,10 +19,11 @@ VERSION = '1.0-memory-qualification'
 ISO_NAME = f'kitpro-linux-server-{VERSION}-x86_64.iso'
 RUNTIME_MODULES = (
     '__init__.py', 'kitpro_repo.py', 'kitpro_phase2.py', 'guided_installer.py',
+    'generation_descriptor.py',
     'rescue.py', 'offline_support.py', 'phase4_live.py', 'system_health.py',
     'support_bundle.py', 'support_bundle_inspect.py', 'production_generation.py',
     'production_identity.py', 'production_packages.py', 'production_publish.py',
-    'production_repository.py',
+    'production_repository.py', 'release_repository.py',
 )
 
 
@@ -101,7 +102,8 @@ def validate_presentation(live: Path, entries: Path) -> None:
 
 
 def stage_qualification_profile(source: Path, generation: Path, run: Path,
-                                release_policy: Path | None = None) -> tuple[Path, dict]:
+                                release_policy: Path | None = None, *,
+                                build_arch_keyring: Path | None = None) -> tuple[Path, dict]:
     commit, dirty = phase5._git_state(source)
     if dirty:
         raise kitpro_repo.PipelineError('qualification media requires a clean source commit')
@@ -120,7 +122,7 @@ def stage_qualification_profile(source: Path, generation: Path, run: Path,
     shutil.copytree(profile_source, profile, symlinks=True)
     definition = profile / 'profiledef.sh'
     text = definition.read_text().replace('KITPRO_0_8_DEV', identity['label'])
-    text = text.replace('0.8.0-dev.18', version).replace(
+    text = text.replace('0.8.0-dev.19', version).replace(
         'KITPro Linux Server Developer Installation Media',
         f'KITPro Linux Server 1.0 {status} Installation Media',
     )
@@ -155,13 +157,17 @@ def stage_qualification_profile(source: Path, generation: Path, run: Path,
     (project / 'config/rootfs').mkdir(parents=True)
     for name in ('mkinitcpio.conf', '10-persistent.conf'):
         shutil.copy2(source / 'config/rootfs' / name, project / 'config/rootfs' / name)
-    install_profile = json.loads((source / 'config/production-install-rootfs-profile.json').read_text())
-    install_profile.update(
-        release='1.0', generation=GENERATION,
-        explicit_packages=[p['name'] for p in manifest['packages'] if p['explicit']],
-        repository_url='https://repo.kitpro.us/kitpro-linux/stable/1.0/current/core/os/$arch',
-    )
-    kitpro_repo.atomic_write_json(project / 'config/install-rootfs-profile.json', install_profile)
+    production_profile = source / 'config/production-install-rootfs-profile.json'
+    install_profile = json.loads(production_profile.read_text())
+    expected_profile_fields = {
+        'release': '1.0',
+        'generation': GENERATION,
+        'explicit_packages': [p['name'] for p in manifest['packages'] if p['explicit']],
+        'repository_url': 'https://repo.kitpro.us/kitpro-linux/stable/1.0/current/core/os/$arch',
+    }
+    if any(install_profile.get(name) != value for name, value in expected_profile_fields.items()):
+        raise kitpro_repo.PipelineError('production install profile differs from frozen policy')
+    shutil.copy2(production_profile, project / 'config/install-rootfs-profile.json')
     destination = project / 'repo/stable/1.0' / GENERATION
     shutil.copytree(generation, destination)
     phase5._stage_operator_tooling(source, live)
@@ -183,8 +189,9 @@ def stage_qualification_profile(source: Path, generation: Path, run: Path,
     # Build-only Arch snapshot configuration stays outside the live filesystem.
     cache = run / 'cache'
     cache.mkdir()
+    arch_gpg_path = build_arch_keyring or Path('/etc/pacman.d/gnupg')
     kitpro_repo.render_template(profile / 'pacman.conf.in', profile / 'pacman.conf', {
-        'CACHE_PATH': str(cache), 'ARCH_GPG_PATH': '/etc/pacman.d/gnupg',
+        'CACHE_PATH': str(cache), 'ARCH_GPG_PATH': str(arch_gpg_path),
         'LOG_PATH': str(run / 'archiso-pacman.log'), 'SNAPSHOT_DATE': phase4_media.SNAPSHOT_DATE,
     })
     (profile / 'pacman.conf.in').unlink()

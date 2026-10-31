@@ -9,9 +9,20 @@ from dataclasses import asdict, dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from kitpro_install_planner import (
+    StoragePlanningError,
+    StorageRequest,
+    StorageRequestV1,
+    StorageRequestV2,
+    StorageRequestV3,
+    StorageRequestV4,
+    StorageRequestV5,
+    StorageRequestV6,
+    StorageRequestV7,
+    storage_request_from_dict,
+)
 from tools import kitpro_repo
 from tools.install import SPEC_VERSION
-
 
 GIB = 1024**3
 ABSOLUTE_MINIMUM_BYTES = 6 * GIB
@@ -20,8 +31,12 @@ MINIMUM_FREE_RESERVE_BYTES = 2 * GIB
 ESP_SIZE_BYTES = 256 * 1024**2
 SUPPORTED_LOCALES = {"C.UTF-8", "en_US.UTF-8"}
 PUBLIC_KEY_TYPES = {
-    "ssh-ed25519", "ssh-rsa", "ecdsa-sha2-nistp256", "ecdsa-sha2-nistp384",
-    "ecdsa-sha2-nistp521", "sk-ssh-ed25519@openssh.com",
+    "ssh-ed25519",
+    "ssh-rsa",
+    "ecdsa-sha2-nistp256",
+    "ecdsa-sha2-nistp384",
+    "ecdsa-sha2-nistp521",
+    "sk-ssh-ed25519@openssh.com",
 }
 
 
@@ -45,6 +60,7 @@ class DiskSpec:
     layout: str
     filesystem: str
     minimum_capacity_bytes: int
+    storage: StorageRequest | None = None
 
 
 @dataclass(frozen=True)
@@ -92,10 +108,10 @@ class InstallSpec:
 
     def to_dict(self) -> dict[str, Any]:
         value = asdict(self)
+        if self.disk.storage is None:
+            value["disk"].pop("storage")
         value["network"]["dns"] = list(self.network.dns)
-        value["administrator"]["ssh_authorized_keys"] = list(
-            self.administrator.ssh_authorized_keys
-        )
+        value["administrator"]["ssh_authorized_keys"] = list(self.administrator.ssh_authorized_keys)
         if self.administrator.password_hash is None:
             value["administrator"].pop("password_hash")
         return value
@@ -152,7 +168,9 @@ def validate_username(value: str) -> str:
 def validate_public_key(value: str) -> str:
     """Validate one OpenSSH public key without accepting private material."""
     if "PRIVATE KEY" in value or "\n" in value or "\r" in value:
-        raise kitpro_repo.PipelineError("administrator SSH keys must contain one public key per entry")
+        raise kitpro_repo.PipelineError(
+            "administrator SSH keys must contain one public key per entry"
+        )
     fields = value.split()
     if len(fields) < 2 or fields[0] not in PUBLIC_KEY_TYPES:
         raise kitpro_repo.PipelineError(f"unsupported administrator SSH public key: {value[:32]}")
@@ -185,7 +203,9 @@ def parse_network(value: Any) -> NetworkSpec:
         raise kitpro_repo.PipelineError("network.dns must be an array of IPv4 addresses")
     if mode == "dhcp":
         if any(item is not None for item in (address, prefix, gateway)) or dns_value:
-            raise kitpro_repo.PipelineError("DHCP network configuration cannot contain static fields")
+            raise kitpro_repo.PipelineError(
+                "DHCP network configuration cannot contain static fields"
+            )
     else:
         if not isinstance(address, str) or not isinstance(gateway, str):
             raise kitpro_repo.PipelineError("static networking requires address and gateway")
@@ -197,7 +217,9 @@ def parse_network(value: Any) -> NetworkSpec:
             for resolver in dns_value:
                 ipaddress.IPv4Address(resolver)
         except ipaddress.AddressValueError as error:
-            raise kitpro_repo.PipelineError(f"invalid static IPv4 configuration: {error}") from error
+            raise kitpro_repo.PipelineError(
+                f"invalid static IPv4 configuration: {error}"
+            ) from error
         if not dns_value:
             raise kitpro_repo.PipelineError("static networking requires at least one DNS server")
     return NetworkSpec(mode, address, prefix, gateway, tuple(dns_value))
@@ -207,11 +229,23 @@ def parse_spec(document: Any) -> InstallSpec:
     root = _mapping(document, "installation specification")
     _reject_unknown(
         root,
-        {"version", "release", "system", "disk", "network", "administrator", "ssh", "firewall", "boot"},
+        {
+            "version",
+            "release",
+            "system",
+            "disk",
+            "network",
+            "administrator",
+            "ssh",
+            "firewall",
+            "boot",
+        },
         "installation specification",
     )
     if root.get("version") != SPEC_VERSION:
-        raise kitpro_repo.PipelineError(f"unsupported installation specification version: {root.get('version')}")
+        raise kitpro_repo.PipelineError(
+            f"unsupported installation specification version: {root.get('version')}"
+        )
 
     release = _mapping(root.get("release"), "release")
     _reject_unknown(release, {"name", "generation"}, "release")
@@ -237,7 +271,14 @@ def parse_spec(document: Any) -> InstallSpec:
     disk = _mapping(root.get("disk"), "disk")
     _reject_unknown(
         disk,
-        {"device", "target_type", "layout", "filesystem", "minimum_capacity_gib"},
+        {
+            "device",
+            "target_type",
+            "layout",
+            "filesystem",
+            "minimum_capacity_gib",
+            "storage",
+        },
         "disk",
     )
     device = _required_string(disk, "device", "disk")
@@ -248,11 +289,91 @@ def parse_spec(document: Any) -> InstallSpec:
         raise kitpro_repo.PipelineError(f"unsupported disk.target_type: {target_type}")
     layout = disk.get("layout", "standard")
     filesystem = disk.get("filesystem", "ext4")
-    if layout != "standard" or filesystem != "ext4":
-        raise kitpro_repo.PipelineError("The installer supports only standard GPT and ext4")
+    if layout not in {
+        "standard",
+        "separate-home",
+        "root-swap",
+        "root-home-swap",
+        "manual",
+        "lvm",
+        "preserve",
+    }:
+        raise kitpro_repo.PipelineError(f"unsupported disk.layout: {layout}")
+    if filesystem not in {"ext4", "btrfs"}:
+        raise kitpro_repo.PipelineError(f"unsupported root filesystem: {filesystem}")
+    storage_value = disk.get("storage")
+    try:
+        storage = storage_request_from_dict(storage_value) if storage_value is not None else None
+    except StoragePlanningError as error:
+        raise kitpro_repo.PipelineError(str(error)) from error
+    if filesystem == "ext4" and not (
+        storage is None
+        or isinstance(
+            storage,
+            (
+                StorageRequestV1,
+                StorageRequestV3,
+                StorageRequestV4,
+                StorageRequestV5,
+                StorageRequestV6,
+                StorageRequestV7,
+            ),
+        )
+    ):
+        raise kitpro_repo.PipelineError("ext4 requires storage schema version 1")
+    if filesystem == "btrfs" and not isinstance(
+        storage, (StorageRequestV2, StorageRequestV3, StorageRequestV4, StorageRequestV7)
+    ):
+        raise kitpro_repo.PipelineError("Btrfs requires storage schema version 2")
+    if isinstance(storage, StorageRequestV3):
+        if storage.filesystem != filesystem:
+            raise kitpro_repo.PipelineError(
+                "encrypted storage filesystem differs from disk.filesystem"
+            )
+        if target_type != "block":
+            raise kitpro_repo.PipelineError("encrypted installation requires a block-device target")
+    if isinstance(storage, StorageRequestV4):
+        root_partition = next(
+            (partition for partition in storage.partitions if partition.role == "root"), None
+        )
+        if root_partition is None or root_partition.filesystem != filesystem:
+            raise kitpro_repo.PipelineError(
+                "manual storage root filesystem differs from disk.filesystem"
+            )
+        if storage.encryption is not None and target_type != "block":
+            raise kitpro_repo.PipelineError("encrypted installation requires a block-device target")
+    if isinstance(storage, (StorageRequestV5, StorageRequestV6)):
+        root_volume = next(
+            (volume for volume in storage.logical_volumes if volume.role == "root"), None
+        )
+        if root_volume is None or root_volume.filesystem != filesystem:
+            raise kitpro_repo.PipelineError("LVM root filesystem differs from disk.filesystem")
+        if target_type != "block":
+            raise kitpro_repo.PipelineError("LVM installation requires a block-device target")
+    if (
+        layout == "standard"
+        and storage is not None
+        and not isinstance(storage, (StorageRequestV2, StorageRequestV3, StorageRequestV4))
+        and storage != StorageRequestV1()
+    ):
+        raise kitpro_repo.PipelineError("standard layout cannot contain custom storage values")
+    if layout == "manual" and not isinstance(storage, StorageRequestV4):
+        raise kitpro_repo.PipelineError("manual layout requires storage schema version 4")
+    if layout == "lvm" and not isinstance(storage, (StorageRequestV5, StorageRequestV6)):
+        raise kitpro_repo.PipelineError("LVM layout requires storage schema version 5 or 6")
+    if layout == "preserve" and not isinstance(storage, StorageRequestV7):
+        raise kitpro_repo.PipelineError("preservation layout requires storage schema version 7")
+    if (
+        layout != "standard"
+        and layout not in {"manual", "lvm", "preserve"}
+        and (storage is None or getattr(storage, "layout", None) != layout)
+    ):
+        raise kitpro_repo.PipelineError("disk.layout and disk.storage.layout must match")
     minimum_gib = disk.get("minimum_capacity_gib", ABSOLUTE_MINIMUM_BYTES // GIB)
     if not isinstance(minimum_gib, int) or isinstance(minimum_gib, bool) or minimum_gib < 6:
-        raise kitpro_repo.PipelineError("disk.minimum_capacity_gib must be an integer of at least 6")
+        raise kitpro_repo.PipelineError(
+            "disk.minimum_capacity_gib must be an integer of at least 6"
+        )
 
     network = parse_network(root.get("network", {"mode": "dhcp"}))
 
@@ -272,9 +393,7 @@ def parse_spec(document: Any) -> InstallSpec:
     password_hash = administrator.get("password_hash")
     if password_hash is not None:
         if not isinstance(password_hash, str):
-            raise kitpro_repo.PipelineError(
-                "administrator.password_hash must be a string"
-            )
+            raise kitpro_repo.PipelineError("administrator.password_hash must be a string")
         validate_password_hash(password_hash)
 
     ssh = _mapping(root.get("ssh", {"enabled": False}), "ssh")
@@ -300,7 +419,7 @@ def parse_spec(document: Any) -> InstallSpec:
         version=SPEC_VERSION,
         release=ReleaseSpec(release_name, generation),
         system=SystemSpec(hostname, locale, timezone),
-        disk=DiskSpec(device, target_type, layout, filesystem, minimum_gib * GIB),
+        disk=DiskSpec(device, target_type, layout, filesystem, minimum_gib * GIB, storage),
         network=network,
         administrator=AdministratorSpec(username, tuple(keys), password_hash),
         ssh=SSHSpec(ssh_enabled),
@@ -313,5 +432,7 @@ def load_spec(path: Path) -> InstallSpec:
     try:
         document = json.loads(path.read_text())
     except (OSError, json.JSONDecodeError) as error:
-        raise kitpro_repo.PipelineError(f"cannot read installation specification {path}: {error}") from error
+        raise kitpro_repo.PipelineError(
+            f"cannot read installation specification {path}: {error}"
+        ) from error
     return parse_spec(document)

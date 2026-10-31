@@ -10,8 +10,20 @@
     "repository", "storage", "history", "redaction", "overall_status",
     "warnings", "errors"
   ],
+  "allOf": [
+    {
+      "if": {"properties": {"schema_version": {"enum": [2, 4]}}},
+      "then": {"properties": {"storage": {"required": ["root", "esp", "kernel_retention", "encryption"]}}},
+      "else": {"properties": {"storage": {"not": {"required": ["encryption"]}}}}
+    },
+    {
+      "if": {"properties": {"schema_version": {"enum": [3, 4]}}},
+      "then": {"properties": {"storage": {"required": ["root", "esp", "kernel_retention", "lvm"]}}},
+      "else": {"properties": {"storage": {"not": {"required": ["lvm"]}}}}
+    }
+  ],
   "properties": {
-    "schema_version": {"const": 1},
+    "schema_version": {"enum": [1, 2, 3, 4]},
     "kind": {"const": "kitpro-system-health"},
     "timestamp": {"type": "string", "format": "date-time"},
     "mode": {"enum": ["live", "offline"]},
@@ -186,7 +198,29 @@
       "properties": {
         "root": {"$ref": "#/$defs/volume"},
         "esp": {"$ref": "#/$defs/volume"},
-        "kernel_retention": {"enum": ["ready", "insufficient-space", "unavailable"]}
+        "kernel_retention": {"enum": ["ready", "insufficient-space", "unavailable"]},
+        "encryption": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "active", "mapper_name", "root_source"],
+          "properties": {
+            "enabled": {"const": true},
+            "active": {"$ref": "#/$defs/nullableBoolean"},
+            "mapper_name": {"type": "string", "pattern": "^crypt(root|lvm)$"},
+            "root_source": {"$ref": "#/$defs/nullableString"}
+          }
+        },
+        "lvm": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled", "active", "volume_group", "root_source"],
+          "properties": {
+            "enabled": {"const": true},
+            "active": {"$ref": "#/$defs/nullableBoolean"},
+            "volume_group": {"type": "string", "pattern": "^[A-Za-z0-9_]{1,63}$"},
+            "root_source": {"$ref": "#/$defs/nullableString"}
+          }
+        }
       }
     },
     "installReceipt": {

@@ -1,10 +1,14 @@
 arch-install-scripts
 base
+btrfs-progs
+cryptsetup
 dosfstools
 e2fsprogs
+efibootmgr
 iproute2
 iputils
 linux-lts
+lvm2
 mkinitcpio
 mkinitcpio-archiso
 mtools

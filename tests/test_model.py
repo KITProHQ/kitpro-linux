@@ -126,6 +126,36 @@ class PackageSetTests(unittest.TestCase):
         with self.assertRaisesRegex(kitpro_repo.PipelineError, "namespace"):
             kitpro_repo.validate_package_set(document)
 
+    def test_reused_snapshot_rejects_different_package_set(self) -> None:
+        package_set = json.loads((ROOT / "config/package-set.json").read_text())
+        snapshot = {
+            "source_arch_snapshot": {"database_hashes": {"core.db": "a" * 64}},
+            "package_set": copy.deepcopy(package_set),
+        }
+        expanded = copy.deepcopy(package_set)
+        expanded["explicit_packages"].append(
+            {
+                "name": "docker",
+                "expected_repository": "extra",
+                "support_class": "server-runtime",
+                "update_policy": "qualified-maintenance",
+                "reason": "KITPro Server runtime.",
+            }
+        )
+        with self.assertRaisesRegex(kitpro_repo.PipelineError, "different package set"):
+            kitpro_repo.validate_reused_snapshot(
+                snapshot, expanded, {"core.db": "a" * 64}
+            )
+
+    def test_reused_snapshot_accepts_exact_inputs(self) -> None:
+        package_set = json.loads((ROOT / "config/package-set.json").read_text())
+        database_hashes = {"core.db": "a" * 64}
+        snapshot = {
+            "source_arch_snapshot": {"database_hashes": database_hashes},
+            "package_set": copy.deepcopy(package_set),
+        }
+        kitpro_repo.validate_reused_snapshot(snapshot, package_set, database_hashes)
+
 
 class ManifestTests(unittest.TestCase):
     def test_valid_manifest(self) -> None:
@@ -140,6 +170,25 @@ class ManifestTests(unittest.TestCase):
     def test_manifest_rejects_cross_release_generation(self) -> None:
         with self.assertRaisesRegex(kitpro_repo.PipelineError, "does not match"):
             kitpro_repo.validate_manifest(manifest(generation="0.2-dev-g0001"))
+
+    def test_manifest_rejects_final_release_without_candidate_marker(self) -> None:
+        document = manifest(generation="1.1-g0001")
+        document["release"] = "1.1"
+        with self.assertRaisesRegex(kitpro_repo.PipelineError, "not a development release"):
+            kitpro_repo.validate_manifest(document)
+
+    def test_manifest_accepts_explicit_linux_1_1_development_candidate(self) -> None:
+        document = manifest(generation="1.1-g0001")
+        document["release"] = "1.1"
+        document["development_release_candidate"] = True
+        kitpro_repo.validate_manifest(document)
+
+    def test_manifest_rejects_other_final_release_candidate(self) -> None:
+        document = manifest(generation="1.2-g0001")
+        document["release"] = "1.2"
+        document["development_release_candidate"] = True
+        with self.assertRaisesRegex(kitpro_repo.PipelineError, "unsupported"):
+            kitpro_repo.validate_manifest(document)
 
     def test_manifest_rejects_incomplete_dependency_closure(self) -> None:
         document = manifest()

@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "release": {
+    "name": "0.1-dev",
+    "generation": "0.1-dev-g0010"
+  },
+  "system": {
+    "hostname": "kitpro",
+    "locale": "C.UTF-8",
+    "timezone": "UTC"
+  },
+  "disk": {
+    "device": "/var/tmp/kitpro-linux-target.raw",
+    "target_type": "image",
+    "layout": "standard",
+    "filesystem": "ext4",
+    "minimum_capacity_gib": 6
+  },
+  "network": {
+    "mode": "dhcp"
+  },
+  "administrator": {
+    "username": "kitpro-admin",
+    "ssh_authorized_keys": [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKITProPhase3ReplaceThisKeyBeforeUse kitpro-install-example"
+    ]
+  },
+  "ssh": {
+    "enabled": true
+  },
+  "firewall": {
+    "ssh": true
+  },
+  "boot": {
+    "mode": "uefi"
+  }
+}

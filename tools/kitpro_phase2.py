@@ -199,6 +199,10 @@ def validate_rootfs_manifest(document: dict[str, Any]) -> None:
 
 
 def generation(profile: dict[str, Any], repo_root: Path) -> tuple[Path, dict[str, Any]]:
+    if profile.get("trust") == "production-signed":
+        from tools.install import production
+
+        return production.verify(profile["generation"], repo_root)
     root = repo_root / "stable" / profile["release"] / profile["generation"]
     manifest = kitpro_repo.load_json(root / "manifest.json")
     kitpro_repo.validate_manifest(manifest)
@@ -306,6 +310,38 @@ def bootstrap_vm_tools(state_root: Path, artifact_root: Path) -> dict[str, Any]:
     return report
 
 
+def development_public_trust() -> tuple[Path, Path, Path]:
+    public = PROJECT_ROOT / ".state/dev-keys/public"
+    paths = (
+        public / "kitpro-linux.gpg",
+        public / "kitpro-linux-trusted",
+        public / "kitpro-linux-revoked",
+    )
+    if not all(path.is_file() for path in paths):
+        raise kitpro_repo.PipelineError(
+            "development repository public trust is unavailable"
+        )
+    return paths
+
+
+def installation_public_trust(
+    root: Path, profile: dict[str, Any]
+) -> tuple[Path, Path, Path]:
+    if profile.get("trust") != "production-signed":
+        return development_public_trust()
+    public = root / "usr/share/pacman/keyrings"
+    paths = (
+        public / "kitpro-linux.gpg",
+        public / "kitpro-linux-trusted",
+        public / "kitpro-linux-revoked",
+    )
+    if not all(path.is_file() for path in paths):
+        raise kitpro_repo.PipelineError(
+            "production repository public trust is unavailable in the installed root"
+        )
+    return paths
+
+
 def configure_rootfs(
     root: Path,
     profile: dict[str, Any],
@@ -337,40 +373,53 @@ def configure_rootfs(
     localtime.unlink(missing_ok=True)
     os.symlink("../usr/share/zoneinfo/UTC", localtime)
 
-    os_release = (
-        'NAME="KITPro Linux Server"\n'
-        'PRETTY_NAME="KITPro Linux Server 0.1 development prototype"\n'
-        'ID=kitpro-linux\n'
-        'ID_LIKE=arch\n'
-        'VERSION_ID="0.1-dev"\n'
-        f'BUILD_ID="{profile["generation"]}"\n'
-        'ANSI_COLOR="38;2;52;120;246"\n'
-        'HOME_URL="https://kitpro.us/"\n'
-        'DOCUMENTATION_URL="https://github.com/KITProHQ/kitpro-linux"\n'
-    )
-    write(root / "usr/lib/os-release", os_release)
-    etc_os_release = root / "etc/os-release"
-    etc_os_release.unlink(missing_ok=True)
-    os.symlink("../usr/lib/os-release", etc_os_release)
-    release_metadata = {
-        "schema_version": 1,
-        "release": profile["release"],
-        "generation": profile["generation"],
-        "channel": "stable",
-        "production_ready": False,
-    }
-    kitpro_repo.atomic_write_json(root / "etc/kitpro-linux-release.json", release_metadata)
+    if profile.get("trust") != "production-signed":
+        os_release = (
+            'NAME="KITPro Linux Server"\n'
+            'PRETTY_NAME="KITPro Linux Server 0.1 development prototype"\n'
+            'ID=kitpro-linux\n'
+            'ID_LIKE=arch\n'
+            'VERSION_ID="0.1-dev"\n'
+            f'BUILD_ID="{profile["generation"]}"\n'
+            'ANSI_COLOR="38;2;52;120;246"\n'
+            'HOME_URL="https://kitpro.us/"\n'
+            'DOCUMENTATION_URL="https://github.com/KITProHQ/kitpro-linux"\n'
+        )
+        write(root / "usr/lib/os-release", os_release)
+        etc_os_release = root / "etc/os-release"
+        etc_os_release.unlink(missing_ok=True)
+        os.symlink("../usr/lib/os-release", etc_os_release)
+        release_metadata = {
+            "schema_version": 1,
+            "release": profile["release"],
+            "generation": profile["generation"],
+            "channel": "stable",
+            "production_ready": False,
+        }
+        kitpro_repo.atomic_write_json(root / "etc/kitpro-linux-release.json", release_metadata)
 
     pacman_text = (source / "pacman.conf.in").read_text()
     pacman_text = pacman_text.replace("@RELEASE@", profile["release"])
     pacman_text = pacman_text.replace("@REPOSITORY_URL@", profile["repository_url"])
     write(root / "etc/pacman.conf", pacman_text)
     repositories = validate_repository_isolation(root / "etc/pacman.conf")
+    development_keyring, development_trusted, development_revoked = installation_public_trust(
+        root, profile
+    )
     kitpro_repo.initialize_public_keyring(
         root / "etc/pacman.d/gnupg",
-        root / "usr/share/pacman/keyrings/kitpro-linux.gpg",
-        root / "usr/share/pacman/keyrings/kitpro-linux-trusted",
-        root / "usr/share/pacman/keyrings/kitpro-linux-revoked",
+        development_keyring,
+        development_trusted,
+        development_revoked,
+        additional_public_keyrings=(
+            root / "usr/share/pacman/keyrings/archlinux.gpg",
+        ),
+        additional_trusted_keys=(
+            root / "usr/share/pacman/keyrings/archlinux-trusted",
+        ),
+        additional_revoked_keys=(
+            root / "usr/share/pacman/keyrings/archlinux-revoked",
+        ),
     )
 
     copy(source / "20-wired-dhcp.network", root / "etc/systemd/network/20-wired-dhcp.network")
@@ -457,7 +506,9 @@ def configure_rootfs(
         "linux /vmlinuz-linux-lts\n"
         "initrd /initramfs-linux-lts.img\n"
         f"options root=PARTUUID={profile['root_partition_uuid']} rw "
-        "console=ttyS0,115200n8 console=tty0\n",
+        "console=ttyS0,115200n8 console=tty0 "
+        "lsm=landlock,lockdown,yama,integrity,apparmor,bpf "
+        "apparmor=1 security=apparmor\n",
     )
     return private_key, repositories
 
@@ -471,6 +522,20 @@ def installed_packages(root: Path) -> dict[str, str]:
     return packages
 
 
+def validate_empty_mounted_target(
+    output: Path, allowed_mountpoints: frozenset[str] = frozenset()
+) -> None:
+    allowed = {"lost+found", "efi", ".kitpro-install-work", *allowed_mountpoints}
+    if not output.is_mount() or any(
+        path.name not in allowed
+        or path.is_symlink()
+        or not path.is_dir()
+        or (path.name in allowed_mountpoints and not path.is_mount())
+        for path in output.iterdir()
+    ):
+        raise kitpro_repo.PipelineError("direct installation requires an empty mounted target")
+
+
 def build_rootfs(
     profile_path: Path,
     repo_root: Path,
@@ -479,20 +544,18 @@ def build_rootfs(
     artifact_root: Path,
     *,
     mounted_target: bool = False,
+    allowed_mountpoints: frozenset[str] = frozenset(),
 ) -> dict[str, Any]:
     profile = kitpro_repo.load_json(profile_path)
     generation_root, generation_manifest = generation(profile, repo_root)
-    kitpro_repo.verify_manifest_artifacts(
-        generation_manifest, repo_root, generation_root, PROJECT_ROOT / ".state/dev-keys"
-    )
+    production_signed = profile.get("trust") == "production-signed"
+    if not production_signed:
+        kitpro_repo.verify_manifest_artifacts(
+            generation_manifest, repo_root, generation_root, PROJECT_ROOT / ".state/dev-keys"
+        )
     marker = output / ".kitpro-phase2-build-root"
     if mounted_target:
-        if not output.is_mount() or any(
-            path.name not in {"lost+found", "efi", ".kitpro-install-work"}
-            or path.is_symlink() or not path.is_dir()
-            for path in output.iterdir()
-        ):
-            raise kitpro_repo.PipelineError("direct installation requires an empty mounted target")
+        validate_empty_mounted_target(output, allowed_mountpoints)
     elif output.exists():
         if not marker.is_file():
             raise kitpro_repo.PipelineError(f"refusing to replace unrecognized rootfs: {output}")
@@ -515,16 +578,22 @@ def build_rootfs(
     log = state_root / "log/rootfs-pacman.log"
     cache.mkdir(parents=True, exist_ok=True)
     log.parent.mkdir(parents=True, exist_ok=True)
-    kitpro_repo.setup_kitpro_keyring(
-        PROJECT_ROOT / ".state/client/gnupg",
-        PROJECT_ROOT / ".state/dev-keys/public",
-    )
+    client_gpg = PROJECT_ROOT / ".state/client/gnupg"
+    if production_signed:
+        from tools.install import production
+
+        client_gpg = production.prepare_trust(profile["generation"], repo_root)
+    else:
+        kitpro_repo.setup_kitpro_keyring(
+            client_gpg,
+            PROJECT_ROOT / ".state/dev-keys/public",
+        )
     kitpro_repo.render_template(
         PROJECT_ROOT / "config/rootfs-build-pacman.conf.in",
         build_config,
         {
             "CACHE_PATH": str(cache.resolve()),
-            "KITPRO_GPG_PATH": str((PROJECT_ROOT / ".state/client/gnupg").resolve()),
+            "KITPRO_GPG_PATH": str(client_gpg.resolve()),
             "LOG_PATH": str(log.resolve()),
             "RELEASE": profile["release"],
             "STABLE_GENERATION": str(generation_root.resolve()),
@@ -540,7 +609,7 @@ def build_rootfs(
     output.chmod(0o755)
     write(marker, "KITPro Linux Phase 2 generated root filesystem\n")
     private_key, repositories = configure_rootfs(
-        output, profile, generation_manifest["source_epoch"], state_root
+        output, profile, generation_manifest.get("source_epoch", profile.get("source_epoch", 0)), state_root
     )
 
     installed = installed_packages(output)

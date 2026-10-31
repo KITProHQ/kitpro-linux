@@ -1,0 +1,10 @@
+post_install() {
+	install -Dm644 /usr/lib/kitpro-linux/release.json /etc/kitpro-linux-release.json
+	install -Dm644 /usr/share/kitpro-linux/pacman.conf /etc/pacman.conf
+	install -Dm644 /usr/share/kitpro-linux/os-release /usr/lib/os-release
+	ln -sfn ../usr/lib/os-release /etc/os-release
+}
+
+post_upgrade() {
+	post_install
+}

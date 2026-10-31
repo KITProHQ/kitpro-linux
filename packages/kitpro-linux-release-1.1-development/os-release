@@ -1,0 +1,10 @@
+NAME="KITPro Linux Server"
+PRETTY_NAME="KITPro Linux Server 1.1"
+ID=kitpro-linux
+ID_LIKE=arch
+VERSION="1.1"
+VERSION_ID="1.1"
+BUILD_ID="1.1-g0001"
+HOME_URL="https://kitpro.us/"
+DOCUMENTATION_URL="https://kitpro.us/"
+SUPPORT_URL="https://kitpro.us/"

@@ -27,7 +27,13 @@ if [[ $product_release == 1.0 ]]; then
     grep -Fxq 'Server = https://repo.kitpro.us/kitpro-linux/stable/1.0/current/core/os/$arch' /etc/pacman.conf
     grep -Fxq 'SigLevel = Required DatabaseRequired TrustedOnly' /etc/pacman.conf
 else
-    grep -q "/$identity_generation/" /etc/pacman.conf
+    [[ $product_release =~ ^[0-9]+\.[0-9]+$ ]]
+    cmp -s /usr/share/kitpro-linux/pacman.conf /etc/pacman.conf
+    grep -Fxq "[kitpro-$product_release-core]" /etc/pacman.conf
+    # Release media pins its immutable generation. An installed release follows
+    # the separately authorized current pointer. Both retain strict signatures.
+    grep -Eq "^Server = (https://repo\.kitpro\.us/kitpro-linux|file:///opt/kitpro-linux/repo)/stable/$product_release/(current|$identity_generation)/core/os/\\\$arch$" /etc/pacman.conf
+    grep -Fxq 'SigLevel = Required DatabaseRequired TrustedOnly' /etc/pacman.conf
 fi
 if grep -Eq '^\[(core|extra|.*testing|.*staging|multilib|aur)\]' /etc/pacman.conf; then
     exit 1

@@ -186,6 +186,17 @@ def validate_package_set(document: dict[str, Any]) -> None:
             raise PipelineError(f"native package violates namespace: {name}")
 
 
+def validate_reused_snapshot(
+    manifest: dict[str, Any],
+    package_set: dict[str, Any],
+    database_hashes: dict[str, str],
+) -> None:
+    if manifest["source_arch_snapshot"]["database_hashes"] != database_hashes:
+        raise PipelineError("existing snapshot uses different repository databases")
+    if manifest.get("package_set") != package_set:
+        raise PipelineError("existing snapshot uses a different package set")
+
+
 def validate_manifest(document: dict[str, Any]) -> None:
     required = {
         "schema_version",
@@ -207,8 +218,12 @@ def validate_manifest(document: dict[str, Any]) -> None:
         raise PipelineError(f"manifest misses fields: {', '.join(missing)}")
     if document["schema_version"] != 1:
         raise PipelineError("unsupported generation-manifest schema version")
-    if not re.fullmatch(r"[0-9]+\.[0-9]+-dev", document["release"]):
+    development_release = re.fullmatch(r"[0-9]+\.[0-9]+-dev", document["release"])
+    release_candidate = document.get("development_release_candidate") is True
+    if development_release is None and not release_candidate:
         raise PipelineError("manifest release is not a development release")
+    if release_candidate and document["release"] != "1.1":
+        raise PipelineError("unsupported development release candidate")
     if document["channel"] not in {"edge", "testing", "stable"}:
         raise PipelineError("manifest channel is invalid")
     if document["channel"] == "stable":
@@ -529,6 +544,8 @@ def initialize_public_keyring(
     revoked_keys: Path,
     *,
     additional_public_keyrings: Sequence[Path] = (),
+    additional_trusted_keys: Sequence[Path] = (),
+    additional_revoked_keys: Sequence[Path] = (),
 ) -> None:
     marker = gpg_dir / ".kitpro-initialized-v3"
     if marker.exists():
@@ -549,21 +566,25 @@ def initialize_public_keyring(
     )
     run(["gpg", "--homedir", str(gpg_dir), "--batch", "--quiet", "--import",
          str(public_keyring), *(str(path) for path in additional_public_keyrings)])
-    if trusted_keys.stat().st_size:
+    trust_files = (trusted_keys, *additional_trusted_keys)
+    if any(path.stat().st_size for path in trust_files):
         # pacman-key normally locally signs these distribution roots. This
         # verification-only keyring has no local secret key, so establish the
         # exact listed fingerprints as ultimate trust anchors instead.
         ownertrust: list[str] = []
-        for raw_line in trusted_keys.read_text().splitlines():
-            fingerprint = raw_line.split(":", 1)[0].strip()
-            if FINGERPRINT_RE.fullmatch(fingerprint):
-                ownertrust.append(f"{fingerprint}:6:")
+        for trust_file in trust_files:
+            for raw_line in trust_file.read_text().splitlines():
+                fingerprint = raw_line.split(":", 1)[0].strip()
+                if FINGERPRINT_RE.fullmatch(fingerprint):
+                    ownertrust.append(f"{fingerprint}:6:")
         run(
             ["gpg", "--homedir", str(gpg_dir), "--batch", "--import-ownertrust"],
             input_data="\n".join(ownertrust) + "\n",
         )
-    if revoked_keys.stat().st_size:
-        for raw_line in revoked_keys.read_text().splitlines():
+    for revoked_file in (revoked_keys, *additional_revoked_keys):
+        if not revoked_file.stat().st_size:
+            continue
+        for raw_line in revoked_file.read_text().splitlines():
             fingerprint = raw_line.strip()
             if not fingerprint or fingerprint.startswith("#"):
                 continue
@@ -681,8 +702,7 @@ def ingest_snapshot(
     if manifest_path.exists():
         manifest = load_json(manifest_path)
         verify_snapshot_manifest(manifest, repo_root)
-        if manifest["source_arch_snapshot"]["database_hashes"] != database_hashes:
-            raise PipelineError("existing snapshot uses different repository databases")
+        validate_reused_snapshot(manifest, package_set, database_hashes)
         return snapshot_root
     explicit_names = [entry["name"] for entry in package_set["explicit_packages"]]
     print_result = run(

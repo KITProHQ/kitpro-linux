@@ -14,6 +14,7 @@ import stat
 import subprocess
 import tempfile
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -272,6 +273,42 @@ def _verification_gpg_home():
         yield home
 
 
+def _create_build_arch_keyring(
+    source: Path = Path("/etc/pacman.d/gnupg"),
+) -> Path:
+    """Create a short writable public-only keyring for rootless mkarchiso."""
+    home = Path(tempfile.mkdtemp(prefix="kitpro-build-gpg-", dir="/tmp"))
+    home.chmod(0o700)
+    try:
+        if len(os.fsencode(home / "S.gpg-agent")) >= 108:
+            raise kitpro_repo.PipelineError("build GnuPG home is too long for a UNIX socket")
+        # Copy only the public verification database and GnuPG configuration.
+        # In particular, never copy the host's private-keys-v1.d directory.
+        for name in ("pubring.gpg", "trustdb.gpg", "gpg.conf", "gpg-agent.conf"):
+            path = source / name
+            if not path.is_file() or path.is_symlink():
+                raise kitpro_repo.PipelineError(f"Arch build keyring file is invalid: {path}")
+            destination = home / name
+            shutil.copy2(path, destination)
+            destination.chmod(0o600)
+    except Exception:
+        shutil.rmtree(home, ignore_errors=True)
+        raise
+    return home
+
+
+def _remove_build_arch_keyring(home: Path | None) -> None:
+    if home is None:
+        return
+    subprocess.run(
+        ["gpgconf", "--homedir", str(home), "--kill", "all"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    shutil.rmtree(home)
+
+
 def verify_bundle(
     bundle: Path,
     scratch: Path,
@@ -476,6 +513,8 @@ def build(
     keep_artifacts: bool = False,
     production_qualification: bool = False,
     release_policy: Path | None = None,
+    profile_transform: Callable[[Path, dict[str, Any]], dict[str, Any]] | None = None,
+    worker_tool_root: Path | None = None,
 ) -> dict[str, Any]:
     state_maintenance.prepare_heavy_work(output_root)
     started = _utc_now()
@@ -488,8 +527,9 @@ def build(
     failed_stage = "worker-validation"
     failed_command: list[str] | None = None
     exit_code: int | None = None
+    build_arch_keyring: Path | None = None
     try:
-        worker_report = worker_check.build_report(run_root)
+        worker_report = worker_check.build_report(run_root, tool_root=worker_tool_root)
         kitpro_repo.atomic_write_json(run_root / "worker-capability.json", worker_report)
         worker_check.validate_report(worker_report)
         if worker_report["worker"]["archiso"] != EXPECTED_ARCHISO:
@@ -499,9 +539,18 @@ def build(
         failed_stage = "build-input-validation"
         if production_qualification or release_policy is not None:
             from tools.production_media import stage_qualification_profile
-            profile, configuration = stage_qualification_profile(source_root, bundle, run_root, release_policy)
+            build_arch_keyring = _create_build_arch_keyring()
+            profile, configuration = stage_qualification_profile(
+                source_root,
+                bundle,
+                run_root,
+                release_policy,
+                build_arch_keyring=build_arch_keyring,
+            )
         else:
             profile, configuration = stage_native_profile(source_root, bundle, run_root)
+        if profile_transform is not None:
+            configuration = profile_transform(profile, configuration)
         generation = configuration["stable_generation"]
         iso_name = configuration.get("iso_filename", ISO_NAME)
         media_version = configuration["media_version"]
@@ -629,6 +678,8 @@ def build(
         }
         kitpro_repo.atomic_write_json(run_root / "failure.json", failure)
         raise
+    finally:
+        _remove_build_arch_keyring(build_arch_keyring)
 
 
 def _run_logged(command: list[str], log: Path) -> str:

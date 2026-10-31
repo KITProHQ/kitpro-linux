@@ -45,6 +45,32 @@ validate_partuuid() {
     [[ $1 =~ ^[0-9A-Fa-f-]{36}$ ]] || fail "invalid root PARTUUID: $1"
 }
 
+validate_root_identifier() {
+    [[ $1 =~ ^PARTUUID=[0-9A-Fa-f-]{36}$ || $1 == /dev/mapper/cryptroot || $1 =~ ^/dev/mapper/[A-Za-z0-9_]+-[A-Za-z0-9_]+$ ]] ||
+        fail "invalid root identifier: $1"
+}
+
+validate_root_lvm_lv() {
+    [[ -z $1 || $1 =~ ^[A-Za-z0-9_]+/[A-Za-z0-9_]+$ ]] ||
+        fail "invalid root LVM logical volume: $1"
+}
+
+validate_crypt_uuid() {
+    [[ -z $1 || $1 =~ ^[0-9A-Fa-f-]{36}$ ]] || fail "invalid LUKS UUID: $1"
+}
+
+root_crypt_mapper() {
+    if [[ -n ${ROOT_LVM_LV:-} ]]; then
+        printf 'cryptlvm\n'
+    else
+        printf 'cryptroot\n'
+    fi
+}
+
+validate_root_flags() {
+    [[ -z $1 || $1 =~ ^[A-Za-z0-9@._=,:+-]+$ ]] || fail "invalid root flags: $1"
+}
+
 sha_file() {
     [[ -f $1 ]] || fail "required file is missing: $1"
     sha256sum "$1" | awk '{print $1}'
@@ -95,6 +121,10 @@ write_state() {
   "kind": "kitpro-kernel-state",
   "state": "$STATE_STATUS",
   "root_partuuid": "$ROOT_PARTUUID",
+  "root_identifier": "$ROOT_IDENTIFIER",
+  "root_crypt_uuid": "$ROOT_CRYPT_UUID",
+  "root_lvm_lv": "$ROOT_LVM_LV",
+  "root_flags": "$ROOT_FLAGS",
   "source_repository_generation": "$SOURCE_GENERATION",
   "current_kernel_package_version": "$CURRENT_PACKAGE_VERSION",
   "current_kernel_release": "$CURRENT_RELEASE",
@@ -132,6 +162,11 @@ EOF
 load_state() {
     STATE_STATUS=$(state_value state)
     ROOT_PARTUUID=$(state_value root_partuuid)
+    ROOT_IDENTIFIER=$(state_value root_identifier || true)
+    [[ -n $ROOT_IDENTIFIER ]] || ROOT_IDENTIFIER="PARTUUID=$ROOT_PARTUUID"
+    ROOT_CRYPT_UUID=$(state_value root_crypt_uuid || true)
+    ROOT_LVM_LV=$(state_value root_lvm_lv || true)
+    ROOT_FLAGS=$(state_value root_flags || true)
     SOURCE_GENERATION=$(state_value source_repository_generation)
     CURRENT_PACKAGE_VERSION=$(state_value current_kernel_package_version)
     CURRENT_RELEASE=$(state_value current_kernel_release)
@@ -169,7 +204,7 @@ kernel_artifact_path() {
 
 entry_text() {
     local role=$1 release=$2 kernel_path=$3 initramfs_path=$4 graphics=${5:-normal}
-    local title boot_kernel_path boot_initramfs_path sort_key extra_options=
+    local title boot_kernel_path boot_initramfs_path sort_key extra_options= console_options=
     [[ $kernel_path == /efi/* ]] || fail "kernel artifact is outside the ESP: $kernel_path"
     [[ $initramfs_path == /efi/* ]] || fail "initramfs artifact is outside the ESP: $initramfs_path"
     boot_kernel_path=${kernel_path#/efi}
@@ -185,13 +220,21 @@ entry_text() {
         sort_key="$sort_key-compatibility"
         extra_options=" nomodeset"
     fi
+    local root_flags= crypt_options= lvm_options=
+    [[ -z ${ROOT_FLAGS:-} ]] || root_flags=" rootflags=$ROOT_FLAGS"
+    [[ -z ${ROOT_CRYPT_UUID:-} ]] || crypt_options=" rd.luks.name=$ROOT_CRYPT_UUID=$(root_crypt_mapper)"
+    [[ -z ${ROOT_LVM_LV:-} ]] || lvm_options=" rd.lvm.lv=$ROOT_LVM_LV"
+    console_options="console=ttyS0,115200n8 console=tty0"
+    # The initramfs password agent uses /dev/console. Keep serial primary for
+    # encrypted boots so the qualified Proxmox console can provide the key.
+    [[ -z ${ROOT_CRYPT_UUID:-} ]] || console_options="console=tty0 console=ttyS0,115200n8"
     cat <<EOF
 title $title
 version $release
 sort-key $sort_key
 linux $boot_kernel_path
 initrd $boot_initramfs_path
-options root=PARTUUID=$ROOT_PARTUUID rw console=ttyS0,115200n8 console=tty0$extra_options
+options root=$ROOT_IDENTIFIER rw$crypt_options$lvm_options$root_flags $console_options lsm=landlock,lockdown,yama,integrity,apparmor,bpf apparmor=1 security=apparmor$extra_options
 EOF
 }
 
@@ -299,12 +342,16 @@ retention_space_requirements() {
 }
 
 initialize() {
-    local package_version= generation= root_partuuid= kernel_release=
+    local package_version= generation= root_partuuid= root_identifier= root_crypt_uuid= root_lvm_lv= root_flags= kernel_release=
     while [[ $# -gt 0 ]]; do
         case $1 in
             --package-version) package_version=$2; shift 2 ;;
             --generation) generation=$2; shift 2 ;;
             --root-partuuid) root_partuuid=$2; shift 2 ;;
+            --root-identifier) root_identifier=$2; shift 2 ;;
+            --root-crypt-uuid) root_crypt_uuid=$2; shift 2 ;;
+            --root-lvm-lv) root_lvm_lv=$2; shift 2 ;;
+            --root-flags) root_flags=$2; shift 2 ;;
             --kernel-release) kernel_release=$2; shift 2 ;;
             *) fail "unknown initialize argument: $1" ;;
         esac
@@ -313,11 +360,32 @@ initialize() {
     validate_token generation "$generation"
     validate_token kernel-release "$kernel_release"
     validate_partuuid "$root_partuuid"
+    [[ -n $root_identifier ]] || root_identifier="PARTUUID=$root_partuuid"
+    validate_root_identifier "$root_identifier"
+    validate_crypt_uuid "$root_crypt_uuid"
+    validate_root_lvm_lv "$root_lvm_lv"
+    if [[ -n $root_lvm_lv ]]; then
+        local expected_mapper=${root_lvm_lv//\//-}
+        [[ $root_identifier == "/dev/mapper/$expected_mapper" ]] ||
+            fail "LVM root identifier does not match the logical volume"
+    elif [[ $root_identifier =~ ^/dev/mapper/ && $root_identifier != /dev/mapper/cryptroot ]]; then
+        fail "LVM mapper root requires --root-lvm-lv"
+    fi
+    if [[ $root_identifier == /dev/mapper/cryptroot ]]; then
+        [[ -n $root_crypt_uuid ]] || fail "encrypted root requires a LUKS UUID"
+    elif [[ -n $root_crypt_uuid && -z $root_lvm_lv ]]; then
+        fail "LUKS UUID requires an encrypted root identifier"
+    fi
+    validate_root_flags "$root_flags"
     [[ ! -e $(state_path) ]] || fail "kernel state already exists"
     [[ -d $(root_path "/usr/lib/modules/$kernel_release") ]] || fail "initial module tree is missing"
     install_artifacts "$kernel_release" \
         "$(root_path /boot/vmlinuz-linux-lts)" "$(root_path /boot/initramfs-linux-lts.img)"
     ROOT_PARTUUID=$root_partuuid
+    ROOT_IDENTIFIER=$root_identifier
+    ROOT_CRYPT_UUID=$root_crypt_uuid
+    ROOT_LVM_LV=$root_lvm_lv
+    ROOT_FLAGS=$root_flags
     SOURCE_GENERATION=$generation
     CURRENT_PACKAGE_VERSION=$package_version
     CURRENT_RELEASE=$kernel_release
@@ -530,7 +598,11 @@ validate_fallback() {
     [[ -f $entry ]] || fail "previous boot entry is missing"
     grep -Fq "linux $boot_kernel_path" "$entry" || fail "previous boot entry kernel path is wrong"
     grep -Fq "initrd $boot_initramfs_path" "$entry" || fail "previous boot entry initramfs path is wrong"
-    grep -Fq "root=PARTUUID=$ROOT_PARTUUID" "$entry" || fail "previous boot entry root identifier is wrong"
+    grep -Fq "root=$ROOT_IDENTIFIER" "$entry" || fail "previous boot entry root identifier is wrong"
+    if [[ -n ${ROOT_CRYPT_UUID:-} ]]; then
+        grep -Fq "rd.luks.name=$ROOT_CRYPT_UUID=$(root_crypt_mapper)" "$entry" ||
+            fail "previous boot entry encrypted-root activation is wrong"
+    fi
     printf '{"status":"valid","previous_kernel_release":"%s","boot_entry":"%s"}\n' \
         "$PREVIOUS_RELEASE" "$PREVIOUS_BOOT_ENTRY"
 }
@@ -648,7 +720,9 @@ status_entry_valid() {
     boot_initramfs=${initramfs_relative#/efi}
     grep -Fq "linux $boot_kernel" "$entry" &&
         grep -Fq "initrd $boot_initramfs" "$entry" &&
-        grep -Fq "root=PARTUUID=$ROOT_PARTUUID" "$entry"
+        grep -Fq "root=$ROOT_IDENTIFIER" "$entry" &&
+        { [[ -z ${ROOT_CRYPT_UUID:-} ]] ||
+          grep -Fq "rd.luks.name=$ROOT_CRYPT_UUID=$(root_crypt_mapper)" "$entry"; }
 }
 
 status_metadata_valid() {

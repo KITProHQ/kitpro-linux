@@ -28,13 +28,22 @@ def validate(root: Path, expected_manifest: str) -> dict:
     if digest(manifest_path) != expected_manifest:
         raise ValueError("publication manifest hash differs from approved source")
     m = json.loads(manifest_path.read_text())
-    if (m["release"] != "1.0" or m["generation_id"] not in ("1.0-g0001", "1.0-g0002")
+    packages = m.get("packages", [])
+    package_count = m.get("package_count")
+    explicit_package_count = m.get("explicit_package_count")
+    if (m["release"] != "1.0"
+            or not re.fullmatch(r"1\.0-g[0-9]{4}", m.get("generation_id", ""))
             or m["qualification_state"] != "signed-awaiting-client-qualification"
-            or m["package_count"] != 199 or m["explicit_package_count"] != 36):
+            or not isinstance(package_count, int) or not 1 <= package_count <= 4096
+            or package_count != len(packages)
+            or len({package.get("name") for package in packages}) != package_count
+            or not isinstance(explicit_package_count, int)
+            or not 1 <= explicit_package_count <= package_count
+            or explicit_package_count != sum(package.get("explicit") is True for package in packages)):
         raise ValueError("generation has not passed signed construction validation")
     expected = {"manifest.json": expected_manifest}
     prefix = "core/os/x86_64/"
-    for p in m["packages"]:
+    for p in packages:
         for field in ("filename", "signature_filename"):
             if Path(p[field]).name != p[field]:
                 raise ValueError("unsafe manifest path")
@@ -111,8 +120,15 @@ def publish(source: Path, public_root: Path, expected_manifest: str) -> dict:
 
 def advance(public_root: Path, generation: str, expected_previous: str,
             manifest_sha: str, verification_path: Path) -> dict:
+    if not re.fullmatch(r"1\.0-g[0-9]{4}", generation or ""):
+        raise ValueError("invalid generation identity")
+    if expected_previous != "none" and not re.fullmatch(
+            r"1\.0-g[0-9]{4}", expected_previous or ""):
+        raise ValueError("invalid predecessor identity")
     parent = public_root / "stable/1.0"
     m = validate(parent / generation, manifest_sha)
+    if m["generation_id"] != generation:
+        raise ValueError("generation path differs from manifest identity")
     verification = json.loads(verification_path.read_text())
     if (verification.get("status") != "passed" or verification.get("generation") != generation
             or verification.get("manifest_sha256") != manifest_sha
@@ -143,8 +159,8 @@ def main():
     parser.add_argument("--public-root", type=Path, default=Path("/srv/kitpro-repository/kitpro-linux"))
     parser.add_argument("--manifest-sha256", required=True)
     parser.add_argument("--source", type=Path)
-    parser.add_argument("--generation", choices=("1.0-g0001", "1.0-g0002"))
-    parser.add_argument("--expected-previous", choices=("none", "1.0-g0001"))
+    parser.add_argument("--generation")
+    parser.add_argument("--expected-previous")
     parser.add_argument("--public-verification", type=Path)
     args = parser.parse_args()
     if not re.fullmatch(r"[0-9a-f]{64}", args.manifest_sha256):

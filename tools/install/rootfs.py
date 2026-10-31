@@ -6,14 +6,15 @@ import os
 import re
 import shutil
 import stat
+from collections.abc import Callable
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from tools import kitpro_phase2, kitpro_repo
 from tools.install.model import InstallSpec
 from tools.install.passwords import configure_account_password
-from tools.install.render import fstab, loader_entry, networkd, nftables, sshd
-
+from tools.install.render import fstab_from_plan, networkd, nftables, sshd
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 STATE_ROOT = PROJECT_ROOT / ".state/phase3"
@@ -35,6 +36,17 @@ SUPPORT_INSPECTION_MODULES = (
     PROJECT_ROOT / "tools/support_bundle_inspect.py",
 )
 REPOSITORY_POLICY = PROJECT_ROOT / "runtime/repository-policy.conf"
+TARGET_LVM_PACKAGES = Path("/opt/kitpro-installer/target-packages")
+
+
+@contextmanager
+def _target_rootfs_umask():
+    """Give installed system paths standard modes under a private service umask."""
+    previous = os.umask(0o022)
+    try:
+        yield
+    finally:
+        os.umask(previous)
 
 
 def _write(path: Path, value: str, mode: int = 0o644) -> None:
@@ -65,7 +77,10 @@ def _copy_phase2_install_tools() -> None:
 
 def prepare_base_rootfs(plan: dict[str, Any]) -> dict[str, Any]:
     profile = kitpro_repo.load_json(PROFILE)
-    if profile["release"] != plan["release"] or profile["generation"] != plan["repository_generation"]:
+    if (
+        profile["release"] != plan["release"]
+        or profile["generation"] != plan["repository_generation"]
+    ):
         raise kitpro_repo.PipelineError("Root filesystem profile does not match the install plan")
     _copy_phase2_install_tools()
     return kitpro_phase2.build_rootfs(
@@ -77,25 +92,55 @@ def prepare_base_rootfs(plan: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def validate_install_source(plan: dict[str, Any]) -> None:
+def validate_install_source(plan: dict[str, Any]) -> dict[str, Any]:
     """Revalidate all offline inputs before a direct install can erase a disk."""
     profile = kitpro_repo.load_json(PROFILE)
-    if (profile["release"] != plan["release"]
-            or profile["generation"] != plan["repository_generation"]
-            or kitpro_repo.sha256_file(PROFILE) != plan["rootfs"]["profile_sha256"]):
+    if (
+        profile["release"] != plan["release"]
+        or profile["generation"] != plan["repository_generation"]
+        or kitpro_repo.sha256_file(PROFILE) != plan["rootfs"]["profile_sha256"]
+    ):
         raise kitpro_repo.PipelineError("installation profile changed after planning")
-    if profile["release"] == "1.0":
+    if profile.get("trust") == "production-signed" or profile["release"] == "1.0":
         from tools.install import production
-        generation_root, _ = production.verify(profile["generation"], PROJECT_ROOT / "repo")
-        if kitpro_repo.sha256_file(generation_root / "manifest.json") != plan["repository"]["generation_manifest_sha256"]:
+
+        generation_root, manifest = production.verify(profile["generation"], PROJECT_ROOT / "repo")
+        if (
+            kitpro_repo.sha256_file(generation_root / "manifest.json")
+            != plan["repository"]["generation_manifest_sha256"]
+        ):
             raise kitpro_repo.PipelineError("production generation changed after planning")
-        return
+        evidence = {
+            "verifier": "kitpro-production-verifier-v1",
+            "generation": profile["generation"],
+            "generation_manifest_sha256": plan["repository"]["generation_manifest_sha256"],
+            "artifact_set_sha256": production.artifact_set_sha256(manifest),
+            "rootfs_profile_sha256": kitpro_repo.sha256_file(PROFILE),
+        }
+        evidence["evidence_sha256"] = kitpro_repo.sha256_bytes(
+            kitpro_repo.canonical_json_bytes(evidence)
+        )
+        return evidence
     generation_root, manifest = kitpro_phase2.generation(profile, PROJECT_ROOT / "repo")
-    if kitpro_repo.sha256_file(generation_root / "manifest.json") != plan["repository"]["generation_manifest_sha256"]:
+    if (
+        kitpro_repo.sha256_file(generation_root / "manifest.json")
+        != plan["repository"]["generation_manifest_sha256"]
+    ):
         raise kitpro_repo.PipelineError("installation generation changed after planning")
     kitpro_repo.verify_manifest_artifacts(
         manifest, PROJECT_ROOT / "repo", generation_root, PROJECT_ROOT / ".state/dev-keys"
     )
+    evidence = {
+        "verifier": "kitpro-development-verifier-v1",
+        "generation": profile["generation"],
+        "generation_manifest_sha256": plan["repository"]["generation_manifest_sha256"],
+        "artifact_set_sha256": kitpro_repo.manifest_artifact_hash(manifest),
+        "rootfs_profile_sha256": kitpro_repo.sha256_file(PROFILE),
+    }
+    evidence["evidence_sha256"] = kitpro_repo.sha256_bytes(
+        kitpro_repo.canonical_json_bytes(evidence)
+    )
+    return evidence
 
 
 def _firewall_check_command(config: Path) -> list[str]:
@@ -105,7 +150,8 @@ def _firewall_check_command(config: Path) -> list[str]:
     mapping = Path("/proc/self/uid_map").read_text().splitlines()
     mapped_root = os.geteuid() == 0 and any(
         fields[0] == "0" and fields[1] != "0"
-        for line in mapping if len(fields := line.split()) == 3
+        for line in mapping
+        if len(fields := line.split()) == 3
     )
     user_options = [] if mapped_root else ["--user", "--map-root-user"]
     return ["unshare", *user_options, "--net", "nft", "-c", "-f", str(config)]
@@ -141,7 +187,9 @@ def _configure_account(
         f"m {username} wheel\n",
     )
     kitpro_phase2.run(["systemd-sysusers", f"--root={root}"])
-    if not any(line.startswith(f"{username}:") for line in (root / "etc/passwd").read_text().splitlines()):
+    if not any(
+        line.startswith(f"{username}:") for line in (root / "etc/passwd").read_text().splitlines()
+    ):
         raise kitpro_repo.PipelineError("administrator account creation failed")
     configure_account_password(
         root,
@@ -168,8 +216,16 @@ def _configure_account(
     else:
         kitpro_phase2.run(
             [
-                "unshare", "--fork", "--pid", "--mount", "--map-auto", "--map-root-user",
-                "chown", "-R", "1000:1000", str(home),
+                "unshare",
+                "--fork",
+                "--pid",
+                "--mount",
+                "--map-auto",
+                "--map-root-user",
+                "chown",
+                "-R",
+                "1000:1000",
+                str(home),
             ]
         )
 
@@ -184,8 +240,12 @@ def _configure_services(root: Path, spec: InstallSpec) -> list[str]:
         "ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any --ipv4 --timeout=30\n",
     )
     enabled = [
-        "systemd-networkd.service", "systemd-resolved.service", "systemd-timesyncd.service",
-        "nftables.service", "getty@tty1.service", "serial-getty@ttyS0.service",
+        "systemd-networkd.service",
+        "systemd-resolved.service",
+        "systemd-timesyncd.service",
+        "nftables.service",
+        "getty@tty1.service",
+        "serial-getty@ttyS0.service",
         "kitpro-install-first-boot-validation.service",
         "kitpro-kernel-boot-validation.service",
     ]
@@ -205,8 +265,9 @@ def _configure_first_boot_validation(
 ) -> None:
     username = spec.administrator.username
     repository_path = (
-        "https://repo.kitpro.us/kitpro-linux/stable/1.0/current/core/os/"
-        if spec.release.name == "1.0" else f"/{spec.release.generation}/"
+        f"https://repo.kitpro.us/kitpro-linux/stable/{spec.release.name}/current/core/os/"
+        if _production_signed_profile()
+        else f"/{spec.release.generation}/"
     )
     network_check = "ip -4 -o address show scope global dynamic | grep -q ."
     if spec.network.mode == "static":
@@ -308,6 +369,167 @@ def _configure_production_identity(root: Path) -> None:
     )
 
 
+def _production_signed_profile() -> bool:
+    return kitpro_repo.load_json(PROFILE).get("trust") == "production-signed"
+
+
+def _requires_production_deployment(spec: InstallSpec) -> bool:
+    """Route every production-trust release through the bounded deployer."""
+    return spec.release.name == "1.0" or _production_signed_profile()
+
+
+def _validate_installed_repository(
+    pacman: str, release: str, generation: str, production_signed: bool
+) -> None:
+    if production_signed:
+        from tools.install import production
+
+        if pacman != production.pacman_config(generation):
+            raise kitpro_repo.PipelineError(
+                "production repository configuration differs from canonical current"
+            )
+    elif generation not in pacman or "/current/" in pacman:
+        raise kitpro_repo.PipelineError(
+            "installed repository is not pinned to an immutable generation"
+        )
+
+
+def _configure_immutable_development_repository(root: Path, spec: InstallSpec) -> None:
+    """Pin non-production installed systems to the exact qualified generation."""
+    _write(
+        root / "etc/pacman.conf",
+        "[options]\n"
+        "HoldPkg = pacman glibc\n"
+        "Architecture = auto\n"
+        "CheckSpace\n"
+        "ParallelDownloads = 5\n"
+        "DownloadUser = alpm\n"
+        "SigLevel = Required DatabaseRequired TrustedOnly\n"
+        "LocalFileSigLevel = Required TrustedOnly\n\n"
+        f"[kitpro-{spec.release.name}-core]\n"
+        "SigLevel = Required DatabaseRequired TrustedOnly\n"
+        "Server = https://repo.kitpro.us/kitpro-linux/stable/"
+        f"{spec.release.name}/{spec.release.generation}/core/os/$arch\n",
+    )
+    _write(
+        root / "usr/share/libalpm/hooks/90-kitpro-repository-identity.hook",
+        "[Trigger]\nType = Package\nOperation = Install\nOperation = Upgrade\n"
+        "Operation = Remove\nTarget = *\n\n[Action]\n"
+        "Description = Recording the verified production generation...\n"
+        "When = PostTransaction\nExec = /usr/lib/kitpro-linux/repository-identity\n",
+    )
+
+
+def _configure_root_filesystem_modules(root: Path, plan: dict[str, Any]) -> None:
+    root_partition = plan["partition_table"]["root"]
+    filesystem = root_partition.get("inner_filesystem", root_partition["filesystem"])
+    if filesystem != "btrfs":
+        return
+    path = root / "etc/mkinitcpio.conf"
+    text = path.read_text()
+    pattern = r"^MODULES=\(([^)]*)\)$"
+    match = re.search(pattern, text, flags=re.MULTILINE)
+    if match is None:
+        raise kitpro_repo.PipelineError("mkinitcpio MODULES policy is unavailable")
+    modules = match.group(1).split()
+    if "btrfs" not in modules:
+        modules.append("btrfs")
+    _write(path, re.sub(pattern, f"MODULES=({' '.join(modules)})", text, flags=re.MULTILINE))
+
+
+def _configure_encrypted_root(root: Path, plan: dict[str, Any]) -> None:
+    encryption = plan["partition_table"].get("encryption")
+    if encryption is None:
+        return
+    for required in (root / "usr/bin/cryptsetup", root / "usr/lib/initcpio/install/sd-encrypt"):
+        if not required.is_file():
+            raise kitpro_repo.PipelineError(
+                f"installed encrypted-root tooling is unavailable: {required.relative_to(root)}"
+            )
+    _write(
+        root / "etc/crypttab",
+        f"{encryption['mapper_name']} UUID={encryption['luks_uuid']} none "
+        "luks,x-initrd.attach,password-cache=no\n",
+        0o600,
+    )
+    path = root / "etc/mkinitcpio.conf"
+    text = path.read_text()
+    pattern = r"^HOOKS=\(([^)]*)\)$"
+    match = re.search(pattern, text, flags=re.MULTILINE)
+    if match is None:
+        raise kitpro_repo.PipelineError("mkinitcpio HOOKS policy is unavailable")
+    hooks = match.group(1).split()
+    for hook in ("keyboard", "sd-vconsole"):
+        if hook not in hooks:
+            block_index = hooks.index("block") if "block" in hooks else len(hooks)
+            hooks.insert(block_index, hook)
+    if "sd-encrypt" not in hooks:
+        block_index = hooks.index("block") if "block" in hooks else len(hooks) - 1
+        hooks.insert(block_index + 1, "sd-encrypt")
+    _write(path, re.sub(pattern, f"HOOKS=({' '.join(hooks)})", text, flags=re.MULTILINE))
+
+
+def _configure_lvm_root(root: Path, plan: dict[str, Any]) -> None:
+    if "lvm" not in plan["partition_table"]:
+        return
+    required = (root / "usr/bin/lvm", root / "usr/lib/initcpio/install/lvm2")
+    for path in required:
+        if not path.is_file():
+            raise kitpro_repo.PipelineError(
+                f"installed LVM root tooling is unavailable: {path.relative_to(root)}"
+            )
+    path = root / "etc/mkinitcpio.conf"
+    text = path.read_text()
+    pattern = r"^HOOKS=\(([^)]*)\)$"
+    match = re.search(pattern, text, flags=re.MULTILINE)
+    if match is None:
+        raise kitpro_repo.PipelineError("mkinitcpio HOOKS policy is unavailable")
+    hooks = match.group(1).split()
+    if "lvm2" not in hooks:
+        predecessor = "sd-encrypt" if "sd-encrypt" in hooks else "block"
+        predecessor_index = hooks.index(predecessor) if predecessor in hooks else len(hooks) - 1
+        hooks.insert(predecessor_index + 1, "lvm2")
+    _write(path, re.sub(pattern, f"HOOKS=({' '.join(hooks)})", text, flags=re.MULTILINE))
+
+
+def _install_lvm_target_packages(root: Path, plan: dict[str, Any]) -> int:
+    """Install the pinned, signed development-profile LVM supplement offline."""
+    if "lvm" not in plan["partition_table"]:
+        return 0
+    manifest_path = TARGET_LVM_PACKAGES / "manifest.json"
+    if not manifest_path.is_file():
+        raise kitpro_repo.PipelineError("pinned target LVM package manifest is unavailable")
+    manifest = kitpro_repo.load_json(manifest_path)
+    if manifest.get("schema_version") != 1 or not isinstance(manifest.get("packages"), dict):
+        raise kitpro_repo.PipelineError("pinned target LVM package manifest is invalid")
+    archives: list[str] = []
+    for filename, expected_sha256 in sorted(manifest["packages"].items()):
+        package = TARGET_LVM_PACKAGES / filename
+        if not package.is_file() or kitpro_repo.sha256_file(package) != expected_sha256:
+            raise kitpro_repo.PipelineError(f"pinned target LVM package changed: {filename}")
+        if filename.endswith(".pkg.tar.zst"):
+            archives.append(str(package))
+    if len(archives) != 3:
+        raise kitpro_repo.PipelineError("pinned target LVM package set is incomplete")
+    kitpro_phase2.run(
+        [
+            "pacman",
+            "--root",
+            str(root),
+            "--dbpath",
+            str(root / "var/lib/pacman"),
+            "--config",
+            str(root / "etc/pacman.conf"),
+            "--gpgdir",
+            str(root / "etc/pacman.d/gnupg"),
+            "--noconfirm",
+            "-U",
+            *archives,
+        ]
+    )
+    return len(archives)
+
+
 def configure_staging_rootfs(
     root: Path,
     spec: InstallSpec,
@@ -317,6 +539,7 @@ def configure_staging_rootfs(
     kernel_package_version: str,
     stage_callback: Callable[[str], None] | None = None,
     administrator_password: str | None = None,
+    installed_package_count: int | None = None,
 ) -> dict[str, Any]:
     hostname = spec.system.hostname
     _write(root / "etc/hostname", hostname + "\n")
@@ -326,7 +549,9 @@ def configure_staging_rootfs(
     )
     timezone = root / "usr/share/zoneinfo" / spec.system.timezone
     if not timezone.is_file():
-        raise kitpro_repo.PipelineError(f"timezone is unavailable in the rootfs: {spec.system.timezone}")
+        raise kitpro_repo.PipelineError(
+            f"timezone is unavailable in the rootfs: {spec.system.timezone}"
+        )
     localtime = root / "etc/localtime"
     localtime.unlink(missing_ok=True)
     os.symlink("../usr/share/zoneinfo/" + spec.system.timezone, localtime)
@@ -344,15 +569,23 @@ def configure_staging_rootfs(
     _write(root / "etc/ssh/sshd_config.d/10-kitpro-server.conf", sshd(spec))
     _write(root / "etc/nftables.conf", nftables(spec), 0o755)
     kitpro_phase2.run(_firewall_check_command(root / "etc/nftables.conf"))
-    _configure_first_boot_validation(root, spec, plan["repository"]["package_count"])
+    _configure_first_boot_validation(
+        root,
+        spec,
+        installed_package_count or plan["repository"]["package_count"],
+    )
     _configure_kernel_boot_validation(root)
     enabled = _configure_services(root, spec)
 
     if stage_callback:
         stage_callback("boot_setup")
-    esp_uuid = plan["partition_table"]["esp"]["partition_uuid"]
-    root_uuid = plan["partition_table"]["root"]["partition_uuid"]
-    _write(root / "etc/fstab", fstab(esp_uuid, root_uuid))
+    root_uuid = (
+        plan["partition_table"]["lvm-pv"]["partition_uuid"]
+        if "lvm" in plan["partition_table"]
+        else plan["partition_table"]["root"]["partition_uuid"]
+    )
+    root_flags = plan["boot"].get("root_flags")
+    _write(root / "etc/fstab", fstab_from_plan(plan))
     _write(
         root / "etc/kitpro-installation.json",
         kitpro_repo.canonical_json_bytes(
@@ -369,6 +602,9 @@ def configure_staging_rootfs(
     kitpro_repo.atomic_write_json(root / "var/lib/kitpro-linux/install-receipt.json", receipt)
     kitpro_phase2.run_in_root_namespace(root, ["ssh-keygen", "-A"], STATE_ROOT)
     kitpro_phase2.run_in_root_namespace(root, ["sshd", "-t"], STATE_ROOT)
+    _configure_root_filesystem_modules(root, plan)
+    _configure_encrypted_root(root, plan)
+    _configure_lvm_root(root, plan)
     kitpro_phase2.run_in_root_namespace(
         root,
         [
@@ -407,8 +643,10 @@ def configure_staging_rootfs(
         root / "usr/lib/kitpro-linux/repository-policy.conf",
         0o644,
     )
-    if spec.release.name == "1.0":
+    if _production_signed_profile():
         _configure_production_identity(root)
+    else:
+        _configure_immutable_development_repository(root, spec)
     _write(
         root / "usr/share/libalpm/hooks/50-kitpro-kernel-preserve.hook",
         "[Trigger]\nType = Package\nOperation = Upgrade\nTarget = linux-lts\n\n"
@@ -435,11 +673,27 @@ def configure_staging_rootfs(
         )
     kitpro_phase2.run(
         [
-            str(runtime), "--root", str(root), "initialize",
-            "--package-version", kernel_package_version,
-            "--generation", spec.release.generation,
-            "--root-partuuid", root_uuid,
-            "--kernel-release", kernel_releases[0],
+            str(runtime),
+            "--root",
+            str(root),
+            "initialize",
+            "--package-version",
+            kernel_package_version,
+            "--generation",
+            spec.release.generation,
+            "--root-partuuid",
+            root_uuid,
+            "--root-identifier",
+            plan["boot"]["root_identifier"],
+            *(
+                ["--root-crypt-uuid", plan["boot"]["luks_uuid"]]
+                if plan["boot"].get("encrypted_root")
+                else []
+            ),
+            *(["--root-lvm-lv", plan["boot"]["lvm_root"]] if plan["boot"].get("lvm_root") else []),
+            *(["--root-flags", root_flags] if root_flags else []),
+            "--kernel-release",
+            kernel_releases[0],
         ]
     )
     validate_configured_rootfs(root, spec, plan)
@@ -455,11 +709,54 @@ def configure_staging_rootfs(
     }
 
 
+def _planned_root_identifier(plan: dict[str, Any]) -> str:
+    root_identifier = plan.get("boot", {}).get("root_identifier")
+    if root_identifier is not None:
+        return str(root_identifier)
+    return f"PARTUUID={plan['partition_table']['root']['partition_uuid']}"
+
+
 def validate_configured_rootfs(root: Path, spec: InstallSpec, plan: dict[str, Any]) -> None:
     if (root / "etc/hostname").read_text().strip() != spec.system.hostname:
         raise kitpro_repo.PipelineError("installed hostname does not match the plan")
     if not (root / "etc/localtime").is_symlink():
         raise kitpro_repo.PipelineError("installed timezone link is missing")
+    if (root / "etc/fstab").read_text() != fstab_from_plan(plan):
+        raise kitpro_repo.PipelineError("installed filesystem table differs from the plan")
+    root_partition = plan["partition_table"]["root"]
+    root_filesystem = root_partition.get(
+        "inner_filesystem", root_partition.get("filesystem", "ext4")
+    )
+    if root_filesystem == "btrfs" and not re.search(
+        r"^MODULES=\([^)]*\bbtrfs\b[^)]*\)$",
+        (root / "etc/mkinitcpio.conf").read_text(),
+        flags=re.MULTILINE,
+    ):
+        raise kitpro_repo.PipelineError("installed initramfs configuration lacks Btrfs support")
+    boot = plan.get("boot", {})
+    if boot.get("encrypted_root"):
+        crypttab = root / "etc/crypttab"
+        mkinitcpio = (root / "etc/mkinitcpio.conf").read_text()
+        if (
+            not crypttab.is_file()
+            or f"UUID={plan['boot']['luks_uuid']}" not in crypttab.read_text()
+            or "x-initrd.attach" not in crypttab.read_text()
+            or not re.search(r"^HOOKS=\([^)]*\bsd-encrypt\b[^)]*\)$", mkinitcpio, re.MULTILINE)
+            or not re.search(r"^HOOKS=\([^)]*\bkeyboard\b[^)]*\)$", mkinitcpio, re.MULTILINE)
+        ):
+            raise kitpro_repo.PipelineError("installed encrypted-root boot policy is incomplete")
+    if boot.get("lvm_root"):
+        mkinitcpio = (root / "etc/mkinitcpio.conf").read_text()
+        if not (root / "usr/bin/lvm").is_file() or not re.search(
+            r"^HOOKS=\([^)]*\blvm2\b[^)]*\)$", mkinitcpio, re.MULTILINE
+        ):
+            raise kitpro_repo.PipelineError("installed LVM root boot policy is incomplete")
+        hooks_match = re.search(r"^HOOKS=\(([^)]*)\)$", mkinitcpio, re.MULTILINE)
+        hooks = hooks_match.group(1).split() if hooks_match else []
+        if boot.get("encrypted_root") and hooks.index("sd-encrypt") > hooks.index("lvm2"):
+            raise kitpro_repo.PipelineError(
+                "installed initramfs must unlock LUKS before activating LVM"
+            )
     sudoers = root / "etc/sudoers.d/10-kitpro-installer-admin"
     if not sudoers.is_file() or sudoers.read_text() != "%wheel ALL=(ALL:ALL) ALL\n":
         raise kitpro_repo.PipelineError("installed sudo policy must require wheel authentication")
@@ -476,29 +773,53 @@ def validate_configured_rootfs(root: Path, spec: InstallSpec, plan: dict[str, An
         / "10-kitpro-any-interface.conf"
     )
     expected_wait = (
-        "ExecStart=/usr/lib/systemd/systemd-networkd-wait-online "
-        "--any --ipv4 --timeout=30"
+        "ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any --ipv4 --timeout=30"
     )
     if not wait_online.is_file() or expected_wait not in wait_online.read_text():
         raise kitpro_repo.PipelineError("installed network readiness policy is invalid")
     firewall = (root / "etc/nftables.conf").read_text()
-    if not all(value in firewall for value in ("policy drop", 'iifname "lo" accept', "established,related")):
+    if not all(
+        value in firewall for value in ("policy drop", 'iifname "lo" accept', "established,related")
+    ):
         raise kitpro_repo.PipelineError("installed nftables configuration is invalid")
     if ("tcp dport 22" in firewall) != spec.ssh.enabled:
         raise kitpro_repo.PipelineError("installed firewall and SSH policy disagree")
     ssh_configuration = (root / "etc/ssh/sshd_config.d/10-kitpro-server.conf").read_text()
     required_ssh = (
-        "PermitRootLogin no", "PasswordAuthentication no",
-        "KbdInteractiveAuthentication no", "AuthenticationMethods publickey",
+        "PermitRootLogin no",
+        "PasswordAuthentication no",
+        "KbdInteractiveAuthentication no",
+        "AuthenticationMethods publickey",
     )
     if any(value not in ssh_configuration for value in required_ssh):
         raise kitpro_repo.PipelineError("installed SSH configuration is invalid")
     entry = (root / "efi/loader/entries/kitpro-linux.conf").read_text()
-    expected_root = plan["partition_table"]["root"]["partition_uuid"]
-    if f"root=PARTUUID={expected_root}" not in entry:
+    expected_root = _planned_root_identifier(plan)
+    if f"root={expected_root}" not in entry:
         raise kitpro_repo.PipelineError("installed boot entry has the wrong root partition")
-    if "console=ttyS0,115200n8 console=tty0" not in entry:
+    if boot.get("encrypted_root") and (
+        f"rd.luks.name={boot['luks_uuid']}={boot['mapper_name']}" not in entry
+    ):
+        raise kitpro_repo.PipelineError("installed boot entry lacks encrypted-root activation")
+    if boot.get("lvm_root") and f"rd.lvm.lv={boot['lvm_root']}" not in entry:
+        raise kitpro_repo.PipelineError("installed boot entry lacks LVM root activation")
+    expected_flags = plan.get("boot", {}).get("root_flags")
+    if expected_flags and f"rootflags={expected_flags}" not in entry:
+        raise kitpro_repo.PipelineError("installed boot entry lacks the planned root flags")
+    expected_consoles = (
+        "console=tty0 console=ttyS0,115200n8"
+        if boot.get("encrypted_root")
+        else "console=ttyS0,115200n8 console=tty0"
+    )
+    if expected_consoles not in entry:
         raise kitpro_repo.PipelineError("installed boot entry lacks dual-console policy")
+    required_security_options = (
+        "lsm=landlock,lockdown,yama,integrity,apparmor,bpf",
+        "apparmor=1",
+        "security=apparmor",
+    )
+    if any(option not in entry.split() for option in required_security_options):
+        raise kitpro_repo.PipelineError("installed boot entry lacks AppArmor activation policy")
     if "systemd.debug_shell" in entry:
         raise kitpro_repo.PipelineError("installed boot entry enables the systemd debug shell")
     compatibility_entry = root / "efi/loader/entries/kitpro-linux-compatibility.conf"
@@ -508,21 +829,27 @@ def validate_configured_rootfs(root: Path, spec: InstallSpec, plan: dict[str, An
     if repositories != [f"kitpro-{spec.release.name}-core"]:
         raise kitpro_repo.PipelineError("installed repository name does not match the release")
     pacman = (root / "etc/pacman.conf").read_text()
-    if spec.release.name == "1.0":
-        from tools.production_repository import production_pacman_config
-        if pacman != production_pacman_config():
-            raise kitpro_repo.PipelineError("production repository configuration differs from canonical current")
-    elif spec.release.generation not in pacman or "/current/" in pacman:
-        raise kitpro_repo.PipelineError("installed repository is not pinned to an immutable generation")
+    _validate_installed_repository(
+        pacman,
+        spec.release.name,
+        spec.release.generation,
+        _production_signed_profile(),
+    )
     status = root / "usr/bin/kitpro-kernel-status"
     if not status.is_file() or not os.access(status, os.X_OK):
-        raise kitpro_repo.PipelineError("installed kernel status command is missing or not executable")
+        raise kitpro_repo.PipelineError(
+            "installed kernel status command is missing or not executable"
+        )
     health = root / "usr/bin/kitpro-health"
     if not health.is_file() or not os.access(health, os.X_OK):
-        raise kitpro_repo.PipelineError("installed system health command is missing or not executable")
+        raise kitpro_repo.PipelineError(
+            "installed system health command is missing or not executable"
+        )
     support = root / "usr/bin/kitpro-support-bundle"
     if not support.is_file() or not os.access(support, os.X_OK):
-        raise kitpro_repo.PipelineError("installed support bundle command is missing or not executable")
+        raise kitpro_repo.PipelineError(
+            "installed support bundle command is missing or not executable"
+        )
     inspector = root / "usr/lib/kitpro-linux/python/tools/support_bundle_inspect.py"
     if not inspector.is_file():
         raise kitpro_repo.PipelineError("installed support bundle inspection runtime is missing")
@@ -536,15 +863,36 @@ def _copy_base_rootfs(destination: Path) -> None:
             source.chmod(mode | stat.S_IRUSR)
             temporarily_readable.append((source, mode))
     try:
-        kitpro_phase2.run(
-            ["cp", "-a", "--reflink=auto", str(BASE_ROOTFS) + "/.", str(destination)]
-        )
+        kitpro_phase2.run(["cp", "-a", "--reflink=auto", str(BASE_ROOTFS) + "/.", str(destination)])
     finally:
         for source, mode in temporarily_readable:
             source.chmod(mode)
             copied = destination / source.relative_to(BASE_ROOTFS)
             if copied.exists():
                 copied.chmod(mode)
+
+
+def _deployment_mountpoints(plan: dict[str, Any]) -> frozenset[str]:
+    """Return planned non-root mounts that may already exist during deployment."""
+    table = plan["partition_table"]
+    mount_points = {
+        item["mount_point"].removeprefix("/")
+        for item in table.get("subvolumes", [])
+        if item["mount_point"] != "/"
+    }
+    mount_points.update(
+        item["mount_point"].removeprefix("/")
+        for item in table.get("partitions", [])
+        if item.get("mount_point") not in {None, "/", "/efi"}
+    )
+    mount_points.update(
+        item["mount_point"].removeprefix("/")
+        for item in table.get("lvm", {}).get("logical_volumes", [])
+        if item.get("mount_point") not in {None, "/"}
+    )
+    if "home" in table:
+        mount_points.add("home")
+    return frozenset(mount_points)
 
 
 def stage_rootfs(
@@ -558,28 +906,51 @@ def stage_rootfs(
 ) -> tuple[Path, dict[str, Any], dict[str, Any]]:
     if spec.sha256() != plan["install_spec_sha256"]:
         raise kitpro_repo.PipelineError("install specification does not match the install plan")
+    production_deployment = _requires_production_deployment(spec)
     if mounted_target is None:
-        if spec.release.name == "1.0":
-            raise kitpro_repo.PipelineError("production installation requires direct mounted deployment")
+        if production_deployment:
+            raise kitpro_repo.PipelineError(
+                "production installation requires direct mounted deployment"
+            )
         base_manifest = prepare_base_rootfs(plan)
     else:
         profile = kitpro_repo.load_json(PROFILE)
-        if profile["release"] != plan["release"] or profile["generation"] != plan["repository_generation"]:
+        if (
+            profile["release"] != plan["release"]
+            or profile["generation"] != plan["repository_generation"]
+        ):
             raise kitpro_repo.PipelineError("rootfs profile does not match the install plan")
         # Package cache, logs and any tool scratch live on the target disk.
         # pacstrap/libalpm extract the signed packages directly into that target.
         disk_state = mounted_target / ".kitpro-install-work"
         disk_state.mkdir(mode=0o700)
-        if spec.release.name == "1.0":
+        if production_deployment:
             from tools.install import production
-            base_manifest = production.deploy(
-                profile, PROJECT_ROOT / "repo", mounted_target, disk_state, BASE_ARTIFACTS
-            )
+
+            with _target_rootfs_umask():
+                base_manifest = production.deploy(
+                    profile,
+                    PROJECT_ROOT / "repo",
+                    mounted_target,
+                    disk_state,
+                    BASE_ARTIFACTS,
+                    allowed_mountpoints=_deployment_mountpoints(plan),
+                    preserve_esp=(
+                        plan["partition_table"].get("layout") == "preserve"
+                        and plan["partition_table"]["esp"].get("action") == "reuse"
+                    ),
+                )
         else:
-            base_manifest = kitpro_phase2.build_rootfs(
-                PROFILE, PROJECT_ROOT / "repo", disk_state, mounted_target,
-                BASE_ARTIFACTS, mounted_target=True,
-            )
+            with _target_rootfs_umask():
+                base_manifest = kitpro_phase2.build_rootfs(
+                    PROFILE,
+                    PROJECT_ROOT / "repo",
+                    disk_state,
+                    mounted_target,
+                    BASE_ARTIFACTS,
+                    mounted_target=True,
+                    allowed_mountpoints=_deployment_mountpoints(plan),
+                )
     base_manifest_path = BASE_ARTIFACTS / "rootfs-manifest.json"
     work = STATE_ROOT / "work" / plan["plan_sha256"]
     root = mounted_target if mounted_target is not None else work / "rootfs"
@@ -595,22 +966,32 @@ def stage_rootfs(
     generation_manifest = kitpro_repo.load_json(
         PROJECT_ROOT / "repo/stable" / spec.release.name / spec.release.generation / "manifest.json"
     )
-    configuration = configure_staging_rootfs(
-        root,
-        spec,
-        plan,
-        (generation_manifest["source"]["epoch"] if spec.release.name == "1.0"
-         else generation_manifest["source_epoch"]),
-        receipt,
-        base_manifest["kernel"]["version"],
-        stage_callback,
-        administrator_password,
-    )
+    supplemental_package_count = _install_lvm_target_packages(root, plan)
+    target_umask = _target_rootfs_umask() if mounted_target is not None else nullcontext()
+    with target_umask:
+        configuration = configure_staging_rootfs(
+            root,
+            spec,
+            plan,
+            (
+                generation_manifest["source"]["epoch"]
+                if spec.release.name == "1.0"
+                else generation_manifest["source_epoch"]
+            ),
+            receipt,
+            base_manifest["kernel"]["version"],
+            stage_callback,
+            administrator_password,
+            base_manifest["resolved_package_count"] + supplemental_package_count,
+        )
     configuration["install_receipt_sha256"] = kitpro_repo.sha256_file(
         root / "var/lib/kitpro-linux/install-receipt.json"
     )
     configuration["base_rootfs_manifest_sha256"] = kitpro_repo.sha256_file(base_manifest_path)
-    configuration["package_count"] = base_manifest["resolved_package_count"]
+    configuration["package_count"] = (
+        base_manifest["resolved_package_count"] + supplemental_package_count
+    )
+    configuration["supplemental_package_count"] = supplemental_package_count
     if mounted_target is not None:
         shutil.rmtree(root / ".kitpro-install-work")
         (root / ".kitpro-phase2-build-root").unlink(missing_ok=True)

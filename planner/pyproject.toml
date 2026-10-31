@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kitpro-install-planner"
+version = "1.8.0"
+description = "Pure authoritative installation planner for KITPro Linux Server"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "KITPro" }]
+
+[tool.setuptools]
+package-dir = { "" = ".." }
+packages = ["kitpro_install_planner"]

@@ -167,6 +167,36 @@ class KernelStatusTests(unittest.TestCase):
         schema = json.loads((PROJECT_ROOT / "schemas/kernel-status.schema.json").read_text())
         self.assertEqual(schema["properties"]["kind"]["const"], "kitpro-kernel-status")
 
+    def test_encrypted_root_entry_is_healthy(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            (root / "efi/loader/entries").mkdir(parents=True)
+            write_package(root, A_PACKAGE, A_RELEASE)
+            write_generation(root, "0.1-dev-g0002")
+            luks_uuid = "33333333-3333-4333-8333-333333333333"
+            self.lifecycle(
+                root,
+                "initialize",
+                "--package-version",
+                A_PACKAGE,
+                "--generation",
+                "0.1-dev-g0002",
+                "--root-partuuid",
+                PARTUUID,
+                "--root-identifier",
+                "/dev/mapper/cryptroot",
+                "--root-crypt-uuid",
+                luks_uuid,
+                "--kernel-release",
+                A_RELEASE,
+            )
+            self.lifecycle(root, "record-successful-boot", running=A_RELEASE)
+            completed, report = self.status(root)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            assert report is not None
+            self.assertEqual(report["overall_status"], "healthy")
+            self.assertTrue(report["current"]["boot_entry_valid"])
+
     def test_fresh_install_and_candidate_pending_states(self) -> None:
         with tempfile.TemporaryDirectory() as name:
             root = Path(name)

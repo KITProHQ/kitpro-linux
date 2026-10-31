@@ -1,0 +1,44 @@
+pkgname=kitpro-linux-release
+pkgver=1.1.0
+pkgrel=5
+pkgdesc='KITPro Linux Server 1.1 release-candidate identity'
+arch=('any')
+license=('Apache-2.0')
+options=('!debug')
+depends=('kitpro-linux-keyring')
+install=kitpro-linux-release.install
+source=(
+	'kitpro-linux-release.json'
+	'os-release'
+	'pacman.conf'
+	'repository-identity'
+	'90-kitpro-repository-identity.hook'
+	"kernel-lifecycle::file://$startdir/../../runtime/kernel-lifecycle"
+	"kernel-boot-validate::file://$startdir/../../runtime/kernel-boot-validate"
+)
+sha256sums=(
+	'4c72797ed7742d967a795341cd3eb5756c872ab9acb05bddcbfdf9d7818672cf'
+	'9cbd024f7133d4e5e1cbe367a65c17a7543b8c3baf589be93c52cd65cdff0639'
+	'357df629f337c960b93433aab81ba830f3f946f60a4c7d76e05271f020a36046'
+	'f9e537a4012595c28d38618e270ec3bc0968087fea8f45b4045be1d8d58030ca'
+	'c7726e3a7e12c58168313606941ae288eb4237e529a2d73f89c0049f2a7b3a05'
+	'b593875e4d8ef145f79661d2c8323502bb94faa837349b04c1a355216939ad12'
+	'4a1f2af1c1506c7f6a8a617a2e52071ee33cd77e0b37571d4c83a3033b84f1a0'
+)
+
+package() {
+	install -Dm644 "$srcdir/kitpro-linux-release.json" \
+		"$pkgdir/usr/lib/kitpro-linux/release.json"
+	install -Dm644 "$srcdir/os-release" \
+		"$pkgdir/usr/share/kitpro-linux/os-release"
+	install -Dm644 "$srcdir/pacman.conf" \
+		"$pkgdir/usr/share/kitpro-linux/pacman.conf"
+	install -Dm755 "$srcdir/repository-identity" \
+		"$pkgdir/usr/lib/kitpro-linux/repository-identity"
+	install -Dm644 "$srcdir/90-kitpro-repository-identity.hook" \
+		"$pkgdir/usr/share/libalpm/hooks/90-kitpro-repository-identity.hook"
+	install -Dm755 "$srcdir/kernel-lifecycle" \
+		"$pkgdir/usr/lib/kitpro-linux/kernel-lifecycle"
+	install -Dm755 "$srcdir/kernel-boot-validate" \
+		"$pkgdir/usr/lib/kitpro-linux/kernel-boot-validate"
+}

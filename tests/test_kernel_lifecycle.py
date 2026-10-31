@@ -8,7 +8,6 @@ import tempfile
 import unittest
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = PROJECT_ROOT / "runtime/kernel-lifecycle"
 PARTUUID = "22222222-2222-4222-8222-222222222222"
@@ -28,9 +27,7 @@ def write_package(root: Path, package_version: str, kernel_release: str) -> None
     (modules / "kernel-test.ko").write_bytes(("module-" + kernel_release).encode())
     (root / "boot").mkdir(parents=True, exist_ok=True)
     shutil.copy2(modules / "vmlinuz", root / "boot/vmlinuz-linux-lts")
-    (root / "boot/initramfs-linux-lts.img").write_bytes(
-        ("initramfs-" + kernel_release).encode()
-    )
+    (root / "boot/initramfs-linux-lts.img").write_bytes(("initramfs-" + kernel_release).encode())
     local = root / "var/lib/pacman/local"
     local.mkdir(parents=True, exist_ok=True)
     for old in local.glob("linux-lts-*"):
@@ -141,12 +138,145 @@ class KernelLifecycleTests(unittest.TestCase):
             compatibility = (
                 root / "efi/loader/entries/kitpro-linux-compatibility.conf"
             ).read_text()
-            self.assertIn("console=ttyS0,115200n8 console=tty0 nomodeset", compatibility)
+            self.assertIn("console=ttyS0,115200n8 console=tty0", compatibility)
+            self.assertIn("lsm=landlock,lockdown,yama,integrity,apparmor,bpf", compatibility)
+            self.assertIn("apparmor=1 security=apparmor", compatibility)
+            self.assertIn("nomodeset", compatibility)
             self.assertIn("Compatibility Graphics", compatibility)
             self.assertNotIn("systemd.debug_shell", compatibility)
-            self.assertFalse(
-                (root / "efi/loader/entries/kitpro-linux-previous.conf").exists()
+            self.assertFalse((root / "efi/loader/entries/kitpro-linux-previous.conf").exists())
+
+    def test_btrfs_root_flags_are_persisted_in_current_and_future_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            (root / "efi/loader/entries").mkdir(parents=True)
+            write_package(root, A_PACKAGE, A_RELEASE)
+            write_generation(root, "0.1-dev-g0002")
+            self.run_lifecycle(
+                root,
+                "initialize",
+                "--package-version",
+                A_PACKAGE,
+                "--generation",
+                "0.1-dev-g0002",
+                "--root-partuuid",
+                PARTUUID,
+                "--root-flags",
+                "subvol=@,compress=zstd",
+                "--kernel-release",
+                A_RELEASE,
             )
+            assert self.state(root)["root_flags"] == "subvol=@,compress=zstd"
+            current = (root / "efi/loader/entries/kitpro-linux.conf").read_text()
+            assert "rootflags=subvol=@,compress=zstd" in current
+            self.mark_a_good(root)
+            self.transition_to_b(root)
+            current = (root / "efi/loader/entries/kitpro-linux.conf").read_text()
+            previous = (root / "efi/loader/entries/kitpro-linux-previous.conf").read_text()
+            assert "rootflags=subvol=@,compress=zstd" in current
+            assert "rootflags=subvol=@,compress=zstd" in previous
+
+    def test_encrypted_root_activation_is_persisted_across_kernel_transitions(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            (root / "efi/loader/entries").mkdir(parents=True)
+            write_package(root, A_PACKAGE, A_RELEASE)
+            write_generation(root, "0.1-dev-g0002")
+            luks_uuid = "33333333-3333-4333-8333-333333333333"
+            self.run_lifecycle(
+                root,
+                "initialize",
+                "--package-version",
+                A_PACKAGE,
+                "--generation",
+                "0.1-dev-g0002",
+                "--root-partuuid",
+                PARTUUID,
+                "--root-identifier",
+                "/dev/mapper/cryptroot",
+                "--root-crypt-uuid",
+                luks_uuid,
+                "--kernel-release",
+                A_RELEASE,
+            )
+            entry = (root / "efi/loader/entries/kitpro-linux.conf").read_text()
+            self.assertIn("root=/dev/mapper/cryptroot", entry)
+            self.assertIn(f"rd.luks.name={luks_uuid}=cryptroot", entry)
+            self.assertIn("console=tty0 console=ttyS0,115200n8", entry)
+            self.assertIn("lsm=landlock,lockdown,yama,integrity,apparmor,bpf", entry)
+            self.assertIn("apparmor=1 security=apparmor", entry)
+            self.mark_a_good(root)
+            self.transition_to_b(root)
+            for relative in (
+                "kitpro-linux.conf",
+                "kitpro-linux-previous.conf",
+            ):
+                entry = (root / "efi/loader/entries" / relative).read_text()
+                self.assertIn("root=/dev/mapper/cryptroot", entry)
+                self.assertIn(f"rd.luks.name={luks_uuid}=cryptroot", entry)
+
+    def test_lvm_root_activation_is_persisted_across_kernel_transitions(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            (root / "efi/loader/entries").mkdir(parents=True)
+            write_package(root, A_PACKAGE, A_RELEASE)
+            write_generation(root, "0.1-dev-g0002")
+            self.run_lifecycle(
+                root,
+                "initialize",
+                "--package-version",
+                A_PACKAGE,
+                "--generation",
+                "0.1-dev-g0002",
+                "--root-partuuid",
+                PARTUUID,
+                "--root-identifier",
+                "/dev/mapper/vgkitpro-root",
+                "--root-lvm-lv",
+                "vgkitpro/root",
+                "--kernel-release",
+                A_RELEASE,
+            )
+            self.assertEqual(self.state(root)["root_lvm_lv"], "vgkitpro/root")
+            self.mark_a_good(root)
+            self.transition_to_b(root)
+            for relative in ("kitpro-linux.conf", "kitpro-linux-previous.conf"):
+                entry = (root / "efi/loader/entries" / relative).read_text()
+                self.assertIn("root=/dev/mapper/vgkitpro-root", entry)
+                self.assertIn("rd.lvm.lv=vgkitpro/root", entry)
+
+    def test_luks_lvm_root_activation_is_persisted_across_kernel_transitions(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            (root / "efi/loader/entries").mkdir(parents=True)
+            write_package(root, A_PACKAGE, A_RELEASE)
+            write_generation(root, "0.1-dev-g0002")
+            luks_uuid = "b8e6b5b5-b649-56df-8b21-538ba7afb8f9"
+            self.run_lifecycle(
+                root,
+                "initialize",
+                "--package-version",
+                A_PACKAGE,
+                "--generation",
+                "0.1-dev-g0002",
+                "--root-partuuid",
+                PARTUUID,
+                "--root-identifier",
+                "/dev/mapper/vgkitpro-root",
+                "--root-crypt-uuid",
+                luks_uuid,
+                "--root-lvm-lv",
+                "vgkitpro/root",
+                "--kernel-release",
+                A_RELEASE,
+            )
+            self.mark_a_good(root)
+            self.transition_to_b(root)
+            for relative in ("kitpro-linux.conf", "kitpro-linux-previous.conf"):
+                entry = (root / "efi/loader/entries" / relative).read_text()
+                self.assertIn("root=/dev/mapper/vgkitpro-root", entry)
+                self.assertIn(f"rd.luks.name={luks_uuid}=cryptlvm", entry)
+                self.assertIn("rd.lvm.lv=vgkitpro/root", entry)
 
     def test_normal_transition_retains_modules_and_manual_fallback(self) -> None:
         with tempfile.TemporaryDirectory() as name:
@@ -284,9 +414,7 @@ class KernelLifecycleTests(unittest.TestCase):
             self.assertEqual(receipt["candidate_health_result"], "passed")
             self.assertRegex(receipt["receipt_sha256"], r"^[0-9a-f]{64}$")
         json.loads((PROJECT_ROOT / "schemas/kernel-state.schema.json").read_text())
-        json.loads(
-            (PROJECT_ROOT / "schemas/kernel-transition-receipt.schema.json").read_text()
-        )
+        json.loads((PROJECT_ROOT / "schemas/kernel-transition-receipt.schema.json").read_text())
 
 
 if __name__ == "__main__":

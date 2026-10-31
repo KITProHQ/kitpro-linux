@@ -32,7 +32,7 @@ from tools.install.receipt import load_source_metadata
 
 
 PRODUCT_NAME = "KITPro Linux Server"
-PRODUCT_VERSION = "0.8.0-dev.18"
+PRODUCT_VERSION = "0.8.0-dev.19"
 RELEASE_STATUS = "Development"
 RELEASE = "0.1-dev"
 GENERATION = "0.1-dev-g0010"

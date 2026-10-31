@@ -27,7 +27,6 @@ from tools.install.rootfs import (
     _copy_base_rootfs,
 )
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STATE_ROOT = PROJECT_ROOT / ".state/phase4"
 TOOL_ROOT = STATE_ROOT / "archiso-tools"
@@ -36,10 +35,27 @@ RELEASE = "0.1-dev"
 GENERATION = "0.1-dev-g0010"
 BASE_ROOTFS_GENERATION = "0.1-dev-g0002"
 SNAPSHOT_DATE = "2026/09/24"
-MEDIA_VERSION = "0.8.0-dev.18"
+MEDIA_VERSION = "0.8.0-dev.19"
 EXPECTED_ARCHISO = "90-1"
 
-REQUIRED_LIVE_PACKAGES = {"arch-install-scripts", "linux-lts", "python"}
+TARGET_LVM_PACKAGES = {
+    "libaio-0.3.113-5-x86_64.pkg.tar.zst": "e746fdedefa9987ad06e918af78976917aba780be8ac51d22dcb9ded324a84ab",
+    "libaio-0.3.113-5-x86_64.pkg.tar.zst.sig": "a54945f3bf1d4d6b9012a9182a72349a3fc0e21ae3c8a2dd564c7f391d9b2cf2",
+    "thin-provisioning-tools-1.3.4-1-x86_64.pkg.tar.zst": "de8c7b8a2980d1ceba52dc1b8fec7cd6df3cda66104062775b912135ca79d87f",
+    "thin-provisioning-tools-1.3.4-1-x86_64.pkg.tar.zst.sig": "e66bd1b3212996f9e78aa6ea81cf90630818d3ea2afad28ed5ea44047f269ee0",
+    "lvm2-2.03.42-1-x86_64.pkg.tar.zst": "d992266151f5b43d5640138de40a5ea1892ac63b5b66c368d1a2c14a340b1106",
+    "lvm2-2.03.42-1-x86_64.pkg.tar.zst.sig": "b33bd07da4b44f6d3cb7e5c79ac9f6ef6ac06c7f2a9c529917f36b9878a79257",
+}
+
+REQUIRED_LIVE_PACKAGES = {
+    "arch-install-scripts",
+    "btrfs-progs",
+    "cryptsetup",
+    "efibootmgr",
+    "linux-lts",
+    "lvm2",
+    "python",
+}
 REQUIRED_PROFILE_PATHS = {
     "profiledef.sh",
     "packages.x86_64",
@@ -87,7 +103,7 @@ LIVE_WRAPPER_TARGETS = {
 
 
 def _utc_now() -> str:
-    return dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    return dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def _git_source_commit() -> str:
@@ -106,10 +122,17 @@ def tree_sha256(root: Path) -> str:
         relative = path.relative_to(root).as_posix()
         mode = stat.S_IMODE(path.lstat().st_mode)
         if path.is_symlink():
-            records.append({"path": relative, "type": "symlink", "mode": mode, "target": os.readlink(path)})
+            records.append(
+                {"path": relative, "type": "symlink", "mode": mode, "target": os.readlink(path)}
+            )
         elif path.is_file():
             records.append(
-                {"path": relative, "type": "file", "mode": mode, "sha256": kitpro_repo.sha256_file(path)}
+                {
+                    "path": relative,
+                    "type": "file",
+                    "mode": mode,
+                    "sha256": kitpro_repo.sha256_file(path),
+                }
             )
         elif path.is_dir():
             records.append({"path": relative, "type": "directory", "mode": mode})
@@ -124,9 +147,7 @@ def validate_profile_inputs(profile: Path, project_root: Path = PROJECT_ROOT) ->
         if not (project_root / "schemas" / name).is_file()
     )
     if missing:
-        raise kitpro_repo.PipelineError(
-            f"developer media input is incomplete; missing: {missing}"
-        )
+        raise kitpro_repo.PipelineError(f"developer media input is incomplete; missing: {missing}")
     packages = {
         line.strip()
         for line in (profile / "packages.x86_64").read_text().splitlines()
@@ -176,7 +197,9 @@ def bootstrap_tools() -> dict[str, Any]:
     marker = TOOL_ROOT / "usr/bin/mkarchiso"
     if not marker.is_file():
         if TOOL_ROOT.exists():
-            raise kitpro_repo.PipelineError(f"refusing to replace incomplete archiso tool root: {TOOL_ROOT}")
+            raise kitpro_repo.PipelineError(
+                f"refusing to replace incomplete archiso tool root: {TOOL_ROOT}"
+            )
         cache = STATE_ROOT / "cache"
         log = STATE_ROOT / "log/archiso-tools-pacman.log"
         config = STATE_ROOT / "archiso-tools-pacman.conf"
@@ -187,7 +210,9 @@ def bootstrap_tools() -> dict[str, Any]:
             config,
             {
                 "CACHE_PATH": str(cache.resolve()),
-                "ARCH_GPG_PATH": str((PROJECT_ROOT / ".state/ingest/2026-09-24/arch-gnupg").resolve()),
+                "ARCH_GPG_PATH": str(
+                    (PROJECT_ROOT / ".state/ingest/2026-09-24/arch-gnupg").resolve()
+                ),
                 "LOG_PATH": str(log.resolve()),
                 "SNAPSHOT_DATE": SNAPSHOT_DATE,
             },
@@ -196,7 +221,13 @@ def bootstrap_tools() -> dict[str, Any]:
         kitpro_phase2.run(
             [
                 str(kitpro_phase2.pacstrap_path(PROJECT_ROOT / ".state/phase2")),
-                "-N", "-G", "-M", "-C", str(config), str(TOOL_ROOT), "archiso",
+                "-N",
+                "-G",
+                "-M",
+                "-C",
+                str(config),
+                str(TOOL_ROOT),
+                "archiso",
             ]
         )
     packages = kitpro_phase2.installed_packages(TOOL_ROOT)
@@ -229,9 +260,14 @@ def _copy_runtime(destination: Path) -> None:
     docs = destination / "docs"
     docs.mkdir(parents=True)
     for name in (
-        "installation-architecture.md", "installation-specification.md",
-        "installation-testing.md", "disk-safety.md", "installation-media.md",
-        "recovery-limitations.md", "guided-installer.md", "rescue.md",
+        "installation-architecture.md",
+        "installation-specification.md",
+        "installation-testing.md",
+        "disk-safety.md",
+        "installation-media.md",
+        "recovery-limitations.md",
+        "guided-installer.md",
+        "rescue.md",
         "kernel-status.md",
         "support-bundle.md",
     ):
@@ -252,7 +288,9 @@ def _copy_repository(destination: Path, manifest: dict[str, Any]) -> None:
             shutil.copy2(source, target)
 
 
-def _build_configuration(profile_sha256: str, commit: str, manifest: dict[str, Any]) -> dict[str, Any]:
+def _build_configuration(
+    profile_sha256: str, commit: str, manifest: dict[str, Any]
+) -> dict[str, Any]:
     document = {
         "schema_version": 1,
         "media_version": MEDIA_VERSION,
@@ -285,7 +323,9 @@ def stage_profile() -> tuple[Path, dict[str, Any]]:
     commit = _git_source_commit()
     output = STATE_ROOT / "staged" / commit
     if output.exists():
-        metadata = kitpro_repo.load_json(output / "airootfs/opt/kitpro-linux/media/build-configuration.json")
+        metadata = kitpro_repo.load_json(
+            output / "airootfs/opt/kitpro-linux/media/build-configuration.json"
+        )
         return output, metadata
     manifest_path = PROJECT_ROOT / "repo/stable" / RELEASE / GENERATION / "manifest.json"
     manifest = kitpro_repo.load_json(manifest_path)
@@ -305,9 +345,7 @@ def stage_profile() -> tuple[Path, dict[str, Any]]:
         output / "pacman.conf",
         {
             "CACHE_PATH": str(cache.resolve()),
-            "ARCH_GPG_PATH": str(
-                (PROJECT_ROOT / ".state/ingest/2026-09-24/arch-gnupg").resolve()
-            ),
+            "ARCH_GPG_PATH": str((PROJECT_ROOT / ".state/ingest/2026-09-24/arch-gnupg").resolve()),
             "LOG_PATH": str(log.resolve()),
             "SNAPSHOT_DATE": SNAPSHOT_DATE,
         },
@@ -366,7 +404,9 @@ def _tool_version(command: list[str]) -> str:
         stderr=subprocess.STDOUT,
         check=False,
     )
-    return next((line.strip() for line in completed.stdout.splitlines() if line.strip()), "unavailable")
+    return next(
+        (line.strip() for line in completed.stdout.splitlines() if line.strip()), "unavailable"
+    )
 
 
 def _overlay_tree(source: Path, destination: Path) -> None:
@@ -411,15 +451,30 @@ def _prepare_live_root(work: Path, profile: Path) -> dict[str, Any]:
     empty_hooks = STATE_ROOT / "empty-hooks"
     empty_hooks.mkdir(parents=True, exist_ok=True)
     command = [
-        "fakeroot", str(TOOL_ROOT / "usr/bin/pacman"),
-        "--root", str(root), "--dbpath", str(root / "var/lib/pacman"),
-        "--config", str(pacman_config), "--cachedir", str(STATE_ROOT / "cache"),
-        "--hookdir", str(empty_hooks), "-Sy", "--noconfirm", "--noscriptlet",
+        "fakeroot",
+        str(TOOL_ROOT / "usr/bin/pacman"),
+        "--root",
+        str(root),
+        "--dbpath",
+        str(root / "var/lib/pacman"),
+        "--config",
+        str(pacman_config),
+        "--cachedir",
+        str(STATE_ROOT / "cache"),
+        "--hookdir",
+        str(empty_hooks),
+        "-Sy",
+        "--noconfirm",
+        "--noscriptlet",
         *package_names,
     ]
     completed = subprocess.run(
-        command, cwd=PROJECT_ROOT, text=True, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, check=False,
+        command,
+        cwd=PROJECT_ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
     )
     (STATE_ROOT / "log").mkdir(parents=True, exist_ok=True)
     kitpro_repo.atomic_write(STATE_ROOT / "log/live-root-pacman.log", completed.stdout.encode())
@@ -427,8 +482,25 @@ def _prepare_live_root(work: Path, profile: Path) -> dict[str, Any]:
         raise kitpro_repo.PipelineError(
             f"live-root package augmentation failed ({completed.returncode}); "
             f"see {STATE_ROOT / 'log/live-root-pacman.log'}"
-    )
+        )
     _overlay_tree(profile / "airootfs", root)
+    target_packages = root / "opt/kitpro-installer/target-packages"
+    target_packages.mkdir(parents=True)
+    for filename, expected_sha256 in TARGET_LVM_PACKAGES.items():
+        source = STATE_ROOT / "cache" / filename
+        if not source.is_file() or kitpro_repo.sha256_file(source) != expected_sha256:
+            raise kitpro_repo.PipelineError(
+                f"pinned target LVM package is unavailable or changed: {filename}"
+            )
+        shutil.copy2(source, target_packages / filename)
+    kitpro_repo.atomic_write_json(
+        target_packages / "manifest.json",
+        {
+            "schema_version": 1,
+            "purpose": "development-profile target LVM2 support",
+            "packages": TARGET_LVM_PACKAGES,
+        },
+    )
     # The Phase 3 seed is intentionally stable and can contain older copies of
     # operator tooling. Overlay the exact current sources that the authoritative
     # installed-root path uses so rescue media and the installed system expose
@@ -463,10 +535,26 @@ def _prepare_live_root(work: Path, profile: Path) -> dict[str, Any]:
     mkinitcpio_environment["TMPDIR"] = "/tmp"
     mkinitcpio = subprocess.run(
         [
-            "bwrap", "--unshare-user", "--uid", "0", "--gid", "0",
-            "--bind", str(root), "/", "--dev", "/dev", "--proc", "/proc",
-            "--ro-bind", "/sys", "/sys", "--tmpfs", "/run",
-            "/usr/bin/mkinitcpio", "-P",
+            "bwrap",
+            "--unshare-user",
+            "--uid",
+            "0",
+            "--gid",
+            "0",
+            "--bind",
+            str(root),
+            "/",
+            "--dev",
+            "/dev",
+            "--proc",
+            "/proc",
+            "--ro-bind",
+            "/sys",
+            "/sys",
+            "--tmpfs",
+            "/run",
+            "/usr/bin/mkinitcpio",
+            "-P",
         ],
         env=mkinitcpio_environment,
         text=True,
@@ -474,7 +562,9 @@ def _prepare_live_root(work: Path, profile: Path) -> dict[str, Any]:
         stderr=subprocess.STDOUT,
         check=False,
     )
-    kitpro_repo.atomic_write(STATE_ROOT / "log/live-root-mkinitcpio.log", mkinitcpio.stdout.encode())
+    kitpro_repo.atomic_write(
+        STATE_ROOT / "log/live-root-mkinitcpio.log", mkinitcpio.stdout.encode()
+    )
     if mkinitcpio.returncode != 0:
         raise kitpro_repo.PipelineError(
             f"live-root initramfs generation failed ({mkinitcpio.returncode}); "
@@ -488,7 +578,9 @@ def _prepare_live_root(work: Path, profile: Path) -> dict[str, Any]:
     operator_tooling = validate_live_operator_tooling(root)
     kitpro_phase2.validate_repository_isolation(root / "etc/pacman.conf")
     if "ID=kitpro-linux-installer" not in (root / "etc/os-release").read_text():
-        raise kitpro_repo.PipelineError("prepared live root has the wrong operating-system identity")
+        raise kitpro_repo.PipelineError(
+            "prepared live root has the wrong operating-system identity"
+        )
     for path in (
         root / "boot/vmlinuz-linux-lts",
         root / "boot/initramfs-linux-lts.img",
@@ -515,8 +607,12 @@ def _prepare_live_root(work: Path, profile: Path) -> dict[str, Any]:
         "initramfs_sha256": kitpro_repo.sha256_file(root / "boot/initramfs-linux-lts.img"),
         "operator_tooling": {
             "kitpro_health_sha256": kitpro_repo.sha256_file(root / "usr/bin/kitpro-health"),
-            "kitpro_kernel_status_sha256": kitpro_repo.sha256_file(root / "usr/bin/kitpro-kernel-status"),
-            "kitpro_support_bundle_sha256": kitpro_repo.sha256_file(root / "usr/bin/kitpro-support-bundle"),
+            "kitpro_kernel_status_sha256": kitpro_repo.sha256_file(
+                root / "usr/bin/kitpro-kernel-status"
+            ),
+            "kitpro_support_bundle_sha256": kitpro_repo.sha256_file(
+                root / "usr/bin/kitpro-support-bundle"
+            ),
             "support_bundle_runtime_sha256": kitpro_repo.sha256_file(
                 root / "usr/lib/kitpro-linux/support-bundle"
             ),
@@ -541,16 +637,18 @@ def _prepare_unshare_wrapper() -> Path:
         b"#!/usr/bin/bash\n"
         b"set -euo pipefail\n"
         b"arguments=()\n"
-        b"for argument in \"$@\"; do\n"
-        b"  [[ $argument == --map-auto ]] || arguments+=(\"$argument\")\n"
+        b'for argument in "$@"; do\n'
+        b'  [[ $argument == --map-auto ]] || arguments+=("$argument")\n'
         b"done\n"
-        b"exec /usr/bin/unshare \"${arguments[@]}\"\n",
+        b'exec /usr/bin/unshare "${arguments[@]}"\n',
         0o755,
     )
     return wrapper.parent
 
 
-def run_mkarchiso(command: list[str], environment: dict[str, str], state_root: Path = STATE_ROOT) -> None:
+def run_mkarchiso(
+    command: list[str], environment: dict[str, str], state_root: Path = STATE_ROOT
+) -> None:
     completed = subprocess.run(
         command,
         cwd=PROJECT_ROOT,
@@ -570,10 +668,23 @@ def run_mkarchiso(command: list[str], environment: dict[str, str], state_root: P
 
 def validate_build_report(report: dict[str, Any]) -> None:
     required = {
-        "schema_version", "status", "media_version", "source_git_commit", "profile_sha256",
-        "build_configuration_sha256", "stable_generation", "repository_source_model",
-        "boot_modes", "archiso_version", "source_date_epoch", "iso_path", "iso_size_bytes",
-        "iso_sha256", "built_at", "tool_versions", "live_root",
+        "schema_version",
+        "status",
+        "media_version",
+        "source_git_commit",
+        "profile_sha256",
+        "build_configuration_sha256",
+        "stable_generation",
+        "repository_source_model",
+        "boot_modes",
+        "archiso_version",
+        "source_date_epoch",
+        "iso_path",
+        "iso_size_bytes",
+        "iso_sha256",
+        "built_at",
+        "tool_versions",
+        "live_root",
     }
     missing = sorted(required - set(report))
     if missing:
@@ -620,13 +731,16 @@ def build_iso(*, keep_artifacts: bool = False) -> dict[str, Any]:
     live_root = _prepare_live_root(work, profile)
     wrapper_path = _prepare_unshare_wrapper()
     command = [
-        str(TOOL_ROOT / "usr/bin/mkarchiso"), "-v", "-w", str(work),
-        "-o", str(output), str(profile),
+        str(TOOL_ROOT / "usr/bin/mkarchiso"),
+        "-v",
+        "-w",
+        str(work),
+        "-o",
+        str(output),
+        str(profile),
     ]
     environment = os.environ.copy()
-    environment["PATH"] = (
-        f"{wrapper_path}:{TOOL_ROOT / 'usr/bin'}:{environment['PATH']}"
-    )
+    environment["PATH"] = f"{wrapper_path}:{TOOL_ROOT / 'usr/bin'}:{environment['PATH']}"
     environment["LD_LIBRARY_PATH"] = str(TOOL_ROOT / "usr/lib")
     environment["SOURCE_DATE_EPOCH"] = str(source_epoch)
     run_mkarchiso(command, environment)
@@ -679,7 +793,9 @@ def build_iso(*, keep_artifacts: bool = False) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("bootstrap-tools", "stage-profile", "build", "validate-report"))
+    parser.add_argument(
+        "command", choices=("bootstrap-tools", "stage-profile", "build", "validate-report")
+    )
     parser.add_argument("path", nargs="?", type=Path)
     parser.add_argument("--keep-artifacts", action="store_true")
     arguments = parser.parse_args()

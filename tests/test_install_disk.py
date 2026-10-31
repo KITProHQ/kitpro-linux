@@ -81,9 +81,9 @@ class DiskSafetyTests(unittest.TestCase):
         if not protected:
             self.skipTest("host and repository filesystems are not backed by visible block devices")
         self.assertIn("host root", protected)
-        self.assertIn("development repository", protected)
+        self.assertIn("installer source filesystem", protected)
         self.assertTrue(protected["host root"].startswith("/dev/"))
-        self.assertTrue(protected["development repository"].startswith("/dev/"))
+        self.assertTrue(protected["installer source filesystem"].startswith("/dev/"))
         with self.assertRaisesRegex(kitpro_repo.PipelineError, "host root disk"):
             discover_disk(Path(protected["host root"]), "block", ABSOLUTE_MINIMUM_BYTES)
 

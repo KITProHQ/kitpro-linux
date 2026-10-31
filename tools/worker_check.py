@@ -46,10 +46,27 @@ def _capture(command: list[str]) -> str:
     return next((line.strip() for line in result.stdout.splitlines() if line.strip()), "unavailable")
 
 
-def _package_version(name: str) -> str:
-    line = _capture(["pacman", "-Q", name])
-    parts = line.split()
-    return parts[1] if len(parts) == 2 and parts[0] == name else "unavailable"
+def _package_version(name: str, tool_root: Path | None = None) -> str:
+    pacman = str(tool_root / "usr/bin/pacman") if tool_root else "pacman"
+    command = [pacman, "-Q", name]
+    if tool_root:
+        command[1:1] = ["--root", str(tool_root)]
+    try:
+        result = subprocess.run(
+            command,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=False,
+            timeout=10,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "unavailable"
+    for line in result.stdout.splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0] == name:
+            return parts[1]
+    return "unavailable"
 
 
 def _subordinate_ids(path: Path) -> bool:
@@ -63,13 +80,23 @@ def _subordinate_ids(path: Path) -> bool:
 
 
 def _mount_namespace() -> bool:
-    try:
-        return subprocess.run(
-            ["unshare", "--mount", "true"], stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL, check=False, timeout=5,
-        ).returncode == 0
-    except (OSError, subprocess.TimeoutExpired):
-        return False
+    commands = (
+        ["unshare", "--mount", "true"],
+        ["unshare", "--user", "--map-root-user", "--mount", "true"],
+    )
+    for command in commands:
+        try:
+            if subprocess.run(
+                command,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+                timeout=5,
+            ).returncode == 0:
+                return True
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+    return False
 
 
 def _filesystem(path: Path) -> str:
@@ -84,22 +111,34 @@ def _cgroup_memory_limit() -> int | None:
         return None
 
 
-def build_report(workspace: Path, *, require_acceptance: bool = True) -> dict[str, Any]:
+def build_report(
+    workspace: Path,
+    *,
+    require_acceptance: bool = True,
+    tool_root: Path | None = None,
+) -> dict[str, Any]:
     os_release: dict[str, str] = {}
     try:
-        for line in Path("/etc/os-release").read_text().splitlines():
+        os_release_path = (tool_root or Path("/")) / "etc/os-release"
+        for line in os_release_path.read_text().splitlines():
             if "=" in line:
                 key, value = line.split("=", 1)
                 os_release[key] = value.strip().strip('"')
     except OSError:
         pass
-    commands = {
-        name: shutil.which(name)
-        for name in (*REQUIRED_BUILD_COMMANDS, *REQUIRED_ACCEPTANCE_COMMANDS, *OPTIONAL_COMMANDS)
-    }
+    command_names = (*REQUIRED_BUILD_COMMANDS, *REQUIRED_ACCEPTANCE_COMMANDS, *OPTIONAL_COMMANDS)
+    commands = {}
+    for name in command_names:
+        candidate = tool_root / "usr/bin" / name if tool_root else None
+        commands[name] = str(candidate) if candidate and candidate.is_file() else shutil.which(name)
     missing_build = [name for name in REQUIRED_BUILD_COMMANDS if not commands[name]]
     missing_acceptance = [name for name in REQUIRED_ACCEPTANCE_COMMANDS if not commands[name]]
-    firmware = next((path for path in OVMF_CANDIDATES if path.is_file()), None)
+    firmware_candidates = (
+        tuple(tool_root / path.relative_to("/") for path in OVMF_CANDIDATES)
+        if tool_root
+        else OVMF_CANDIDATES
+    )
+    firmware = next((path for path in firmware_candidates if path.is_file()), None)
     arch_supported = platform.machine() == "x86_64"
     os_supported = os_release.get("ID") == "arch"
     mount_namespace = _mount_namespace()
@@ -135,17 +174,18 @@ def build_report(workspace: Path, *, require_acceptance: bool = True) -> dict[st
             "kernel": platform.release(),
             "architecture": platform.machine(),
             "python": platform.python_version(),
-            "systemd": _capture(["systemctl", "--version"]),
-            "pacman": _package_version("pacman"),
-            "archiso": _package_version("archiso"),
-            "qemu": _capture(["qemu-system-x86_64", "--version"]),
-            "ovmf": _package_version("edk2-ovmf"),
-            "git": _capture(["git", "--version"]),
+            "systemd": _capture([commands.get("systemctl") or "systemctl", "--version"]),
+            "pacman": _package_version("pacman", tool_root),
+            "archiso": _package_version("archiso", tool_root),
+            "qemu": _capture([commands["qemu-system-x86_64"] or "qemu-system-x86_64", "--version"]),
+            "ovmf": _package_version("edk2-ovmf", tool_root),
+            "git": _capture([commands["git"] or "git", "--version"]),
             "filesystem": _filesystem(workspace),
             "memory_bytes": memory_bytes,
             "memory_limit_bytes": _cgroup_memory_limit(),
             "free_disk_bytes": disk.free,
             "environment": "container" if Path("/.dockerenv").exists() else "host-or-vm",
+            "tool_root": str(tool_root) if tool_root else None,
         },
         "capabilities": {
             "privilege_model": privilege_model,

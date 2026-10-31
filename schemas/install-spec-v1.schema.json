@@ -33,9 +33,156 @@
       "properties": {
         "device": { "type": "string", "pattern": "^/" },
         "target_type": { "enum": ["image", "block"], "default": "image" },
-        "layout": { "const": "standard", "default": "standard" },
-        "filesystem": { "const": "ext4", "default": "ext4" },
-        "minimum_capacity_gib": { "type": "integer", "minimum": 6, "default": 6 }
+        "layout": {
+          "enum": ["standard", "separate-home", "root-swap", "root-home-swap", "manual"],
+          "default": "standard"
+        },
+        "filesystem": { "enum": ["ext4", "btrfs"], "default": "ext4" },
+        "minimum_capacity_gib": { "type": "integer", "minimum": 6, "default": 6 },
+        "storage": {
+          "oneOf": [{
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schema_version", "layout", "root_size_bytes", "swap_size_bytes",
+            "logical_sector_bytes", "physical_sector_bytes"
+          ],
+          "properties": {
+            "schema_version": { "const": 1 },
+            "layout": {
+              "enum": ["standard", "separate-home", "root-swap", "root-home-swap"]
+            },
+            "root_size_bytes": { "type": ["integer", "null"], "minimum": 5368709120 },
+            "swap_size_bytes": { "type": ["integer", "null"], "minimum": 268435456 },
+            "logical_sector_bytes": { "type": "integer", "minimum": 512 },
+            "physical_sector_bytes": { "type": "integer", "minimum": 512 }
+          }
+          }, {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "schema_version", "layout", "root_size_bytes", "swap_size_bytes",
+              "subvolumes", "compression", "logical_sector_bytes",
+              "physical_sector_bytes", "filesystem"
+            ],
+            "properties": {
+              "schema_version": { "const": 2 },
+              "layout": {
+                "enum": ["standard", "separate-home", "root-swap", "root-home-swap"]
+              },
+              "root_size_bytes": { "type": "null" },
+              "swap_size_bytes": { "type": ["integer", "null"], "minimum": 268435456 },
+              "subvolumes": {
+                "type": "array", "minItems": 1, "uniqueItems": true,
+                "items": { "enum": ["@", "@home", "@snapshots"] }
+              },
+              "compression": { "enum": ["none", "zstd"] },
+              "logical_sector_bytes": { "type": "integer", "minimum": 512 },
+              "physical_sector_bytes": { "type": "integer", "minimum": 512 },
+              "filesystem": { "const": "btrfs" }
+            }
+          }, {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "schema_version", "layout", "subvolumes", "compression",
+              "logical_sector_bytes", "physical_sector_bytes", "filesystem",
+              "encryption"
+            ],
+            "properties": {
+              "schema_version": { "const": 3 },
+              "layout": { "enum": ["standard", "separate-home"] },
+              "subvolumes": {
+                "type": "array", "uniqueItems": true,
+                "items": { "enum": ["@", "@home", "@snapshots"] }
+              },
+              "compression": { "enum": ["none", "zstd"] },
+              "logical_sector_bytes": { "type": "integer", "minimum": 512 },
+              "physical_sector_bytes": { "type": "integer", "minimum": 512 },
+              "filesystem": { "enum": ["ext4", "btrfs"] },
+              "encryption": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "schema_version", "enabled", "luks_version", "mapper_name",
+                  "pbkdf", "keyslot", "iter_time_ms", "pbkdf_memory_kib",
+                  "pbkdf_parallel_threads"
+                ],
+                "properties": {
+                  "schema_version": { "const": 1 },
+                  "enabled": { "const": true },
+                  "luks_version": { "const": 2 },
+                  "mapper_name": { "const": "cryptroot" },
+                  "pbkdf": { "const": "argon2id" },
+                  "keyslot": { "const": 0 },
+                  "iter_time_ms": { "type": "integer", "minimum": 1000, "maximum": 5000 },
+                  "pbkdf_memory_kib": { "type": "integer", "minimum": 65536, "maximum": 524288 },
+                  "pbkdf_parallel_threads": { "type": "integer", "minimum": 1, "maximum": 4 }
+                }
+              }
+            }
+          }, {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "schema_version", "partitions", "subvolumes", "compression",
+              "logical_sector_bytes", "physical_sector_bytes", "encryption"
+            ],
+            "properties": {
+              "schema_version": { "const": 4 },
+              "partitions": {
+                "type": "array",
+                "minItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "role", "filesystem", "mount_point", "size_bytes", "use_remaining"
+                  ],
+                  "properties": {
+                    "role": { "enum": ["esp", "root", "home", "var", "srv", "swap"] },
+                    "filesystem": { "enum": ["vfat", "ext4", "btrfs", "swap"] },
+                    "mount_point": { "enum": ["/efi", "/", "/home", "/var", "/srv", null] },
+                    "size_bytes": { "type": ["integer", "null"], "minimum": 268435456 },
+                    "use_remaining": { "type": "boolean" }
+                  }
+                }
+              },
+              "subvolumes": {
+                "type": "array", "uniqueItems": true,
+                "items": { "enum": ["@", "@home", "@snapshots"] }
+              },
+              "compression": { "enum": ["none", "zstd"] },
+              "logical_sector_bytes": { "type": "integer", "minimum": 512 },
+              "physical_sector_bytes": { "type": "integer", "minimum": 512 },
+              "encryption": {
+                "oneOf": [
+                  { "type": "null" },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "schema_version", "enabled", "luks_version", "mapper_name",
+                      "pbkdf", "keyslot", "iter_time_ms", "pbkdf_memory_kib",
+                      "pbkdf_parallel_threads"
+                    ],
+                    "properties": {
+                      "schema_version": { "const": 1 },
+                      "enabled": { "const": true },
+                      "luks_version": { "const": 2 },
+                      "mapper_name": { "const": "cryptroot" },
+                      "pbkdf": { "const": "argon2id" },
+                      "keyslot": { "const": 0 },
+                      "iter_time_ms": { "type": "integer", "minimum": 1000, "maximum": 5000 },
+                      "pbkdf_memory_kib": { "type": "integer", "minimum": 65536, "maximum": 524288 },
+                      "pbkdf_parallel_threads": { "type": "integer", "minimum": 1, "maximum": 4 }
+                    }
+                  }
+                ]
+              }
+            }
+          }]
+        }
       }
     },
     "network": {

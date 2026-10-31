@@ -9,15 +9,31 @@ try:
 
     ValidationError = kitpro_repo.PipelineError
 except ImportError:  # Installed support-inspection runtime has no repository tooling.
+
     class ValidationError(RuntimeError):
         """A controlled health-document validation failure."""
 
 
 TOP_LEVEL_FIELDS = {
-    "schema_version", "kind", "timestamp", "mode", "system", "kernel",
-    "boot", "systemd", "networking", "dns", "firewall", "ssh",
-    "repository", "storage", "history", "redaction", "overall_status",
-    "warnings", "errors",
+    "schema_version",
+    "kind",
+    "timestamp",
+    "mode",
+    "system",
+    "kernel",
+    "boot",
+    "systemd",
+    "networking",
+    "dns",
+    "firewall",
+    "ssh",
+    "repository",
+    "storage",
+    "history",
+    "redaction",
+    "overall_status",
+    "warnings",
+    "errors",
 }
 
 
@@ -29,10 +45,11 @@ def _object(document: dict[str, Any], field: str, required: set[str]) -> dict[st
 
 
 def validate_health_report(document: dict[str, Any]) -> None:
-    """Validate the strict shape and semantic discriminators of schema version 1."""
+    """Validate the strict shape and semantic discriminators of supported schemas."""
     if set(document) != TOP_LEVEL_FIELDS:
         raise ValidationError("system health fields do not match schema version 1")
-    if document.get("schema_version") != 1 or document.get("kind") != "kitpro-system-health":
+    schema_version = document.get("schema_version")
+    if schema_version not in {1, 2, 3, 4} or document.get("kind") != "kitpro-system-health":
         raise ValidationError("unsupported system health schema or kind")
     if document.get("mode") not in {"live", "offline"}:
         raise ValidationError("system health mode is invalid")
@@ -44,17 +61,33 @@ def validate_health_report(document: dict[str, Any]) -> None:
         ):
             raise ValidationError(f"system health {field} must be strings")
     _object(
-        document, "system",
+        document,
+        "system",
         {"product", "release", "generation", "hostname", "architecture", "uptime_seconds"},
     )
     kernel = _object(
-        document, "kernel",
+        document,
+        "kernel",
         {
-            "schema_version", "kind", "timestamp", "running_kernel", "boot_mode",
-            "expected_running_kernel_match", "current", "candidate",
-            "previous_known_good", "fallback", "reboot_required", "transition_stage",
-            "transition_id", "latest_transition_receipt", "retention_preflight",
-            "metadata_consistency", "overall_status", "warnings", "errors",
+            "schema_version",
+            "kind",
+            "timestamp",
+            "running_kernel",
+            "boot_mode",
+            "expected_running_kernel_match",
+            "current",
+            "candidate",
+            "previous_known_good",
+            "fallback",
+            "reboot_required",
+            "transition_stage",
+            "transition_id",
+            "latest_transition_receipt",
+            "retention_preflight",
+            "metadata_consistency",
+            "overall_status",
+            "warnings",
+            "errors",
         },
     )
     if kernel.get("schema_version") != 1 or kernel.get("kind") != "kitpro-kernel-status":
@@ -62,35 +95,117 @@ def validate_health_report(document: dict[str, Any]) -> None:
     if kernel.get("overall_status") not in {"healthy", "warning", "error"}:
         raise ValidationError("embedded kernel status severity is invalid")
     _object(
-        document, "boot",
-        {"firmware", "esp_present", "esp_mounted", "systemd_boot_valid", "default_entry", "current_entry_valid", "fallback_entry_valid", "kernel_image_valid", "initramfs_valid"},
+        document,
+        "boot",
+        {
+            "firmware",
+            "esp_present",
+            "esp_mounted",
+            "systemd_boot_valid",
+            "default_entry",
+            "current_entry_valid",
+            "fallback_entry_valid",
+            "kernel_image_valid",
+            "initramfs_valid",
+        },
     )
     systemd = _object(
-        document, "systemd",
+        document,
+        "systemd",
         {"failed_unit_count", "failed_units", "critical_failed_units", "services"},
     )
     if not isinstance(systemd["failed_unit_count"], int) or systemd["failed_unit_count"] < 0:
         raise ValidationError("system health failed-unit count is invalid")
     _object(
-        document, "networking",
-        {"configuration_present", "configuration_files", "active_interfaces", "global_address_present", "default_route_present", "networkd_state"},
+        document,
+        "networking",
+        {
+            "configuration_present",
+            "configuration_files",
+            "active_interfaces",
+            "global_address_present",
+            "default_route_present",
+            "networkd_state",
+        },
     )
     _object(document, "dns", {"resolved_state", "resolv_conf_valid", "validation"})
-    _object(document, "firewall", {"service_state", "configuration_valid", "ruleset_available", "baseline_policy_valid"})
-    _object(document, "ssh", {"enabled", "service_state", "configuration_valid", "syntax", "listening", "root_login", "password_authentication"})
-    repository = _object(
-        document, "repository",
-        {"enabled_repositories", "generation", "kitpro_only", "signature_enforcement", "arch_repositories_present", "package_database_readable", "installed_package_count", "release_package_present", "kernel_package_present"},
+    _object(
+        document,
+        "firewall",
+        {"service_state", "configuration_valid", "ruleset_available", "baseline_policy_valid"},
     )
-    if not isinstance(repository["installed_package_count"], int) or repository["installed_package_count"] < 0:
+    _object(
+        document,
+        "ssh",
+        {
+            "enabled",
+            "service_state",
+            "configuration_valid",
+            "syntax",
+            "listening",
+            "root_login",
+            "password_authentication",
+        },
+    )
+    repository = _object(
+        document,
+        "repository",
+        {
+            "enabled_repositories",
+            "generation",
+            "kitpro_only",
+            "signature_enforcement",
+            "arch_repositories_present",
+            "package_database_readable",
+            "installed_package_count",
+            "release_package_present",
+            "kernel_package_present",
+        },
+    )
+    if (
+        not isinstance(repository["installed_package_count"], int)
+        or repository["installed_package_count"] < 0
+    ):
         raise ValidationError("system health package count is invalid")
-    storage = _object(document, "storage", {"root", "esp", "kernel_retention"})
+    storage_fields = {"root", "esp", "kernel_retention"}
+    if schema_version in {2, 4}:
+        storage_fields.add("encryption")
+    if schema_version in {3, 4}:
+        storage_fields.add("lvm")
+    storage = _object(document, "storage", storage_fields)
     for volume in ("root", "esp"):
         value = storage.get(volume)
         if not isinstance(value, dict) or set(value) != {
-            "filesystem", "total_bytes", "free_bytes", "low_space"
+            "filesystem",
+            "total_bytes",
+            "free_bytes",
+            "low_space",
         }:
             raise ValidationError(f"system health {volume} storage is invalid")
+    if schema_version in {2, 4}:
+        encryption = storage.get("encryption")
+        if not isinstance(encryption, dict) or set(encryption) != {
+            "enabled",
+            "active",
+            "mapper_name",
+            "root_source",
+        }:
+            raise ValidationError("system health encryption storage is invalid")
+        if encryption["enabled"] is not True or (
+            document["mode"] == "live" and encryption["active"] is not True
+        ):
+            raise ValidationError("encrypted root is not active through its expected mapper")
+    if schema_version in {3, 4}:
+        lvm = storage.get("lvm")
+        if not isinstance(lvm, dict) or set(lvm) != {
+            "enabled",
+            "active",
+            "volume_group",
+            "root_source",
+        }:
+            raise ValidationError("system health LVM storage is invalid")
+        if lvm["enabled"] is not True or (document["mode"] == "live" and lvm["active"] is not True):
+            raise ValidationError("LVM root is not active through its expected volume group")
     _object(document, "history", {"install_receipt", "kernel_transition", "recovery"})
     redaction = _object(document, "redaction", {"profile", "sensitive_values_included"})
     if redaction != {"profile": "support-safe-v1", "sensitive_values_included": False}:
@@ -109,36 +224,61 @@ def subsystem_summary(document: dict[str, Any]) -> dict[str, str]:
     ssh = document["ssh"]
     systemd = document["systemd"]
 
-    boot_status = "healthy" if all(
-        (
-            boot["systemd_boot_valid"], boot["current_entry_valid"],
-            boot["kernel_image_valid"], boot["initramfs_valid"],
+    boot_status = (
+        "healthy"
+        if all(
+            (
+                boot["systemd_boot_valid"],
+                boot["current_entry_valid"],
+                boot["kernel_image_valid"],
+                boot["initramfs_valid"],
+            )
         )
-    ) else "error"
-    repository_status = "healthy" if all(
-        (
-            repository["kitpro_only"], repository["signature_enforcement"],
-            not repository["arch_repositories_present"],
-            repository["package_database_readable"],
-            repository["release_package_present"], repository["kernel_package_present"],
+        else "error"
+    )
+    repository_status = (
+        "healthy"
+        if all(
+            (
+                repository["kitpro_only"],
+                repository["signature_enforcement"],
+                not repository["arch_repositories_present"],
+                repository["package_database_readable"],
+                repository["release_package_present"],
+                repository["kernel_package_present"],
+            )
         )
-    ) else "error"
-    storage_status = "warning" if (
-        storage["root"]["low_space"] or storage["esp"]["low_space"]
-        or storage["kernel_retention"] not in {"ready", "not-applicable"}
-    ) else "healthy"
+        else "error"
+    )
+    storage_status = (
+        "warning"
+        if (
+            storage["root"]["low_space"]
+            or storage["esp"]["low_space"]
+            or storage["kernel_retention"] not in {"ready", "not-applicable"}
+        )
+        else "healthy"
+    )
     if offline:
         systemd_status = networking_status = "unavailable"
     else:
-        systemd_status = "error" if systemd["critical_failed_units"] else (
-            "warning" if systemd["failed_unit_count"] else "healthy"
+        systemd_status = (
+            "error"
+            if systemd["critical_failed_units"]
+            else ("warning" if systemd["failed_unit_count"] else "healthy")
         )
-        networking_status = "healthy" if all(
-            (
-                networking["configuration_present"], networking["global_address_present"],
-                networking["default_route_present"], networking["networkd_state"] == "active",
+        networking_status = (
+            "healthy"
+            if all(
+                (
+                    networking["configuration_present"],
+                    networking["global_address_present"],
+                    networking["default_route_present"],
+                    networking["networkd_state"] == "active",
+                )
             )
-        ) else "warning"
+            else "warning"
+        )
     dns_status = {"healthy": "healthy", "degraded": "warning", "unavailable": "unavailable"}[
         document["dns"]["validation"]
     ]
@@ -147,10 +287,14 @@ def subsystem_summary(document: dict[str, Any]) -> dict[str, str]:
     elif offline:
         firewall_status = "unavailable"
     else:
-        firewall_status = "healthy" if (
-            firewall["service_state"] in {"active", "exited", "inactive-success"}
-            and firewall["ruleset_available"] is True
-        ) else "warning"
+        firewall_status = (
+            "healthy"
+            if (
+                firewall["service_state"] in {"active", "exited", "inactive-success"}
+                and firewall["ruleset_available"] is True
+            )
+            else "warning"
+        )
     if (
         not ssh["configuration_valid"]
         or ssh["root_login"] not in {"no", "disabled"}
@@ -162,7 +306,11 @@ def subsystem_summary(document: dict[str, Any]) -> dict[str, str]:
     elif offline:
         ssh_status = "unavailable"
     else:
-        ssh_status = "healthy" if ssh["service_state"] == "active" and ssh["listening"] is True else "warning"
+        ssh_status = (
+            "healthy"
+            if ssh["service_state"] == "active" and ssh["listening"] is True
+            else "warning"
+        )
 
     summary = {
         "kernel": document["kernel"]["overall_status"],

@@ -1,93 +1,52 @@
 # KITPro Linux Server
 
-KITPro Linux Server is an Arch-derived, x86_64 server distribution with a
-curated, signed KITPro production repository. It uses UEFI, systemd-boot, and
-linux-lts, with guided whole-disk installation, recovery, manually selected
-previous-kernel fallback, health and support-bundle tooling, and no telemetry.
-Installed systems do not use direct Arch Linux repositories.
+KITPro Linux Server is an Arch Linux-derived, x86_64 server distribution with
+controlled package promotion, a native Textual installer, encrypted storage,
+previous-kernel fallback, offline rescue, and local sanitized support bundles.
 
-**KITPro Linux Server 1.0 is officially released.** It was published on
-October 24, 2026. Standard support runs from October 24, 2026 through
-October 24, 2027. See the [official 1.0 release](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.0.0)
-and the [KITPro Linux Server website](https://kitpro.us/linux-server).
+This is the local sanitized source candidate for KITPro Linux Server 1.1. The
+candidate is not published. Physical Linux 1.1 qualification, offline ISO
+signature verification, repository publication, and public release remain
+separate approval gates.
 
-The final release uses the exact ISO qualified during the RC3 cycle. Its
-filename retains `rc3` because the artifact was promoted without rebuilding or
-renaming it. Qualification included virtual and physical checks, offline
-signature verification, and a 14-day physical burn-in with all required boot
-events and zero recorded defects.
+## Release candidate
+
+- Version: `1.1.0`
+- Generation: `1.1-g0001`
+- Kernel: `linux-lts 6.18.59-1`
+- Installer: `1.2.0`
+- Planner: `1.8.0`
+- Adapter: `0.5.0`
+- KITPro Console: optional and absent from the default installation
+
+See the [release notes](docs/1.1/release-notes.md),
+[installation guide](docs/1.1/installation-guide.md),
+[upgrade guide](docs/1.1/upgrade-guide.md), and
+[verification guide](docs/1.1/verification-guide.md).
 
 ## Requirements
 
 - x86_64 processor
 - UEFI firmware with Secure Boot disabled
-- 2 GiB RAM minimum, 4 GiB or more recommended
-- 16 GiB target disk minimum, 32 GiB or larger SSD/NVMe recommended
+- 2 GiB RAM minimum; 4 GiB or more recommended
+- 16 GiB target disk minimum; 32 GiB or larger SSD/NVMe recommended
 - 4 GiB or larger installer USB drive
-- supported network adapter, with wired Ethernet recommended
-
-See [hardware requirements](docs/rc3/hardware-support.md) and
-[known limitations](docs/rc3/known-limitations.md) before installation.
-
-## Install and verify
-
-- [Download the official 1.0 ISO](https://github.com/KITProHQ/kitpro-linux/releases/download/v1.0.0/kitpro-linux-server-1.0-rc3-x86_64.iso)
-- [Official 1.0 release](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.0.0)
-- [Installation guide](docs/rc3/installation-guide.md)
-- [Hardware requirements](docs/rc3/hardware-support.md)
-- [Known limitations](docs/rc3/known-limitations.md)
-- [Artifact verification](docs/rc3/verification-guide.md)
-- [Release notes](docs/rc3/release-notes.md)
-- [Support period](docs/rc3/support-and-eol.md)
-- [Release artifact inventory](docs/rc3/artifacts.md)
-
-The guided installer erases the selected target disk. Back up required data
-and verify the disk before confirming installation.
+- supported wired network adapter
 
 ## Build and test
 
-The product source in this repository maps to frozen RC3 source commit
-`14e5b36cc1b02632ab729a65d206fd36accfac47`, tree
-`9c711fea80eb6d5def1aaae310fcb46d325c13b5`. Production generation artifacts
-are external, public, hash-pinned build inputs.
+The public source intentionally excludes private infrastructure, raw
+qualification evidence, signing homes, internal endpoints, and credentials.
+Production package generations and the Installer wheel bundle are external,
+hash-pinned inputs.
 
-Build the locked Arch worker locally:
-
-```bash
-docker build -f ci/arch-worker.Containerfile -t kitpro-rc-worker .
-```
-
-Run the public test and source checks:
+Run the public test suite with:
 
 ```bash
-bash ci/phase6-fast.sh
+python -m pytest -q
 ```
-
-Build and validate non-release qualification media with the frozen generation:
-
-```bash
-python -m tools.production_media build \
-  --source . \
-  --generation GENERATION_DIRECTORY \
-  --output OUTPUT_DIRECTORY \
-  --build-id clean \
-  --release-policy config/releases/1.0-rc3.json
-
-python -m tools.production_media verify \
-  --manifest BUILD_MANIFEST \
-  --output VALIDATION_DIRECTORY \
-  --release-policy config/releases/1.0-rc3.json
-```
-
-The locked worker and production generation are required. No private repository,
-private worker registry, signing key, or private qualification record is needed.
-
-## Licensing status
 
 KITPro-authored source and documentation are licensed under
-[Apache License 2.0](LICENSE) unless otherwise noted. Third-party and upstream
-materials retain their respective licenses and notice requirements. The release
-SBOMs record declared package license metadata. See [NOTICE.md](NOTICE.md).
-
-KITPro is independent of Arch Linux. Arch Linux does not sponsor, endorse, or
-support KITPro Linux Server.
+[Apache License 2.0](LICENSE) unless otherwise noted. Third-party materials
+retain their respective licenses. KITPro is independent of Arch Linux; Arch
+Linux does not sponsor, endorse, or support KITPro Linux Server.

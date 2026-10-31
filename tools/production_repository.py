@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Prototype KITPro Linux production repository publication and client config."""
+"""Compatibility entry point for the frozen KITPro Linux 1.0 repository.
+
+The typed, release-aware implementation is provided by
+``tools.release_repository``. This module retains the established 1.0 API and
+behavior for historical callers and evidence.
+"""
 
 from __future__ import annotations
 
@@ -12,8 +17,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from tools import kitpro_repo
-
+from tools import kitpro_repo, release_repository
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION_HOSTNAME = "repo.kitpro.us"
@@ -21,6 +25,17 @@ PRODUCTION_BASE_URL = "https://repo.kitpro.us/kitpro-linux"
 RELEASE = "1.0"
 REPOSITORY_NAME = "kitpro-1.0-core"
 ARCH = "x86_64"
+
+# Release-aware contracts are exposed here without changing the historical 1.0
+# function signatures below.
+ReleaseRepositoryConfig = release_repository.ReleaseRepositoryConfig
+RepositoryTrust = release_repository.RepositoryTrust
+PromotionAuthorization = release_repository.PromotionAuthorization
+RELEASE_CONFIGS = release_repository.RELEASE_CONFIGS
+validate_release_generation_tree = release_repository.validate_generation_tree
+validate_release_candidate_input = release_repository.validate_rc_input
+publish_immutable_release_generation = release_repository.publish_immutable_generation
+promote_release_current = release_repository.promote_current
 
 FORBIDDEN_PRODUCTION_MARKERS = (
     "0.1-dev",

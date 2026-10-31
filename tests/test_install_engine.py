@@ -29,6 +29,30 @@ def plan() -> dict[str, object]:
     }
 
 
+def custom_plan() -> dict[str, object]:
+    return {
+        "partition_table": {
+            "partitions": [],
+            "esp": {
+                "partition_uuid": "11111111-1111-4111-8111-111111111111",
+                "planned_size_bytes": 260 * 1024**2,
+            },
+            "root": {
+                "partition_uuid": "22222222-2222-4222-8222-222222222222",
+                "planned_size_bytes": 6 * 1024**3,
+            },
+            "home": {
+                "partition_uuid": "33333333-3333-4333-8333-333333333333",
+                "planned_size_bytes": 4 * 1024**3,
+            },
+            "swap": {
+                "partition_uuid": "44444444-4444-4444-8444-444444444444",
+                "planned_size_bytes": 1024**3,
+            },
+        }
+    }
+
+
 def report() -> dict[str, object]:
     return {
         "schema_version": 1,
@@ -91,6 +115,39 @@ class InstallEngineTests(unittest.TestCase):
             self.assertIn("SizeMinBytes=5G", root)
             self.assertIn("GrowFileSystem=yes", root)
             self.assertNotIn("SizeMaxBytes", root)
+
+    def test_custom_repart_definitions_are_exact_and_role_specific(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            definitions = render_repart_definitions(
+                Path(name), custom_plan(), populate=False
+            )
+            esp = (definitions / "00-esp.conf").read_text()
+            root = (definitions / "10-root.conf").read_text()
+            home = (definitions / "20-home.conf").read_text()
+            swap = (definitions / "30-swap.conf").read_text()
+            self.assertIn(f"SizeMinBytes={260 * 1024**2}", esp)
+            self.assertIn(f"SizeMaxBytes={260 * 1024**2}", esp)
+            self.assertIn(f"SizeMinBytes={6 * 1024**3}", root)
+            self.assertIn(f"SizeMaxBytes={6 * 1024**3}", root)
+            self.assertIn("Type=home", home)
+            self.assertIn("Label=KITPRO_HOME", home)
+            self.assertIn("Type=swap", swap)
+            self.assertIn("Format=swap", swap)
+            self.assertNotIn("CopyFiles", root + home + swap)
+
+    def test_custom_sector_geometry_change_is_rejected_before_partitioning(self) -> None:
+        custom = custom_plan()
+        custom["partition_table"].update(
+            {
+                "storage_schema_version": 1,
+                "logical_sector_bytes": 512,
+                "physical_sector_bytes": 4096,
+            }
+        )
+        completed = mock.Mock(stdout="4096\n", returncode=0)
+        with mock.patch.object(engine, "_recorded_command", return_value=completed):
+            with self.assertRaisesRegex(kitpro_repo.PipelineError, "geometry changed"):
+                engine._assert_sector_geometry(Path("/dev/vda"), custom, Path("/tmp"))
 
     def test_pre_disk_failures_record_the_exact_stage(self) -> None:
         for failed_stage in ("rootfs_staging", "configuration", "boot_setup"):
@@ -253,6 +310,65 @@ class InstallEngineTests(unittest.TestCase):
                         require_no_children=True,
                         name="after-wipe",
                     )
+
+    def test_preservation_without_partition_creation_does_not_reread_gpt(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            temporary = Path(name)
+            target = temporary / "vda"
+            target.write_bytes(b"")
+            evidence = temporary / "evidence"
+            evidence.mkdir()
+            partition_uuid = "22222222-2222-4222-8222-222222222222"
+            preservation = {
+                "partition_table": {
+                    "layout": "preserve",
+                    "logical_sector_bytes": 512,
+                    "partitions": [
+                        {
+                            "action": "format",
+                            "partition_number": 2,
+                            "partition_uuid": partition_uuid,
+                            "role": "root",
+                            "filesystem": "ext4",
+                        }
+                    ],
+                }
+            }
+
+            def command(arguments, *_args, **_kwargs):
+                stdout = ""
+                if arguments[0] == "lsblk":
+                    stdout = json.dumps(
+                        {
+                            "blockdevices": [
+                                {
+                                    "path": str(target),
+                                    "partuuid": None,
+                                    "children": [
+                                        {
+                                            "path": str(target) + "2",
+                                            "partuuid": partition_uuid,
+                                        }
+                                    ],
+                                }
+                            ]
+                        }
+                    )
+                return mock.Mock(returncode=0, stdout=stdout, stderr="")
+
+            with (
+                mock.patch.object(engine.os, "geteuid", return_value=0),
+                mock.patch.object(engine.shutil, "which", return_value="/usr/bin/sfdisk"),
+                mock.patch.object(engine, "_assert_block_target_idle"),
+                mock.patch.object(engine, "_recorded_command", side_effect=command) as recorded,
+            ):
+                self.assertEqual(
+                    engine._prepare_preservation_target(target, preservation, evidence), []
+                )
+
+            commands = [call.args[0] for call in recorded.call_args_list]
+            self.assertNotIn(["blockdev", "--rereadpt", str(target)], commands)
+            self.assertIn(["mkfs.ext4", "-F", "-L", "KITPRO_ROOT", str(target) + "2"], commands)
 
     def test_first_boot_failure_marks_installation_failed(self) -> None:
         with tempfile.TemporaryDirectory() as name:

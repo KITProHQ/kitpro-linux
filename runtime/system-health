@@ -214,7 +214,6 @@ else
 fi
 if [[ -f $LOADER_CONF && -d $ESP/EFI/systemd && $KERNEL_CURRENT_ENTRY == true ]]; then SYSTEMD_BOOT_VALID=true; fi
 DEFAULT_ENTRY=$(sed -n 's/^[[:space:]]*default[[:space:]]\+//p' "$LOADER_CONF" 2>/dev/null | head -n1)
-if [[ $ESP_PRESENT != true || $SYSTEMD_BOOT_VALID != true ]]; then error 'Boot structure is incomplete or invalid.'; fi
 if [[ $MODE == live && $BOOT_FIRMWARE != uefi ]]; then error 'The running system was not booted with UEFI firmware.'; fi
 if [[ $MODE == live && $ESP_MOUNTED != true ]]; then error 'The EFI system partition is not mounted at /efi.'; fi
 
@@ -404,6 +403,11 @@ ROOT_LOW=false ESP_LOW=false
 if (( ROOT_STORAGE_TOTAL > 0 )) && (( ROOT_STORAGE_FREE < 2147483648 || ROOT_STORAGE_FREE * 100 < ROOT_STORAGE_TOTAL * 10 )); then ROOT_LOW=true; warning 'Root filesystem free space is below the maintenance threshold.'; fi
 if (( ESP_STORAGE_TOTAL > 0 )) && (( ESP_STORAGE_FREE < 67108864 || ESP_STORAGE_FREE * 100 < ESP_STORAGE_TOTAL * 10 )); then ESP_LOW=true; warning 'ESP free space is below the maintenance threshold.'; fi
 
+ROOT_SOURCE=$(findmnt -n -o SOURCE --target "$ROOT" 2>/dev/null || true)
+HEALTH_SCHEMA_VERSION=1
+ENCRYPTION_ENABLED=false ENCRYPTION_ACTIVE=false ENCRYPTION_MAPPER='' ENCRYPTION_ROOT_SOURCE=$ROOT_SOURCE
+LVM_ENABLED=false LVM_ACTIVE=false LVM_VG='' LVM_ROOT_SOURCE=$ROOT_SOURCE
+
 # Receipt summaries expose only schema, time, operation, result, and opaque IDs.
 INSTALL_RECEIPT=$(root_path /var/lib/kitpro-linux/install-receipt.json)
 INSTALL_PRESENT=false INSTALL_VALID=false INSTALL_VERSION=null INSTALL_TIME='' INSTALLER_VERSION=''
@@ -412,12 +416,49 @@ if [[ -f $INSTALL_RECEIPT ]]; then
     INSTALL_VERSION=$(json_number_value "$INSTALL_RECEIPT" schema_version); [[ -n $INSTALL_VERSION ]] || INSTALL_VERSION=null
     INSTALL_TIME=$(json_text_value "$INSTALL_RECEIPT" installed_at)
     INSTALLER_VERSION=$(json_text_value "$INSTALL_RECEIPT" installer_version)
-    if basic_json_object "$INSTALL_RECEIPT" && [[ $INSTALL_VERSION == 1 ]] &&
+    if basic_json_object "$INSTALL_RECEIPT" && [[ $INSTALL_VERSION == 1 || $INSTALL_VERSION == 2 || $INSTALL_VERSION == 3 || $INSTALL_VERSION == 4 || $INSTALL_VERSION == 5 ]] &&
        grep -Eq '"install_spec_sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' "$INSTALL_RECEIPT" &&
        grep -Eq '"install_plan_sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' "$INSTALL_RECEIPT" &&
        grep -Eq '"generation_manifest_sha256"[[:space:]]*:[[:space:]]*"[0-9a-f]{64}"' "$INSTALL_RECEIPT"; then INSTALL_VALID=true; fi
+    if [[ $INSTALL_VERSION == 2 || $INSTALL_VERSION == 4 ]] && grep -Eq '"enabled"[[:space:]]*:[[:space:]]*true' "$INSTALL_RECEIPT"; then
+        ENCRYPTION_ENABLED=true
+        HEALTH_SCHEMA_VERSION=2
+        ENCRYPTION_MAPPER=$(json_text_value "$INSTALL_RECEIPT" mapper_name)
+        ENCRYPTION_ROOT_DEVICE=${ROOT_SOURCE%%\[*}
+        if [[ $MODE == live && $INSTALL_VERSION == 2 && $ENCRYPTION_ROOT_DEVICE == /dev/mapper/$ENCRYPTION_MAPPER ]]; then
+            ENCRYPTION_ACTIVE=true
+        elif [[ $MODE == live && $INSTALL_VERSION == 4 ]] &&
+             pvs --noheadings -o pv_name --select "vg_name=$(json_text_value "$INSTALL_RECEIPT" volume_group)" 2>/dev/null |
+             xargs | grep -Fxq "/dev/mapper/$ENCRYPTION_MAPPER"; then
+            ENCRYPTION_ACTIVE=true
+        elif [[ $MODE == live ]]; then
+            error 'The installed root filesystem is not mounted from its expected dm-crypt mapper.'
+        fi
+    fi
+    if [[ $INSTALL_VERSION == 3 || $INSTALL_VERSION == 4 ]] && grep -Eq '"enabled"[[:space:]]*:[[:space:]]*true' "$INSTALL_RECEIPT"; then
+        LVM_ENABLED=true
+        HEALTH_SCHEMA_VERSION=$INSTALL_VERSION
+        LVM_VG=$(json_text_value "$INSTALL_RECEIPT" volume_group)
+        LVM_EXPECTED_ROOT=$(json_text_value "$INSTALL_RECEIPT" root_device)
+        LVM_ROOT_DEVICE=${ROOT_SOURCE%%\[*}
+        if [[ $MODE == live && $LVM_ROOT_DEVICE == "$LVM_EXPECTED_ROOT" ]] &&
+           vgs --noheadings "$LVM_VG" >/dev/null 2>&1; then
+            LVM_ACTIVE=true
+        elif [[ $MODE == live ]]; then
+            error 'The installed root filesystem is not mounted from its expected active LVM volume.'
+        fi
+    fi
+    if [[ $INSTALL_VALID == true && $INSTALL_VERSION == 5 ]] &&
+       grep -Eq '"mode"[[:space:]]*:[[:space:]]*"preserve"' "$INSTALL_RECEIPT" &&
+       grep -Eq '"esp_action"[[:space:]]*:[[:space:]]*"reuse"' "$INSTALL_RECEIPT" &&
+       grep -Eq '"bootloader_path"[[:space:]]*:[[:space:]]*"/EFI/KITPRO/kitpro-bootx64\.efi"' "$INSTALL_RECEIPT" &&
+       [[ -f $ESP/EFI/KITPRO/kitpro-bootx64.efi ]] &&
+       [[ ! -L $ESP/EFI/KITPRO/kitpro-bootx64.efi && $KERNEL_CURRENT_ENTRY == true ]]; then
+        SYSTEMD_BOOT_VALID=true
+    fi
 fi
 if [[ $INSTALL_PRESENT != true ]]; then warning 'Installation receipt is missing.'; elif [[ $INSTALL_VALID != true ]]; then error 'Installation receipt is malformed.'; fi
+if [[ $ESP_PRESENT != true || $SYSTEMD_BOOT_VALID != true ]]; then error 'Boot structure is incomplete or invalid.'; fi
 
 TRANSITION_PRESENT=false TRANSITION_VALID=false TRANSITION_OPERATION='' TRANSITION_RESULT='' TRANSITION_TIME=''
 if [[ -n $KERNEL_TRANSITION_RECEIPT && $KERNEL_TRANSITION_RECEIPT != null ]]; then
@@ -457,7 +498,7 @@ fi
 emit_json() {
     cat <<EOF
 {
-  "schema_version": 1,
+  "schema_version": $HEALTH_SCHEMA_VERSION,
   "kind": "kitpro-system-health",
   "timestamp": $(json_string "$TIMESTAMP"),
   "mode": $(json_string "$MODE"),
@@ -535,7 +576,20 @@ emit_json() {
   "storage": {
     "root": {"filesystem": $(json_string "$ROOT_STORAGE_FS"), "total_bytes": $ROOT_STORAGE_TOTAL, "free_bytes": $ROOT_STORAGE_FREE, "low_space": $(json_bool "$ROOT_LOW")},
     "esp": {"filesystem": $(json_string "$ESP_STORAGE_FS"), "total_bytes": $ESP_STORAGE_TOTAL, "free_bytes": $ESP_STORAGE_FREE, "low_space": $(json_bool "$ESP_LOW")},
-    "kernel_retention": $(json_string "$KERNEL_RETENTION")
+    "kernel_retention": $(json_string "$KERNEL_RETENTION")$(
+      if [[ $ENCRYPTION_ENABLED == true ]]; then
+        printf ',\n    "encryption": {"enabled": true, "active": %s, "mapper_name": %s, "root_source": %s}' \
+          "$(json_nullable_bool "$ENCRYPTION_ACTIVE")" \
+          "$(json_nullable "$ENCRYPTION_MAPPER")" \
+          "$(json_nullable "$ENCRYPTION_ROOT_SOURCE")"
+      fi
+      if [[ $LVM_ENABLED == true ]]; then
+        printf ',\n    "lvm": {"enabled": true, "active": %s, "volume_group": %s, "root_source": %s}' \
+          "$(json_nullable_bool "$LVM_ACTIVE")" \
+          "$(json_nullable "$LVM_VG")" \
+          "$(json_nullable "$LVM_ROOT_SOURCE")"
+      fi
+    )
   },
   "history": {
     "install_receipt": {"present": $(json_bool "$INSTALL_PRESENT"), "valid": $(json_bool "$INSTALL_VALID"), "schema_version": $INSTALL_VERSION, "installed_at": $(json_nullable "$INSTALL_TIME"), "installer_version": $(json_nullable "$INSTALLER_VERSION")},
