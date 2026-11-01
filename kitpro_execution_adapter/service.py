@@ -13,15 +13,21 @@ from typing import Any
 from .api import (
     ADAPTER_API_VERSION,
     AdapterError,
+    AuthorizationBindingV1,
     CancellationToken,
     ExecutionEventV1,
     ExecutionRequestV1,
     ExecutionResponseV1,
     RuntimeSecretReference,
 )
-from .bridge import LivePrivilegedBridge
+from .bridge import LivePrivilegedBridge, PhysicalPrivilegedBridge
 from .secret_broker import ProtectedSecretBroker
-from .security import LIVE_AUTHORIZATION_SCOPE, SignedAuthorizationV1, parse_signed_authorization
+from .security import (
+    LIVE_AUTHORIZATION_SCOPE,
+    PHYSICAL_AUTHORIZATION_SCOPE,
+    SignedAuthorizationV1,
+    parse_signed_authorization,
+)
 
 SERVICE_SCHEMA_VERSION = 1
 HEX64 = re.compile(r"[0-9a-f]{64}")
@@ -43,10 +49,11 @@ class PrivilegedGuestService:
     def __init__(
         self,
         *,
-        bridge: LivePrivilegedBridge,
+        bridge: LivePrivilegedBridge | PhysicalPrivilegedBridge,
         secrets: ProtectedSecretBroker,
         expected_client_uid: int,
         expected_client_executable_sha256: str,
+        accepted_authorization_scope: str = LIVE_AUTHORIZATION_SCOPE,
     ) -> None:
         if expected_client_uid < 0 or not HEX64.fullmatch(expected_client_executable_sha256):
             raise AdapterError("service_configuration_invalid", "service client pin is invalid")
@@ -54,7 +61,26 @@ class PrivilegedGuestService:
         self.secrets = secrets
         self.expected_client_uid = expected_client_uid
         self.expected_client_executable_sha256 = expected_client_executable_sha256
+        if accepted_authorization_scope not in {
+            LIVE_AUTHORIZATION_SCOPE,
+            PHYSICAL_AUTHORIZATION_SCOPE,
+        }:
+            raise AdapterError("service_configuration_invalid", "authorization scope is invalid")
+        self.accepted_authorization_scope = accepted_authorization_scope
         self._active_request: str | None = None
+
+    def authorization_binding(
+        self,
+        peer: PeerCredentials,
+        request_value: dict[str, Any],
+        *,
+        cancel: CancellationToken | None = None,
+    ) -> AuthorizationBindingV1:
+        """Return the verifier-owned binding without bearer authority or secrets."""
+        self.authenticate(peer)
+        request = ExecutionRequestV1.from_dict(request_value)
+        evidence, _ = self.bridge.authorization_evidence(request, cancel=cancel)
+        return evidence.binding
 
     def authorization_request(
         self,
@@ -177,15 +203,15 @@ class PrivilegedGuestService:
         if (
             envelope["schema_version"] != SERVICE_SCHEMA_VERSION
             or envelope["adapter_api_version"] != ADAPTER_API_VERSION
-            or envelope["authorization_scope"] != LIVE_AUTHORIZATION_SCOPE
+            or envelope["authorization_scope"] != self.accepted_authorization_scope
         ):
             raise AdapterError(
                 "service_request_unsupported", "service request version is unsupported"
             )
         request = ExecutionRequestV1.from_dict(envelope["request"])
         authorization = parse_signed_authorization(json.dumps(envelope["authorization"]))
-        if authorization.scope != LIVE_AUTHORIZATION_SCOPE:
-            raise AdapterError("authorization_invalid", "qualification authorization is not live")
+        if authorization.scope != self.accepted_authorization_scope:
+            raise AdapterError("authorization_invalid", "authorization scope changed")
         secret_value = envelope["secret_reference"]
         secret = None
         if secret_value is not None:

@@ -266,13 +266,25 @@ _LIVE_FACTORY_CAPABILITY = object()
 class LiveAuthoritativeEngineCommitment:
     """The sole exact connection from a live-authorized bridge to ``engine.apply``."""
 
-    def __init__(self, engine_apply: EngineApplyPort, capability: object) -> None:
+    def __init__(
+        self,
+        engine_apply: EngineApplyPort,
+        capability: object,
+        *,
+        required_environment_profile: str = "kitpro-phase3b2e-qemu-v1",
+    ) -> None:
         if capability is not _LIVE_FACTORY_CAPABILITY:
             raise AdapterError(
                 "production_commitment_unavailable",
                 "live commitment must be created by the privileged factory",
             )
         self._engine_apply = engine_apply
+        if required_environment_profile not in {
+            "kitpro-phase3b2e-qemu-v1",
+            "kitpro-physical-console-v1",
+        }:
+            raise AdapterError("environment_untrusted", "live environment profile is unsupported")
+        self._required_environment_profile = required_environment_profile
 
     def commit(
         self,
@@ -286,7 +298,7 @@ class LiveAuthoritativeEngineCommitment:
         spec, plan, source_metadata = AuthoritativeEngineCommitment._validate_mapping(
             request,
             evidence,
-            required_environment_profile="kitpro-phase3b2e-qemu-v1",
+            required_environment_profile=self._required_environment_profile,
         )
         password, luks_passphrase = AuthoritativeEngineCommitment._read_runtime_secrets(
             secret_fd, request.runtime_secret_required
@@ -353,11 +365,17 @@ class LiveAuthoritativeEngineCommitment:
         return CommitmentResultV1("completed", str(report_path), report_sha256, True, True)
 
 
-def create_live_engine_commitment() -> LiveAuthoritativeEngineCommitment:
+def create_live_engine_commitment(
+    *, required_environment_profile: str = "kitpro-phase3b2e-qemu-v1"
+) -> LiveAuthoritativeEngineCommitment:
     """Import the real engine only inside the privileged guest service composition root."""
     from tools.install.engine import apply
 
-    return LiveAuthoritativeEngineCommitment(apply, _LIVE_FACTORY_CAPABILITY)
+    return LiveAuthoritativeEngineCommitment(
+        apply,
+        _LIVE_FACTORY_CAPABILITY,
+        required_environment_profile=required_environment_profile,
+    )
 
 
 def connection_safety_inventory() -> dict[str, object]:

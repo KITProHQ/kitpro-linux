@@ -30,6 +30,7 @@ from .secret_broker import ProtectedSecretBroker
 from .security import (
     ExecutionRevocationStore,
     LiveAuthorizationVerifier,
+    PhysicalAuthorizationVerifier,
     QualificationAuthorizationVerifier,
     SignedAuthorizationV1,
 )
@@ -342,6 +343,36 @@ class LivePrivilegedBridge(NonDestructivePrivilegedBridge):
             )
         if isinstance(commitment, DisabledCommitmentBoundary):
             raise AdapterError("commitment_disabled", "live commitment is not configured")
+        super().__init__(
+            backend=backend,
+            authorization=authorization,
+            secrets=secrets,
+            audit=audit,
+            commitment=commitment,
+            revocations=revocations,
+        )
+
+
+class PhysicalPrivilegedBridge(NonDestructivePrivilegedBridge):
+    """Live bridge that accepts only physical-console authorization."""
+
+    def __init__(
+        self,
+        *,
+        backend: ExecutionBackendPort,
+        authorization: PhysicalAuthorizationVerifier,
+        secrets: ProtectedSecretBroker,
+        audit: CommitmentAuditStore,
+        commitment: CommitmentBoundary,
+        revocations: ExecutionRevocationStore,
+    ) -> None:
+        if not isinstance(authorization, PhysicalAuthorizationVerifier):
+            raise AdapterError(
+                "authorization_scope_invalid",
+                "physical bridge requires the physical-console authorization verifier",
+            )
+        if isinstance(commitment, DisabledCommitmentBoundary):
+            raise AdapterError("commitment_disabled", "physical commitment is not configured")
         super().__init__(
             backend=backend,
             authorization=authorization,

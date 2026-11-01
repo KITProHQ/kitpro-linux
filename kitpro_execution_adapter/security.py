@@ -21,6 +21,7 @@ from .api import AdapterError, AuthorizationBindingV1, canonical_json_bytes
 AUTHORIZATION_SCHEMA_VERSION = 1
 AUTHORIZATION_SCOPE = "kitpro-phase3b2d-qualification-only"
 LIVE_AUTHORIZATION_SCOPE = "kitpro-phase3b2e-live-vm-install-v1"
+PHYSICAL_AUTHORIZATION_SCOPE = "kitpro-physical-console-install-v1"
 MAX_AUTHORIZATION_LIFETIME_SECONDS = 300
 HEX64 = re.compile(r"[0-9a-f]{64}")
 
@@ -203,6 +204,32 @@ class LiveOperatorApprovalGate(OperatorApprovalGate):
         return f"AUTHORIZE LIVE VM INSTALL {binding.binding_sha256}"
 
 
+class PhysicalOperatorApprovalGate(OperatorApprovalGate):
+    """Bind physical-console approval to the exact media and target identity."""
+
+    def __init__(
+        self,
+        *,
+        media_sha256: str,
+        expected_uid: int = 0,
+        qualification_tests: bool = False,
+    ) -> None:
+        if not HEX64.fullmatch(media_sha256):
+            raise AdapterError("operator_approval_invalid", "physical media digest is invalid")
+        super().__init__(
+            expected_uid=expected_uid,
+            qualification_tests=qualification_tests,
+        )
+        self.media_sha256 = media_sha256
+
+    def phrase(self, binding: AuthorizationBindingV1) -> str:
+        binding.validate()
+        return (
+            f"AUTHORIZE PHYSICAL INSTALL MEDIA {self.media_sha256} "
+            f"TARGET {binding.target_identity_sha256} BINDING {binding.binding_sha256}"
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class SignedAuthorizationV1:
     schema_version: int
@@ -306,6 +333,32 @@ class LiveAuthorizationIssuer(QualificationAuthorizationIssuer):
         approval_gate: LiveOperatorApprovalGate,
         clock: Callable[[], float] = time.time,
     ) -> None:
+        super().__init__(
+            private_key_fd=private_key_fd,
+            public_key_pem=public_key_pem,
+            approval_gate=approval_gate,
+            clock=clock,
+        )
+
+
+class PhysicalAuthorizationIssuer(QualificationAuthorizationIssuer):
+    """Issue short-lived tokens only after exact physical-console approval."""
+
+    authorization_scope = PHYSICAL_AUTHORIZATION_SCOPE
+
+    def __init__(
+        self,
+        *,
+        private_key_fd: int,
+        public_key_pem: bytes,
+        approval_gate: PhysicalOperatorApprovalGate,
+        clock: Callable[[], float] = time.time,
+    ) -> None:
+        if not isinstance(approval_gate, PhysicalOperatorApprovalGate):
+            raise AdapterError(
+                "authorization_scope_invalid",
+                "physical authorization requires the physical-console approval gate",
+            )
         super().__init__(
             private_key_fd=private_key_fd,
             public_key_pem=public_key_pem,
@@ -460,6 +513,25 @@ class LiveAuthorizationVerifier(QualificationAuthorizationVerifier):
     """Verify only VM-live tokens signed by the separately pinned live authority."""
 
     authorization_scope = LIVE_AUTHORIZATION_SCOPE
+
+    def __init__(
+        self,
+        *,
+        public_key_pem: bytes,
+        consumption_store: AuthorizationConsumptionStore,
+        clock: Callable[[], float] = time.time,
+    ) -> None:
+        super().__init__(
+            public_key_pem=public_key_pem,
+            consumption_store=consumption_store,
+            clock=clock,
+        )
+
+
+class PhysicalAuthorizationVerifier(QualificationAuthorizationVerifier):
+    """Verify only physical-console tokens from the per-boot ephemeral authority."""
+
+    authorization_scope = PHYSICAL_AUTHORIZATION_SCOPE
 
     def __init__(
         self,

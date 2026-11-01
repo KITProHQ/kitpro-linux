@@ -12,7 +12,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass, field
 from typing import Any, Protocol
 
-ADAPTER_VERSION = "0.5.0"
+ADAPTER_VERSION = "0.5.1"
 ADAPTER_API_VERSION = 1
 REQUEST_SCHEMA_VERSION = 1
 RESPONSE_SCHEMA_VERSION = 1
@@ -167,16 +167,21 @@ class EnvironmentEvidenceV1:
     target_ownership_sha256: str
 
     def validate(self) -> None:
-        if self.verifier != "kitpro-qemu-environment-verifier-v1":
-            raise AdapterError(
-                "environment_untrusted", "execution environment verifier is unsupported"
-            )
-        if self.profile not in {
+        qemu_profiles = {
             "kitpro-phase3b2b-qemu-v1",
             "kitpro-phase3b2c-qemu-v1",
             "kitpro-phase3b2d-qemu-v1",
             "kitpro-phase3b2e-qemu-v1",
-        }:
+        }
+        if self.verifier == "kitpro-qemu-environment-verifier-v1":
+            profile_valid = self.profile in qemu_profiles
+        elif self.verifier == "kitpro-physical-console-environment-verifier-v1":
+            profile_valid = self.profile == "kitpro-physical-console-v1"
+        else:
+            raise AdapterError(
+                "environment_untrusted", "execution environment verifier is unsupported"
+            )
+        if not profile_valid:
             raise AdapterError("environment_untrusted", "execution environment is not approved")
         for name in ("boot_artifact_sha256", "vm_identity_sha256", "target_ownership_sha256"):
             _require_digest(getattr(self, name), f"environment.{name}")

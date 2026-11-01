@@ -1,0 +1,42 @@
+[Unit]
+Description=KITPro VM-scoped privileged installation service
+ConditionKernelCommandLine=kitpro.phase3b2e=live-candidate
+ConditionVirtualization=vm
+After=systemd-udev-settle.service
+Wants=systemd-udev-settle.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+UMask=0077
+Environment=PYTHONPATH=/opt/kitpro-installer/runtime:/opt/kitpro-linux
+ExecStart=/usr/bin/python /usr/local/lib/kitpro-linux/phase3b2e-live-service.py
+# systemd-repart mounts newly formatted filesystems here while populating them.
+# RuntimeDirectory keeps installation mount points and LVM's lock directory
+# writable inside ProtectSystem=strict.
+RuntimeDirectory=kitpro-installer kitpro-installations systemd/mount-root cryptsetup lock/lvm
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+StateDirectory=kitpro-installer kitpro-linux
+StateDirectoryMode=0700
+NoNewPrivileges=no
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadOnlyPaths=/opt/kitpro-linux/repo
+ReadOnlyPaths=/opt/kitpro-linux/config
+ReadOnlyPaths=/etc/kitpro-installer
+# LVM archives metadata before each VG mutation. Keep only those two standard
+# metadata directories writable; the remainder of /etc stays read-only.
+ReadWritePaths=/run/kitpro-installer /var/lib/kitpro-installer /var/lib/kitpro-linux /run/kitpro-installations /opt/kitpro-linux/.state/production-verification /opt/kitpro-linux/.state/phase3 /etc/lvm/archive /etc/lvm/backup
+# The engine validates the generated nftables ruleset inside a fresh network
+# namespace. nft(8) uses a Netlink socket for that read-only validation.
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+LockPersonality=yes
+RestrictRealtime=yes
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kitpro-execution-adapter"
-version = "0.5.0"
-description = "Versioned VM-scoped execution boundary for KITPro Linux Server"
+version = "0.5.1"
+description = "Versioned VM and physical-console execution boundary for KITPro Linux Server"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 authors = [{ name = "KITPro" }]

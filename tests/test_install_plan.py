@@ -10,6 +10,7 @@ from unittest import mock
 from tools import kitpro_repo
 from tools.install.disk import create_test_disk
 from tools.install.model import ABSOLUTE_MINIMUM_BYTES, parse_spec
+from tools.install import plan as install_plan
 from tools.install.plan import build_plan, validate_plan
 from tests.plan_fixture import generation_fixture
 
@@ -29,6 +30,32 @@ def document(target: Path) -> dict[str, object]:
 
 
 class InstallPlanTests(unittest.TestCase):
+    def test_production_signed_linux_1_1_uses_pinned_production_verifier(self) -> None:
+        with tempfile.TemporaryDirectory() as name:
+            root = Path(name)
+            profile = root / "profile.json"
+            profile.write_text(
+                json.dumps(
+                    {
+                        "release": "1.1",
+                        "generation": "1.1-g0001",
+                        "trust": "production-signed",
+                    }
+                )
+            )
+            value = document(root / "disk.raw")
+            value["release"] = {"name": "1.1", "generation": "1.1-g0001"}
+            spec = parse_spec(value)
+            expected = (root / "verified", {"generation_id": "1.1-g0001"})
+            with (
+                mock.patch.object(install_plan, "ROOTFS_PROFILE", profile),
+                mock.patch("tools.install.production.verify", return_value=expected) as verify,
+                mock.patch.object(kitpro_repo, "validate_manifest") as development_validate,
+            ):
+                self.assertEqual(install_plan._generation(spec), expected)
+            verify.assert_called_once_with("1.1-g0001", install_plan.REPO_ROOT)
+            development_validate.assert_not_called()
+
     def test_schema_is_valid_json(self) -> None:
         json.loads((ROOT / "schemas/install-plan.schema.json").read_text())
 

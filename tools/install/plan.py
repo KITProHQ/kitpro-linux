@@ -27,7 +27,15 @@ ROOTFS_PROFILE = PROJECT_ROOT / "config/install-rootfs-profile.json"
 
 def _generation(spec: InstallSpec) -> tuple[Path, dict[str, Any]]:
     """Verify and return the pinned source at the privileged trust boundary."""
-    if spec.release.name == "1.0":
+    profile = kitpro_repo.load_json(ROOTFS_PROFILE)
+    if (
+        profile["release"] != spec.release.name
+        or profile["generation"] != spec.release.generation
+    ):
+        raise kitpro_repo.PipelineError(
+            "rootfs profile does not match the pinned Stable generation"
+        )
+    if profile.get("trust") == "production-signed" or spec.release.name == "1.0":
         from tools.install import production
 
         return production.verify(spec.release.generation, REPO_ROOT)
@@ -50,20 +58,26 @@ def _generation(spec: InstallSpec) -> tuple[Path, dict[str, Any]]:
 
 def _request(spec: InstallSpec, disk: DiskState) -> PlanningRequestV1:
     """Collect verified filesystem facts, then cross into the pure API."""
+    profile = kitpro_repo.load_json(ROOTFS_PROFILE)
     generation_root, manifest = _generation(spec)
-    production = spec.release.name == "1.0"
+    production_signed = profile.get("trust") == "production-signed" or spec.release.name == "1.0"
+    if production_signed:
+        from tools.install import production
+
+        package_records = production.packages(manifest)
+    else:
+        package_records = [
+            package
+            for repository in manifest["repositories"]
+            for package in repository["packages"]
+        ]
     package_count = (
         manifest["package_count"]
-        if production
-        else sum(len(repository["packages"]) for repository in manifest["repositories"])
+        if "package_count" in manifest
+        else len(package_records)
     )
-    profile = kitpro_repo.load_json(ROOTFS_PROFILE)
-    if profile["release"] != spec.release.name or profile["generation"] != spec.release.generation:
-        raise kitpro_repo.PipelineError(
-            "rootfs profile does not match the pinned Stable generation"
-        )
-    if production and sorted(profile["explicit_packages"]) != sorted(
-        package["name"] for package in manifest["packages"] if package["explicit"]
+    if production_signed and sorted(profile["explicit_packages"]) != sorted(
+        package["name"] for package in package_records if package["explicit"]
     ):
         raise kitpro_repo.PipelineError("production profile differs from frozen explicit inventory")
     return PlanningRequestV1(
@@ -74,8 +88,8 @@ def _request(spec: InstallSpec, disk: DiskState) -> PlanningRequestV1:
             generation=spec.release.generation,
             generation_manifest_sha256=kitpro_repo.sha256_file(generation_root / "manifest.json"),
             artifact_set_sha256=(
-                manifest["artifact_set_sha256"]
-                if production
+                production.artifact_set_sha256(manifest)
+                if production_signed
                 else kitpro_repo.manifest_artifact_hash(manifest)
             ),
             package_count=package_count,
