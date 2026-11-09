@@ -6,6 +6,9 @@ The final release uses the qualified RC3 media unchanged, so its filename and
 installer screens retain `rc3`. Verify the artifact and identify the target
 disk before installation.
 
+For a Proxmox VM, use the [Proxmox installation guide](../proxmox-installation.md)
+for OVMF and Secure Boot settings before starting the installer.
+
 1. Verify SHA256SUMS and the release manifest as described in the verification guide.
 2. Write the exact verified ISO to a USB drive of at least 4 GiB. Identify the
    destination by current model, serial, and capacity. Writing the image destroys

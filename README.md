@@ -24,6 +24,7 @@ production generation remain unchanged by this documentation update.
 
 See the [published release notes](https://github.com/KITProHQ/kitpro-linux/releases/tag/v1.1.0),
 [installation guide](docs/1.1/installation-guide.md),
+[Proxmox installation guide](docs/proxmox-installation.md),
 [upgrade guide](docs/1.1/upgrade-guide.md), and
 [verification guide](docs/1.1/verification-guide.md).
 
